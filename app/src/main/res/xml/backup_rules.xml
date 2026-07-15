@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Credentials (DataStore) stay on-device; the Room cache is just a cache. -->
+<full-backup-content>
+    <exclude domain="file" path="datastore/neon_credentials.preferences_pb" />
+</full-backup-content>

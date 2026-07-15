@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash (androidx.core:core-splashscreen) → hands off to the main theme. -->
+    <style name="Theme.Neon" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#07060D</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <item name="postSplashScreenTheme">@style/Theme.Neon.Main</item>
+    </style>
+
+    <!-- Compose owns all theming; this just sets the window up. -->
+    <style name="Theme.Neon.Main" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#07060D</item>
+    </style>
+</resources>
