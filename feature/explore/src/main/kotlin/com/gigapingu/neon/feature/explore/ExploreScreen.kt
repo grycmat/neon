@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,22 +76,20 @@ fun ExploreScreen(
     }
 
     NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (isPushed) {
+        Column(Modifier.fillMaxSize()) {
+            if (isPushed) {
+                Row(
+                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     GlassIconButton(
                         icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
                         onClick = navigator::back,
                         contentDescription = "Back",
                     )
                     Spacer(Modifier.width(10.dp))
-                } else {
-                    Spacer(Modifier.width(8.dp))
+                    Text("Explore", style = type.headlineMedium, color = palette.text)
                 }
-                Text("Explore", style = type.headlineMedium, color = palette.text)
             }
             SearchField(
                 query = uiState.query,

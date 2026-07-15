@@ -29,5 +29,6 @@ object NetworkModule {
         coerceInputValues = true
         explicitNulls = false
         encodeDefaults = true
+        isLenient = true
     }
 }

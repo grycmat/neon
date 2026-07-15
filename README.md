@@ -16,7 +16,7 @@ glassy pink→purple→cyan design (`Neon Mastodon Client.html`).
 ## Modules
 
 ```
-app                   Auth gate, Navigation 3 wiring, HomeShell (tabs + FAB), ShellViewModel
+app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs + TopAppBar + FAB), ShellViewModel
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database         Room cache (list_cache / entity_cache)
@@ -39,6 +39,8 @@ Architecture mirrors the Flutter app: singleton repositories hold
 updated/created statuses and poll updates on `SharedFlow`s, and every
 list-holding repository/ViewModel patches its copies — interactions stay in
 sync across timelines, thread, notifications and profiles.
+
+Root shell tabs (Home, Explore, Notifications, Profile) are hosted within a `HorizontalPager` to support swipe navigation, keeping their states alive across page swiping via `beyondViewportPageCount = 3`. A shared, glassmorphic `TopAppBar` displays page context and triggers settings.
 
 ## Building
 

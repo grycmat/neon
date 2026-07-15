@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -40,7 +39,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
-import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
 import com.gigapingu.neon.core.designsystem.util.relativeTime
@@ -57,19 +55,7 @@ fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(
-                modifier = Modifier.padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "Notifications",
-                    style = type.headlineMedium,
-                    color = palette.text,
-                    modifier = Modifier.weight(1f),
-                )
-                NeonLabel("Live")
-            }
+        Column(Modifier.fillMaxSize()) {
             AsyncList(
                 state = state,
                 onRefresh = viewModel::refresh,

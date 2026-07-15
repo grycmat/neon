@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,7 +63,8 @@ fun ProfileScreen(
     LaunchedEffect(accountId) { viewModel.start(accountId) }
 
     NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        val modifier = if (isRoot) Modifier.fillMaxSize() else Modifier.fillMaxSize().statusBarsPadding()
+        Column(modifier) {
             val listState = AsyncState(
                 phase = if (uiState.loadingStatuses) AsyncPhase.Loading else AsyncPhase.Ready,
                 data = if (uiState.account == null) null else uiState.statuses,
@@ -79,7 +79,9 @@ fun ProfileScreen(
                 key = { it.id },
                 header = {
                     Column {
-                        TopBar(isRoot = isRoot)
+                        if (!isRoot) {
+                            TopBar()
+                        }
                         uiState.account?.let { ProfileHeader(uiState, viewModel) }
                         NeonLabel(
                             "Toots",
@@ -105,7 +107,7 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun TopBar(isRoot: Boolean) {
+private fun TopBar() {
     val navigator = LocalNeonNavigator.current
     Row(
         modifier = Modifier
@@ -113,21 +115,11 @@ private fun TopBar(isRoot: Boolean) {
             .padding(top = 4.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (!isRoot) {
-            GlassIconButton(
-                icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                onClick = navigator::back,
-                contentDescription = "Back",
-            )
-        }
-        Spacer(Modifier.weight(1f))
-        if (isRoot) {
-            GlassIconButton(
-                icon = Icons.Outlined.Settings,
-                onClick = navigator::openSettings,
-                contentDescription = "Settings",
-            )
-        }
+        GlassIconButton(
+            icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
+            onClick = navigator::back,
+            contentDescription = "Back",
+        )
     }
 }
 

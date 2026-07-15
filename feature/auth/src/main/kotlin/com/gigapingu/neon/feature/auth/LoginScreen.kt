@@ -1,5 +1,6 @@
 package com.gigapingu.neon.feature.auth
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -114,6 +115,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 )
             }
             uiState.error?.let { error ->
+                Log.d("Login error", error)
                 Spacer(Modifier.height(12.dp))
                 Text(error, style = type.bodySmall, color = palette.pink)
             }
