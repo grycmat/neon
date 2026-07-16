@@ -30,6 +30,7 @@ import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.status.StatusCard
+import com.gigapingu.neon.core.ui.status.StatusListSkeleton
 
 /** Home / Local / Federated timelines behind a segmented pill switcher. */
 @Composable
@@ -59,6 +60,7 @@ fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
                 onLoadMore = viewModel::loadMore,
                 emptyLabel = "No toots yet — follow some people!",
                 key = { it.id },
+                loadingContent = { StatusListSkeleton() },
             ) { status ->
                 StatusCard(status = status)
             }

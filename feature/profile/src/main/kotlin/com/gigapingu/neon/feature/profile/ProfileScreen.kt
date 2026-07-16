@@ -54,6 +54,7 @@ import com.gigapingu.neon.core.ui.status.StatusCard
 fun ProfileScreen(
     accountId: String,
     isRoot: Boolean = false,
+    heroKey: String? = null,
     viewModel: ProfileViewModel = hiltViewModel(key = "profile-$accountId"),
 ) {
     val palette = NeonTheme.palette
@@ -82,7 +83,7 @@ fun ProfileScreen(
                         if (!isRoot) {
                             TopBar()
                         }
-                        uiState.account?.let { ProfileHeader(uiState, viewModel) }
+                        uiState.account?.let { ProfileHeader(uiState, viewModel, heroKey) }
                         NeonLabel(
                             "Toots",
                             modifier = Modifier.padding(start = 6.dp, top = 20.dp, end = 6.dp, bottom = 8.dp),
@@ -124,7 +125,11 @@ private fun TopBar() {
 }
 
 @Composable
-private fun ProfileHeader(uiState: ProfileUiState, viewModel: ProfileViewModel) {
+private fun ProfileHeader(
+    uiState: ProfileUiState,
+    viewModel: ProfileViewModel,
+    heroKey: String? = null,
+) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     val navigator = LocalNeonNavigator.current
@@ -139,7 +144,7 @@ private fun ProfileHeader(uiState: ProfileUiState, viewModel: ProfileViewModel) 
     ) {
         Column {
             Row {
-                NeonAvatar(account = account, size = 72.dp, ring = true)
+                NeonAvatar(account = account, size = 72.dp, ring = true, heroKey = heroKey)
                 Spacer(Modifier.weight(1f))
                 when {
                     uiState.isSelf -> GlassButton(

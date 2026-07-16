@@ -20,18 +20,23 @@ import com.gigapingu.neon.core.designsystem.theme.NeonAccents
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.Account
 
-/** Avatar with the accent-trio gradient fallback and optional glow ring. */
+/**
+ * Avatar with the accent-trio gradient fallback and optional glow ring.
+ * A non-null [heroKey] lets it morph across screens as a shared element.
+ */
 @Composable
 fun NeonAvatar(
     account: Account?,
     modifier: Modifier = Modifier,
     size: Dp = 38.dp,
     ring: Boolean = false,
+    heroKey: String? = null,
 ) {
     val palette = NeonTheme.palette
     val url = account?.avatar.orEmpty()
     Box(
         modifier = modifier
+            .then(if (heroKey != null) Modifier.neonSharedElement(heroKey) else Modifier)
             .size(size)
             .then(
                 if (ring) {

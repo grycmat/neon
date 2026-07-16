@@ -87,13 +87,17 @@ fun StatusCard(
                 }
             }
             Row {
+                // Unique per card (status wrapper id) so timelines with the same
+                // account twice never carry duplicate shared-element keys.
+                val avatarHeroKey = "avatar-${status.id}"
                 NeonAvatar(
                     account = display.account,
                     size = 38.dp,
+                    heroKey = avatarHeroKey,
                     modifier = Modifier.clickable(
                         interactionSource = null,
                         indication = null,
-                    ) { navigator.openProfile(display.account.id) },
+                    ) { navigator.openProfile(display.account.id, heroKey = avatarHeroKey) },
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -104,7 +108,7 @@ fun StatusCard(
                             .clickable(
                                 interactionSource = null,
                                 indication = null,
-                            ) { navigator.openProfile(display.account.id) },
+                            ) { navigator.openProfile(display.account.id, heroKey = avatarHeroKey) },
                     ) {
                         Text(
                             display.account.displayNameOrUsername,

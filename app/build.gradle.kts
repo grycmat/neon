@@ -70,5 +70,8 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
+    // For the app-wide ImageLoader (crossfade) built in NeonApplication.
+    implementation(libs.coil.compose)
+
     debugImplementation(libs.compose.ui.tooling)
 }

@@ -1,5 +1,15 @@
 package com.gigapingu.neon.core.ui.status
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,6 +38,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,9 +46,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.model.Status
@@ -82,6 +95,7 @@ fun StatusActions(status: Status, modifier: Modifier = Modifier) {
                 count = status.reblogsCount,
                 active = status.reblogged,
                 activeColor = palette.cyan,
+                spinOnActivate = true,
                 onClick = { showBoostSheet = true },
             )
             ActionItem(
@@ -120,10 +134,30 @@ private fun ActionItem(
     count: Int? = null,
     active: Boolean = false,
     activeColor: Color? = null,
+    spinOnActivate: Boolean = false,
     onClick: () -> Unit,
 ) {
     val palette = NeonTheme.palette
-    val color = if (active) (activeColor ?: palette.cyan) else palette.textDim
+    val color by animateColorAsState(
+        targetValue = if (active) (activeColor ?: palette.cyan) else palette.textDim,
+        animationSpec = NeonMotion.quick(),
+        label = "actionTint",
+    )
+    val scale = remember { Animatable(1f) }
+    val rotation = remember { Animatable(0f) }
+    // Pop only on a fresh activation, not when a card scrolls into view already active.
+    var wasActive by remember { mutableStateOf(active) }
+    LaunchedEffect(active) {
+        if (active && !wasActive) {
+            if (spinOnActivate) {
+                rotation.snapTo(0f)
+                rotation.animateTo(360f, NeonMotion.screen())
+            }
+            scale.animateTo(1.4f, spring(stiffness = Spring.StiffnessHigh))
+            scale.animateTo(1f, NeonMotion.bouncy())
+        }
+        wasActive = active
+    }
     Row(
         modifier = Modifier
             .clickable(
@@ -135,14 +169,38 @@ private fun ActionItem(
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(17.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier
+                .size(17.dp)
+                .graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value
+                    rotationZ = rotation.value
+                },
+        )
         if (count != null && count > 0) {
             Spacer(Modifier.width(6.dp))
-            Text(
-                compactCount(count),
-                style = NeonTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
-                color = color,
-            )
+            // Counts roll like an odometer: up on increment, down on decrement.
+            AnimatedContent(
+                targetState = count,
+                transitionSpec = {
+                    val dir = if (targetState > initialState) 1 else -1
+                    (slideInVertically(NeonMotion.quick()) { dir * it } +
+                        fadeIn(NeonMotion.quick())) togetherWith
+                        (slideOutVertically(NeonMotion.quick()) { -dir * it } +
+                            fadeOut(NeonMotion.quick()))
+                },
+                label = "actionCount",
+            ) { value ->
+                Text(
+                    compactCount(value),
+                    style = NeonTheme.type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                    color = color,
+                )
+            }
         }
     }
 }

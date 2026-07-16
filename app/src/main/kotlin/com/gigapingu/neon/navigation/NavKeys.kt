@@ -15,7 +15,7 @@ data object HomeKey : NavKey
 data class ThreadKey(val statusId: String) : NavKey
 
 @Serializable
-data class ProfileKey(val accountId: String) : NavKey
+data class ProfileKey(val accountId: String, val heroKey: String? = null) : NavKey
 
 @Serializable
 data class HashtagKey(val query: String) : NavKey
@@ -33,5 +33,5 @@ data object EditProfileKey : NavKey
 data object SettingsKey : NavKey
 
 @Serializable
-data class MediaPreviewKey(val url: String) : NavKey
+data class MediaPreviewKey(val url: String, val previewUrl: String? = null) : NavKey
 

@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,16 +39,22 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import com.gigapingu.neon.core.designsystem.component.neonSharedElement
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 @Composable
 fun MediaPreviewScreen(
     url: String,
+    previewUrl: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val navigator = LocalNeonNavigator.current
@@ -130,16 +137,23 @@ fun MediaPreviewScreen(
                 }
         ) {
             AsyncImage(
-                model = url,
+                // Start from the already-cached grid thumbnail so the hero
+                // morph never flashes while the full-size image loads.
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(url)
+                    .placeholderMemoryCacheKey(previewUrl)
+                    .build(),
                 contentDescription = "Media Preview",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .fillMaxSize()
+                    // Pan is a layout offset (not graphicsLayer) so the shared
+                    // element pops back home from the dragged position.
+                    .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) }
+                    .neonSharedElement("media-$url")
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
-                        translationX = offset.value.x
-                        translationY = offset.value.y
                     }
             )
         }

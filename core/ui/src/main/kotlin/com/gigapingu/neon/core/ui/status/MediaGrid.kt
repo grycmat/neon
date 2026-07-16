@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.gigapingu.neon.core.designsystem.component.neonSharedElement
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.MediaAttachment
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
@@ -77,11 +78,15 @@ private fun Tile(attachment: MediaAttachment, onClick: ((MediaAttachment) -> Uni
     val clickModifier = if (onClick != null) {
         Modifier.clickable { onClick(attachment) }
     } else {
-        Modifier.clickable { navigator.openMediaPreview(attachment.url) }
+        Modifier.clickable {
+            navigator.openMediaPreview(attachment.url, attachment.preview.ifEmpty { null })
+        }
     }
     Box(
         modifier = Modifier
             .fillMaxSize()
+            // Hero: this tile morphs into the full-screen viewer.
+            .neonSharedElement("media-${attachment.url}")
             .background(palette.gradientSoft)
             .then(clickModifier),
     ) {

@@ -50,12 +50,13 @@ object PreviewFixtures {
 
     val navigator = object : NeonNavigator {
         override fun openThread(statusId: String) = Unit
-        override fun openProfile(accountId: String) = Unit
+        override fun openProfile(accountId: String, heroKey: String?) = Unit
         override fun openHashtag(tag: String) = Unit
         override fun openCompose(replyToId: String?, quotingId: String?) = Unit
         override fun openFollowList(accountId: String, handle: String, following: Boolean) = Unit
         override fun openEditProfile() = Unit
         override fun openSettings() = Unit
+        override fun openMediaPreview(url: String, previewUrl: String?) = Unit
         override fun back() = Unit
     }
 

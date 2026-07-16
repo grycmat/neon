@@ -11,13 +11,20 @@ import com.gigapingu.neon.core.model.Status
  */
 interface NeonNavigator {
     fun openThread(statusId: String)
-    fun openProfile(accountId: String)
+
+    /**
+     * [heroKey] identifies the avatar the tap came from so it can morph into
+     * the profile header (shared element); null skips the hero.
+     */
+    fun openProfile(accountId: String, heroKey: String? = null)
     fun openHashtag(tag: String)
     fun openCompose(replyToId: String? = null, quotingId: String? = null)
     fun openFollowList(accountId: String, handle: String, following: Boolean)
     fun openEditProfile()
     fun openSettings()
-    fun openMediaPreview(url: String)
+
+    /** [previewUrl] is the already-cached thumbnail shown while [url] loads. */
+    fun openMediaPreview(url: String, previewUrl: String? = null)
     fun back()
 }
 

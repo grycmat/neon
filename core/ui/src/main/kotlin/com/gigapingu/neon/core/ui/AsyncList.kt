@@ -1,5 +1,6 @@
 package com.gigapingu.neon.core.ui
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,8 +32,11 @@ import androidx.compose.ui.unit.dp
 import com.gigapingu.neon.core.data.AsyncPhase
 import com.gigapingu.neon.core.data.AsyncState
 import com.gigapingu.neon.core.designsystem.component.GlassButton
+import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import kotlinx.coroutines.flow.distinctUntilChanged
+
+private enum class ListPane { Loading, Error, Content }
 
 /**
  * Pull-to-refresh + infinite-scroll list bound to an [AsyncState] of items.
@@ -50,21 +54,10 @@ fun <T : Any> AsyncList(
     contentPadding: PaddingValues = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 90.dp),
     key: ((T) -> Any)? = null,
     header: (@Composable () -> Unit)? = null,
+    loadingContent: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
 ) {
     val palette = NeonTheme.palette
-
-    if (state.isLoading && !state.hasData) {
-        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = palette.cyan)
-        }
-        return
-    }
-    if (state.isError) {
-        ErrorPane(message = state.error ?: "Something broke", onRetry = onRefresh, modifier = modifier)
-        return
-    }
-
     val items = state.data.orEmpty()
 
     // Infinite scroll: trigger when the last few items become visible.
@@ -82,48 +75,78 @@ fun <T : Any> AsyncList(
         }
     }
 
-    PullToRefreshBox(
-        isRefreshing = state.phase == AsyncPhase.Refreshing,
-        onRefresh = onRefresh,
-        modifier = modifier.fillMaxSize(),
-    ) {
-        LazyColumn(
-            state = listState,
-            contentPadding = contentPadding,
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            if (header != null) {
-                item(key = "header") { header() }
+    val pane = when {
+        state.isLoading && !state.hasData -> ListPane.Loading
+        state.isError -> ListPane.Error
+        else -> ListPane.Content
+    }
+
+    Crossfade(
+        targetState = pane,
+        animationSpec = NeonMotion.quick(),
+        label = "asyncListPane",
+        modifier = modifier,
+    ) { current ->
+        when (current) {
+            ListPane.Loading -> loadingContent?.invoke() ?: Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = palette.cyan)
             }
-            if (items.isEmpty()) {
-                item(key = "empty") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 60.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(emptyLabel, style = NeonTheme.type.bodyMedium, color = palette.textMute)
+
+            ListPane.Error -> ErrorPane(
+                message = state.error ?: "Something broke",
+                onRetry = onRefresh,
+            )
+
+            ListPane.Content -> PullToRefreshBox(
+                isRefreshing = state.phase == AsyncPhase.Refreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = contentPadding,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    if (header != null) {
+                        item(key = "header") { header() }
                     }
-                }
-            } else {
-                items(count = items.size, key = key?.let { k -> { index: Int -> k(items[index]) } }) { index ->
-                    itemContent(items[index])
-                }
-            }
-            item(key = "footer") {
-                if (state.phase == AsyncPhase.LoadingMore) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            strokeWidth = 2.2.dp,
-                            color = palette.cyan,
-                        )
+                    if (items.isEmpty()) {
+                        item(key = "empty") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 60.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(emptyLabel, style = NeonTheme.type.bodyMedium, color = palette.textMute)
+                            }
+                        }
+                    } else {
+                        items(count = items.size, key = key?.let { k -> { index: Int -> k(items[index]) } }) { index ->
+                            // New/patched rows glide into place instead of popping.
+                            Box(Modifier.animateItem()) {
+                                itemContent(items[index])
+                            }
+                        }
+                    }
+                    item(key = "footer") {
+                        if (state.phase == AsyncPhase.LoadingMore) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(22.dp),
+                                    strokeWidth = 2.2.dp,
+                                    color = palette.cyan,
+                                )
+                            }
+                        }
                     }
                 }
             }

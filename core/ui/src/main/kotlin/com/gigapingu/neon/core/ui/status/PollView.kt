@@ -20,9 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gigapingu.neon.core.designsystem.component.GradientButton
+import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.designsystem.util.pollTimeLeft
@@ -152,6 +155,9 @@ private fun ResultRow(poll: Poll, index: Int, total: Int) {
     val palette = NeonTheme.palette
     val option = poll.options[index]
     val fraction = (option.votesCount.toFloat() / total).coerceIn(0f, 1f)
+    // Bars grow from zero when results first appear and re-flow on new tallies.
+    val fill = remember { Animatable(0f) }
+    LaunchedEffect(fraction) { fill.animateTo(fraction, NeonMotion.screen()) }
     val mine = index in poll.ownVotes
     val shape = RoundedCornerShape(14.dp)
     Box(
@@ -164,7 +170,7 @@ private fun ResultRow(poll: Poll, index: Int, total: Int) {
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(fraction)
+                .fillMaxWidth(fill.value)
                 .fillMaxHeight()
                 .background(
                     Brush.horizontalGradient(
