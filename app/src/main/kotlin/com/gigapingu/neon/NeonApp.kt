@@ -43,9 +43,11 @@ import com.gigapingu.neon.navigation.EditProfileKey
 import com.gigapingu.neon.navigation.FollowListKey
 import com.gigapingu.neon.navigation.HashtagKey
 import com.gigapingu.neon.navigation.HomeKey
+import com.gigapingu.neon.navigation.MediaPreviewKey
 import com.gigapingu.neon.navigation.ProfileKey
 import com.gigapingu.neon.navigation.SettingsKey
 import com.gigapingu.neon.navigation.ThreadKey
+import com.gigapingu.neon.core.ui.media.MediaPreviewScreen
 
 /** Routes between login and the main shell based on auth state (Flutter's _AuthGate). */
 @Composable
@@ -122,6 +124,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
                     }
                     entry<EditProfileKey> { EditProfileScreen() }
                     entry<SettingsKey> { SettingsScreen() }
+                    entry<MediaPreviewKey> { key -> MediaPreviewScreen(url = key.url) }
                 },
             )
             SnackbarHost(
@@ -160,6 +163,10 @@ private class BackStackNavigator(private val backStack: NavBackStack) : NeonNavi
 
     override fun openSettings() {
         backStack.add(SettingsKey)
+    }
+
+    override fun openMediaPreview(url: String) {
+        backStack.add(MediaPreviewKey(url))
     }
 
     override fun back() {

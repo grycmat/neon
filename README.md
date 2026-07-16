@@ -63,5 +63,5 @@ Root shell tabs (Home, Explore, Notifications, Profile) are hosted within a `Hor
   system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
   from the AndroidX downloadable-fonts docs — the base64 certs must match
   exactly.
-- Media viewer, push notifications and streaming are not implemented (parity
-  with the Flutter version, which also lacks them).
+- Push notifications and streaming are not implemented (parity with the Flutter version, which also lacks them).
+

@@ -17,6 +17,7 @@ interface NeonNavigator {
     fun openFollowList(accountId: String, handle: String, following: Boolean)
     fun openEditProfile()
     fun openSettings()
+    fun openMediaPreview(url: String)
     fun back()
 }
 

@@ -31,3 +31,7 @@ data object EditProfileKey : NavKey
 
 @Serializable
 data object SettingsKey : NavKey
+
+@Serializable
+data class MediaPreviewKey(val url: String) : NavKey
+

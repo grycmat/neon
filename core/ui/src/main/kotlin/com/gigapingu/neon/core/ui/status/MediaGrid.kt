@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.MediaAttachment
+import com.gigapingu.neon.core.ui.LocalNeonNavigator
+
 
 /** 1–4 media attachments in a rounded grid. Videos/gifs get a play badge. */
 @Composable
@@ -71,13 +73,17 @@ fun MediaGrid(
 @Composable
 private fun Tile(attachment: MediaAttachment, onClick: ((MediaAttachment) -> Unit)?) {
     val palette = NeonTheme.palette
+    val navigator = LocalNeonNavigator.current
+    val clickModifier = if (onClick != null) {
+        Modifier.clickable { onClick(attachment) }
+    } else {
+        Modifier.clickable { navigator.openMediaPreview(attachment.url) }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.gradientSoft)
-            .then(
-                if (onClick != null) Modifier.clickable { onClick(attachment) } else Modifier,
-            ),
+            .then(clickModifier),
     ) {
         if (attachment.preview.isNotEmpty()) {
             AsyncImage(
