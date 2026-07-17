@@ -35,13 +35,14 @@ DataStore for credentials/settings.
 ### Module graph
 
 ```
-app                   Auth gate, Navigation 3 wiring, HomeShell (tabs + FAB), ShellViewModel
+app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs + TopAppBar + FAB), ShellViewModel
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database          Room cache (list_cache / entity_cache tables)
 core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
+                      MediaPreviewScreen (full-screen viewer), PreviewFixtures,
                       NeonNavigator + StatusActionHandler CompositionLocals
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills
@@ -114,6 +115,33 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
   (favourite/boost/vote/share/open-mention) go through `StatusActionHandler`,
   another CompositionLocal, so `core/ui` components (`StatusCard`, etc.) stay
   decoupled from `ShellViewModel`/navigation and are reusable across features.
+- `HomeShell` hosts the four root tabs (Home / Explore / Notifications /
+  Profile) in a `HorizontalPager` with `beyondViewportPageCount = 3` so tab
+  state survives swiping, and draws the shared glassmorphic top app bar itself
+  — tab screens must not add their own headers or `statusBarsPadding`
+  (`ProfileScreen` pads conditionally because it is also pushed standalone).
+
+### Motion & shared elements
+
+- `NeonMotion` (`core/designsystem/.../theme/NeonMotion.kt`) is the single
+  motion vocabulary: `screen()` / `quick()` tweens on the M3 emphasized curve,
+  `bouncy()` / `settle()` springs for touch feedback. Use these specs for new
+  animations instead of ad-hoc `tween`/`spring` values.
+- Shared-element ("hero") transitions: `NeonApp` wraps the nav graph in a
+  `SharedTransitionLayout` and provides `LocalSharedTransitionScope` +
+  `LocalNavAnimatedVisibilityScope` (`core/designsystem/.../SharedElements.kt`).
+  Mark hero views with `Modifier.neonSharedElement(key)` — it degrades to a
+  no-op when either scope is absent (previews, HomeShell tabs), so it is safe
+  in reusable components.
+
+### Compose previews & stateless screens
+
+Screens are split into a stateful ViewModel-connected wrapper and a stateless
+layout composable taking state + callback lambdas; `@Preview`s target the
+stateless one. Mock data lives in `PreviewFixtures` (`core/ui/.../UiPreviews.kt`),
+with design-system previews in `core/designsystem/.../ComponentPreviews.kt` and
+per-feature previews next to each screen. Follow this split when adding or
+reworking a screen so it stays previewable without Hilt/ViewModels.
 
 ### Known caveats (from README, still relevant)
 
@@ -124,6 +152,9 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
 - **Downloadable fonts** (Space Grotesk + Manrope): if they silently fall back
   to the system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
   from the AndroidX downloadable-fonts docs — the base64 certs must match exactly.
-- Media viewer, push notifications, and streaming are intentionally not
-  implemented yet (parity with the Flutter version, which also lacks them) —
-  don't treat their absence as a bug.
+- Push notifications and streaming are intentionally not implemented yet
+  (parity with the Flutter version, which also lacks them) — don't treat their
+  absence as a bug. (The media viewer *is* implemented:
+  `core/ui/.../media/MediaPreviewScreen.kt`, opened via
+  `NeonNavigator.openMediaPreview`; `MediaGrid` falls back to it when no
+  custom click handler is given.)
