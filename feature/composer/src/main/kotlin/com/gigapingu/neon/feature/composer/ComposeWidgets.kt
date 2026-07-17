@@ -47,11 +47,14 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.gigapingu.neon.core.designsystem.component.GlassField
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.MediaAttachment
+import com.gigapingu.neon.core.ui.PreviewFixtures
+import com.gigapingu.neon.core.ui.PreviewHarness
 
 /** Attached-media strip with per-item alt-text editing and removal. */
 @Composable
@@ -431,6 +434,52 @@ fun VisibilityPicker(value: String, onChanged: (String) -> Unit) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(name = "Media strip", showBackground = true, heightDp = 160)
+@Composable
+private fun MediaStripPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            MediaStrip(
+                items = listOf(
+                    PreviewFixtures.attachment("1"),
+                    PreviewFixtures.attachment("2").copy(description = "A neon tulip at dusk"),
+                    PreviewFixtures.attachment("3"),
+                ),
+                onRemove = {},
+                onEditAlt = { _, _ -> },
+            )
+        }
+    }
+}
+
+@Preview(name = "Poll editor", showBackground = true, heightDp = 340)
+@Composable
+private fun PollEditorPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            PollEditor(
+                poll = PollDraftState(options = listOf("Pink", "Cyan", "")),
+                onUpdate = {},
+                onRemove = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "Visibility picker", showBackground = true, heightDp = 120)
+@Composable
+private fun VisibilityPickerPreview() {
+    PreviewHarness {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            VisibilityPicker(value = "public", onChanged = {})
+            VisibilityPicker(value = "private", onChanged = {})
         }
     }
 }

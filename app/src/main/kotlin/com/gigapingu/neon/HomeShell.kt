@@ -49,10 +49,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
+import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.designsystem.theme.NeonAccents
 import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
@@ -290,6 +292,41 @@ private fun TabBar(position: Float, onChanged: (Int) -> Unit) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(name = "Top app bar", showBackground = true, heightDp = 200)
+@Composable
+private fun TopAppBarPreview() {
+    PreviewHarness {
+        Column {
+            TopAppBar(page = 0, onSettingsClick = {})
+            Spacer(Modifier.height(12.dp))
+            TopAppBar(page = 2, onSettingsClick = {})
+        }
+    }
+}
+
+@Preview(name = "Tab bar", showBackground = true, heightDp = 200)
+@Composable
+private fun TabBarPreview() {
+    PreviewHarness {
+        Column {
+            TabBar(position = 0f, onChanged = {})
+            Spacer(Modifier.height(12.dp))
+            // Mid-swipe between Explore and Notifications.
+            TabBar(position = 1.5f, onChanged = {})
+        }
+    }
+}
+
+@Preview(name = "Compose FAB", showBackground = true, heightDp = 120)
+@Composable
+private fun ComposeFabPreview() {
+    PreviewHarness {
+        Box(Modifier.fillMaxSize()) {
+            ComposeFab(onClick = {}, modifier = Modifier.align(Alignment.Center))
         }
     }
 }

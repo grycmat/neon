@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,13 +40,9 @@ import com.gigapingu.neon.core.designsystem.theme.NeonTheme
  * screen typography. When the ViewModel produces an authorize URL, the
  * in-app OAuth WebView takes over.
  */
-@OptIn(ExperimentalTextApi::class)
 @Composable
 fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
-    val palette = NeonTheme.palette
-    val type = NeonTheme.type
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var instance by rememberSaveable { mutableStateOf("") }
 
     uiState.authorizeUrl?.let { url ->
         OAuthWebViewScreen(
@@ -56,6 +53,26 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
         )
         return
     }
+
+    LoginContent(
+        instanceHint = viewModel.defaultInstanceHint,
+        busy = uiState.busy,
+        error = uiState.error,
+        onConnect = viewModel::connect,
+    )
+}
+
+@OptIn(ExperimentalTextApi::class)
+@Composable
+private fun LoginContent(
+    instanceHint: String,
+    busy: Boolean,
+    error: String?,
+    onConnect: (String) -> Unit,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    var instance by rememberSaveable { mutableStateOf("") }
 
     NeonBackground {
         Column(
@@ -100,12 +117,12 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                         imeAction = ImeAction.Go,
                         autoCorrectEnabled = false,
                     ),
-                    keyboardActions = KeyboardActions(onGo = { viewModel.connect(instance) }),
+                    keyboardActions = KeyboardActions(onGo = { onConnect(instance) }),
                     modifier = Modifier.fillMaxWidth(),
                     decorationBox = { innerTextField ->
                         if (instance.isEmpty()) {
                             Text(
-                                viewModel.defaultInstanceHint,
+                                instanceHint,
                                 style = type.bodyLarge,
                                 color = palette.textMute,
                             )
@@ -114,19 +131,45 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                     },
                 )
             }
-            uiState.error?.let { error ->
-                Log.d("Login error", error)
+            error?.let { message ->
+                Log.d("Login error", message)
                 Spacer(Modifier.height(12.dp))
-                Text(error, style = type.bodySmall, color = palette.pink)
+                Text(message, style = type.bodySmall, color = palette.pink)
             }
             Spacer(Modifier.height(16.dp))
             GradientButton(
                 label = "Connect",
                 trailingArrow = true,
-                busy = uiState.busy,
-                onClick = { viewModel.connect(instance) },
+                busy = busy,
+                onClick = { onConnect(instance) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@Preview(name = "Login", showBackground = true, heightDp = 760)
+@Composable
+private fun LoginPreview() {
+    NeonTheme(darkTheme = true) {
+        LoginContent(
+            instanceHint = "mastodon.social",
+            busy = false,
+            error = null,
+            onConnect = {},
+        )
+    }
+}
+
+@Preview(name = "Login — error", showBackground = true, heightDp = 760)
+@Composable
+private fun LoginErrorPreview() {
+    NeonTheme(darkTheme = true) {
+        LoginContent(
+            instanceHint = "mastodon.social",
+            busy = false,
+            error = "Could not reach that instance — check the address.",
+            onConnect = {},
+        )
     }
 }

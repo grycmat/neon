@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,6 +47,9 @@ import com.gigapingu.neon.core.model.MastoNotification
 import com.gigapingu.neon.core.model.NotificationType
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.PreviewFixtures
+import com.gigapingu.neon.core.ui.PreviewHarness
+import java.time.Instant
 
 /** Notifications feed — favourite / boost / follow / mention / poll rows. */
 @Composable
@@ -150,6 +154,28 @@ private fun NotificationRow(item: MastoNotification) {
                 style = type.bodySmall,
                 color = palette.textMute,
             )
+        }
+    }
+}
+
+private fun previewNotification(id: String, type: String, withStatus: Boolean = true) = MastoNotification(
+    id = id,
+    rawType = type,
+    createdAt = Instant.now().minusSeconds(60 * 12),
+    account = PreviewFixtures.account2,
+    status = if (withStatus) PreviewFixtures.status else null,
+)
+
+@Preview(name = "Notification rows", showBackground = true, heightDp = 560)
+@Composable
+private fun NotificationRowPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            NotificationRow(item = previewNotification("1", "favourite"))
+            NotificationRow(item = previewNotification("2", "reblog"))
+            NotificationRow(item = previewNotification("3", "mention"))
+            NotificationRow(item = previewNotification("4", "follow", withStatus = false))
+            NotificationRow(item = previewNotification("5", "poll"))
         }
     }
 }

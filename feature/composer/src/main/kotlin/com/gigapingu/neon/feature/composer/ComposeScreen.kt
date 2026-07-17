@@ -48,6 +48,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -61,6 +62,8 @@ import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
 import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.PreviewFixtures
+import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.QuoteCard
 
 /**
@@ -371,6 +374,29 @@ private fun ContextCard(label: String, status: Status) {
                 overflow = TextOverflow.Ellipsis,
                 style = type.bodySmall,
                 color = palette.textDim,
+            )
+        }
+    }
+}
+
+@Preview(name = "Reply context card", showBackground = true, heightDp = 140)
+@Composable
+private fun ContextCardPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            ContextCard(label = "Replying to", status = PreviewFixtures.status)
+        }
+    }
+}
+
+@Preview(name = "Mention suggestions", showBackground = true, heightDp = 200)
+@Composable
+private fun MentionSuggestionsPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            MentionSuggestions(
+                suggestions = listOf(PreviewFixtures.account, PreviewFixtures.account2),
+                onPick = {},
             )
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,8 +43,11 @@ import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
+import com.gigapingu.neon.core.model.Relationship
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.PreviewFixtures
+import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
 
 /**
@@ -83,7 +87,9 @@ fun ProfileScreen(
                         if (!isRoot) {
                             TopBar()
                         }
-                        uiState.account?.let { ProfileHeader(uiState, viewModel, heroKey) }
+                        uiState.account?.let {
+                            ProfileHeader(uiState, heroKey, onToggleFollow = viewModel::toggleFollow)
+                        }
                         NeonLabel(
                             "Toots",
                             modifier = Modifier.padding(start = 6.dp, top = 20.dp, end = 6.dp, bottom = 8.dp),
@@ -127,8 +133,8 @@ private fun TopBar() {
 @Composable
 private fun ProfileHeader(
     uiState: ProfileUiState,
-    viewModel: ProfileViewModel,
     heroKey: String? = null,
+    onToggleFollow: () -> Unit,
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
@@ -158,7 +164,7 @@ private fun ProfileHeader(
                             GlassButton(
                                 label = if (requested) "Requested" else "Following",
                                 height = 40.dp,
-                                onClick = if (uiState.followBusy) null else viewModel::toggleFollow,
+                                onClick = if (uiState.followBusy) null else onToggleFollow,
                                 modifier = Modifier.width(118.dp),
                             )
                         } else {
@@ -166,7 +172,7 @@ private fun ProfileHeader(
                                 label = "Follow",
                                 height = 40.dp,
                                 busy = uiState.followBusy,
-                                onClick = viewModel::toggleFollow,
+                                onClick = onToggleFollow,
                                 modifier = Modifier.width(118.dp),
                             )
                         }
@@ -244,4 +250,40 @@ private fun StatDivider() {
             .height(26.dp)
             .background(NeonTheme.palette.divider),
     )
+}
+
+@Preview(name = "Profile header — other user", showBackground = true, heightDp = 420)
+@Composable
+private fun ProfileHeaderPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            ProfileHeader(
+                uiState = ProfileUiState(
+                    account = PreviewFixtures.account,
+                    relationship = Relationship(id = "1", followedBy = true),
+                ),
+                onToggleFollow = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "Profile header — self + following", showBackground = true, heightDp = 760)
+@Composable
+private fun ProfileHeaderVariantsPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            ProfileHeader(
+                uiState = ProfileUiState(account = PreviewFixtures.account, isSelf = true),
+                onToggleFollow = {},
+            )
+            ProfileHeader(
+                uiState = ProfileUiState(
+                    account = PreviewFixtures.account2,
+                    relationship = Relationship(id = "2", following = true),
+                ),
+                onToggleFollow = {},
+            )
+        }
+    }
 }

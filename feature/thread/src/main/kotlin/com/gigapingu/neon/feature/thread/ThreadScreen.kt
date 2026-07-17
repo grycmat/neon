@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,6 +38,8 @@ import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.fullTime
 import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.PreviewFixtures
+import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.MediaGrid
 import com.gigapingu.neon.core.ui.status.PollView
 import com.gigapingu.neon.core.ui.status.QuoteCard
@@ -163,6 +166,31 @@ private fun FocusedStatus(status: Status) {
             Spacer(Modifier.height(12.dp))
             Text(fullTime(status.createdAt), style = type.bodySmall, color = palette.textMute)
             StatusActions(status = status)
+        }
+    }
+}
+
+@Preview(name = "Focused toot", showBackground = true, heightDp = 380)
+@Composable
+private fun FocusedStatusPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            FocusedStatus(status = PreviewFixtures.status)
+        }
+    }
+}
+
+@Preview(name = "Focused toot — poll", showBackground = true, heightDp = 480)
+@Composable
+private fun FocusedStatusPollPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            FocusedStatus(
+                status = PreviewFixtures.status.copy(
+                    content = "<p>Which accent wins?</p>",
+                    poll = PreviewFixtures.poll,
+                ),
+            )
         }
     }
 }

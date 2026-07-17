@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,6 +44,7 @@ import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.PreviewHarness
 
 /** Settings — theme mode + account/session. */
 @Composable
@@ -152,5 +154,41 @@ private fun ThemeOption(
             style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
             color = if (selected) palette.text else palette.textDim,
         )
+    }
+}
+
+@Preview(name = "Theme options", showBackground = true, heightDp = 140)
+@Composable
+private fun ThemeOptionPreview() {
+    PreviewHarness {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            ThemeOption(
+                mode = ThemeMode.Dark,
+                label = "Neon dark",
+                icon = Icons.Rounded.DarkMode,
+                current = ThemeMode.Dark,
+                onSelect = {},
+                modifier = Modifier.weight(1f),
+            )
+            ThemeOption(
+                mode = ThemeMode.Light,
+                label = "Light",
+                icon = Icons.Rounded.LightMode,
+                current = ThemeMode.Dark,
+                onSelect = {},
+                modifier = Modifier.weight(1f),
+            )
+            ThemeOption(
+                mode = ThemeMode.System,
+                label = "System",
+                icon = Icons.Rounded.Smartphone,
+                current = ThemeMode.Dark,
+                onSelect = {},
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }

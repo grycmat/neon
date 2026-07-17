@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,10 +48,15 @@ import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
+import com.gigapingu.neon.core.model.SearchResults
 import com.gigapingu.neon.core.model.TrendTag
 import com.gigapingu.neon.core.ui.AccountRow
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.PreviewFixtures
+import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Explore: trending tags + toots, and full search (accounts / toots / tags).
@@ -272,5 +278,61 @@ private fun TagWrap(tags: List<TrendTag>, showUses: Boolean, onTagClick: (String
                 )
             }
         }
+    }
+}
+
+private fun previewTag(name: String, uses: Int) = TrendTag(
+    name = name,
+    history = listOf(buildJsonObject { put("uses", uses) }),
+)
+
+private val previewTags = listOf(
+    previewTag("neon", 4210),
+    previewTag("synthwave", 1930),
+    previewTag("fediverse", 812),
+    previewTag("gardening", 245),
+)
+
+@Preview(name = "Search field", showBackground = true, heightDp = 180)
+@Composable
+private fun SearchFieldPreview() {
+    PreviewHarness {
+        Column {
+            SearchField(query = "", onQueryChange = {}, onSearch = {}, onClear = {})
+            SearchField(query = "neon tulips", onQueryChange = {}, onSearch = {}, onClear = {})
+        }
+    }
+}
+
+@Preview(name = "Explore trends", showBackground = true, heightDp = 520)
+@Composable
+private fun TrendsPreview() {
+    PreviewHarness {
+        Trends(
+            uiState = ExploreUiState(
+                loadingTrends = false,
+                tags = previewTags,
+                trending = listOf(PreviewFixtures.status),
+            ),
+            onTagClick = {},
+        )
+    }
+}
+
+@Preview(name = "Search results", showBackground = true, heightDp = 620)
+@Composable
+private fun SearchResultsListPreview() {
+    PreviewHarness {
+        SearchResultsList(
+            uiState = ExploreUiState(
+                query = "neon",
+                results = SearchResults(
+                    accounts = listOf(PreviewFixtures.account, PreviewFixtures.account2),
+                    statuses = listOf(PreviewFixtures.status),
+                    hashtags = previewTags.take(2),
+                ),
+            ),
+            onTagClick = {},
+        )
     }
 }

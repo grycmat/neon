@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -29,6 +30,7 @@ import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
+import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
 import com.gigapingu.neon.core.ui.status.StatusListSkeleton
 
@@ -87,5 +89,20 @@ private fun SegmentPill(label: String, active: Boolean, onClick: () -> Unit) {
             style = NeonTheme.type.labelLarge.copy(fontSize = 14.sp),
             color = if (active) palette.text else palette.textDim,
         )
+    }
+}
+
+@Preview(name = "Timeline segment pills", showBackground = true, heightDp = 100)
+@Composable
+private fun SegmentPillPreview() {
+    PreviewHarness {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TimelineKind.entries.forEachIndexed { index, entry ->
+                SegmentPill(label = entry.label, active = index == 0, onClick = {})
+            }
+        }
     }
 }
