@@ -54,8 +54,8 @@ import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.model.Status
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
-import com.gigapingu.neon.core.ui.LocalStatusActionHandler
+import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.StatusActionService
 
 /**
  * Reply / boost / favourite / share row under every status.
@@ -65,8 +65,6 @@ import com.gigapingu.neon.core.ui.LocalStatusActionHandler
 @Composable
 fun StatusActions(status: Status, modifier: Modifier = Modifier) {
     val palette = NeonTheme.palette
-    val navigator = LocalNeonNavigator.current
-    val actions = LocalStatusActionHandler.current
     var showBoostSheet by remember { mutableStateOf(false) }
 
     Column(
@@ -88,7 +86,7 @@ fun StatusActions(status: Status, modifier: Modifier = Modifier) {
             ActionItem(
                 icon = Icons.Outlined.ModeComment,
                 count = status.repliesCount,
-                onClick = { navigator.openCompose(replyToId = status.id) },
+                onClick = { Navigator.openCompose(replyToId = status.id) },
             )
             ActionItem(
                 icon = Icons.Rounded.Repeat,
@@ -103,11 +101,11 @@ fun StatusActions(status: Status, modifier: Modifier = Modifier) {
                 count = status.favouritesCount,
                 active = status.favourited,
                 activeColor = palette.pink,
-                onClick = { actions.toggleFavourite(status) },
+                onClick = { StatusActionService.toggleFavourite(status) },
             )
             ActionItem(
                 icon = Icons.Rounded.IosShare,
-                onClick = { actions.share(status) },
+                onClick = { StatusActionService.share(status) },
             )
         }
     }
@@ -118,11 +116,11 @@ fun StatusActions(status: Status, modifier: Modifier = Modifier) {
             onDismiss = { showBoostSheet = false },
             onBoost = {
                 showBoostSheet = false
-                actions.toggleBoost(status)
+                StatusActionService.toggleBoost(status)
             },
             onQuote = {
                 showBoostSheet = false
-                navigator.openCompose(quotingId = status.id)
+                Navigator.openCompose(quotingId = status.id)
             },
         )
     }

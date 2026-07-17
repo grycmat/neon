@@ -43,7 +43,7 @@ core/data             Repositories: Auth, Timeline, Status, Notification, Accoun
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
                       MediaPreviewScreen (full-screen viewer), PreviewFixtures,
-                      NeonNavigator + StatusActionHandler CompositionLocals
+                      Navigator + StatusActionService singletons (and the NavKeys)
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills
 feature/explore       Trends + search (also pushed for hashtag taps)
@@ -56,7 +56,7 @@ feature/settings      Theme mode + logout
 
 `core/*` modules have no dependency on `feature/*` or `app`; `feature/*`
 modules depend on `core/*` but not on each other — cross-feature navigation
-goes through `NeonNavigator` (below), not direct module deps.
+goes through the `Navigator` singleton (below), not direct module deps.
 
 ### State pattern: singleton repositories + StateFlow
 
@@ -67,22 +67,25 @@ phases plus `hasMore` for pagination). ViewModels collect this state directly
 rather than owning their own copies — the repository is the source of truth,
 not the ViewModel.
 
-### Cross-screen sync via SharedFlow broadcasts
+### Cross-screen sync via direct calls
 
 `StatusRepository` is the hub for all status interactions (favourite, boost,
-vote, create, delete). It broadcasts on three `SharedFlow`s:
-- `updates` — a status changed (favourite/boost toggle)
-- `created` — a new status was posted (reply/quote/compose)
-- `pollUpdates` — a poll's tallies changed after voting
+vote, create, delete). After every mutation it syncs the other list holders
+directly — no event bus:
+- it calls `TimelineRepository.applyStatusUpdate` / `applyPollUpdate` /
+  `prependCreated` and `NotificationRepository.applyStatusUpdate` (both are
+  injected singletons), and
+- it notifies registered `StatusRepository.StatusListener`s — implemented by
+  `ThreadViewModel` and `ProfileViewModel`, which `addListener(this)` in
+  `init` and `removeListener(this)` in `onCleared()` (several can be alive at
+  once because Nav3 keeps a ViewModel per back-stack entry).
 
-Every other list-holding repository (timelines, notifications, profile lists,
-thread) subscribes to these and patches its own cached list in place using
-`patchStatusList` / `patchPollList` (`StatusListPatch.kt`), which also follow
-into boosted/reblogged statuses. This is how a favourite/boost/vote made in
-one screen (e.g. a thread) shows up immediately in another (e.g. the home
-timeline) without a refetch. When adding a new mutation or a new list screen,
-wire it into this broadcast pattern rather than inventing a separate
-refresh/callback mechanism.
+All receivers patch their cached lists in place with `patchStatusList` /
+`patchPollList` (`StatusListPatch.kt`), which also follow into
+boosted/reblogged statuses. This is how a favourite/boost/vote made in one
+screen (e.g. a thread) shows up immediately in another (e.g. the home
+timeline) without a refetch. When adding a new mutation or list screen, wire
+it into this direct-call/listener pattern.
 
 ### Offline cache
 
@@ -105,34 +108,35 @@ responses with per-model `KSerializer`s, rather than generating API interfaces.
 
 Built on **Navigation 3** (`androidx.navigation3`, still pre-1.0 — see below),
 wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
-- Routes are serializable `NavKey`s (`app/.../navigation/NavKeys.kt`), pushed
-  onto a `NavBackStack` via `entryProvider { entry<SomeKey> { ... } }`.
+- Routes are serializable `NavKey`s (`core/ui/.../Navigator.kt`), pushed onto
+  a `NavBackStack` via `entryProvider { entry<SomeKey> { ... } }`. Screen
+  transitions are the NavDisplay defaults — do not add custom
+  `transitionSpec`s or shared-element/hero animations.
 - `NeonApp` first gates on `ShellViewModel.authStatus` (Unknown / Unauthenticated
   / Authenticated) before mounting the real nav graph.
-- Screens never touch the back stack directly. They call methods on
-  `NeonNavigator` (a `CompositionLocal` from `core/ui`, implemented by
-  `BackStackNavigator` in `NeonApp.kt`), and status-level actions
-  (favourite/boost/vote/share/open-mention) go through `StatusActionHandler`,
-  another CompositionLocal, so `core/ui` components (`StatusCard`, etc.) stay
-  decoupled from `ShellViewModel`/navigation and are reusable across features.
+- Navigation and status actions are **plain singleton `object`s in `core/ui`**,
+  called directly from any composable (no CompositionLocals, no interfaces):
+  - `Navigator` holds `var backStack: NavBackStack?` — `NeonApp` binds it in a
+    `DisposableEffect` while the authenticated shell is on screen; while null
+    (previews, login) every call no-ops. Screens call `Navigator.openThread(id)`,
+    `Navigator.back()`, etc.
+  - `StatusActionService` (favourite/boost/vote/share/open-mention) is
+    initialized from `NeonApplication.onCreate` with Hilt-injected repos; it
+    owns a Main-dispatcher scope, shows failures as Toasts, and resolves
+    mention taps straight to `Navigator.openProfile`.
 - `HomeShell` hosts the four root tabs (Home / Explore / Notifications /
   Profile) in a `HorizontalPager` with `beyondViewportPageCount = 3` so tab
   state survives swiping, and draws the shared glassmorphic top app bar itself
   — tab screens must not add their own headers or `statusBarsPadding`
   (`ProfileScreen` pads conditionally because it is also pushed standalone).
 
-### Motion & shared elements
+### Motion
 
-- `NeonMotion` (`core/designsystem/.../theme/NeonMotion.kt`) is the single
-  motion vocabulary: `screen()` / `quick()` tweens on the M3 emphasized curve,
-  `bouncy()` / `settle()` springs for touch feedback. Use these specs for new
-  animations instead of ad-hoc `tween`/`spring` values.
-- Shared-element ("hero") transitions: `NeonApp` wraps the nav graph in a
-  `SharedTransitionLayout` and provides `LocalSharedTransitionScope` +
-  `LocalNavAnimatedVisibilityScope` (`core/designsystem/.../SharedElements.kt`).
-  Mark hero views with `Modifier.neonSharedElement(key)` — it degrades to a
-  no-op when either scope is absent (previews, HomeShell tabs), so it is safe
-  in reusable components.
+`NeonMotion` (`core/designsystem/.../theme/NeonMotion.kt`) is the motion
+vocabulary for **in-screen feedback only**: `quick()` tweens for short fades
+(titles, counters, pane crossfades), `bouncy()` springs for icon pops and
+pressed states, `screen()` for larger in-screen reveals (poll bars, boost
+spin). Screen-to-screen transitions deliberately use framework defaults.
 
 ### Compose previews & stateless screens
 
@@ -156,5 +160,5 @@ reworking a screen so it stays previewable without Hilt/ViewModels.
   (parity with the Flutter version, which also lacks them) — don't treat their
   absence as a bug. (The media viewer *is* implemented:
   `core/ui/.../media/MediaPreviewScreen.kt`, opened via
-  `NeonNavigator.openMediaPreview`; `MediaGrid` falls back to it when no
+  `Navigator.openMediaPreview`; `MediaGrid` falls back to it when no
   custom click handler is given.)

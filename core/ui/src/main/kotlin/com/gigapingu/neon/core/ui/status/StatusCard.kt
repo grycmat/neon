@@ -3,7 +3,6 @@ package com.gigapingu.neon.core.ui.status
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,8 +34,8 @@ import com.gigapingu.neon.core.designsystem.component.NeonAvatar
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.relativeTime
 import com.gigapingu.neon.core.model.Status
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
-import com.gigapingu.neon.core.ui.LocalStatusActionHandler
+import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.StatusActionService
 
 /**
  * The toot card. Unwraps boosts (with a boost header), renders CW spoilers,
@@ -51,7 +50,6 @@ fun StatusCard(
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val display = status.display
 
     GlassCard(
@@ -59,7 +57,7 @@ fun StatusCard(
             .fillMaxWidth()
             .padding(vertical = 5.dp),
         onClick = if (navigateOnTap) {
-            { navigator.openThread(display.id) }
+            { Navigator.openThread(display.id) }
         } else {
             null
         },
@@ -87,17 +85,13 @@ fun StatusCard(
                 }
             }
             Row {
-                // Unique per card (status wrapper id) so timelines with the same
-                // account twice never carry duplicate shared-element keys.
-                val avatarHeroKey = "avatar-${status.id}"
                 NeonAvatar(
                     account = display.account,
                     size = 38.dp,
-                    heroKey = avatarHeroKey,
                     modifier = Modifier.clickable(
                         interactionSource = null,
                         indication = null,
-                    ) { navigator.openProfile(display.account.id, heroKey = avatarHeroKey) },
+                    ) { Navigator.openProfile(display.account.id) },
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -108,7 +102,7 @@ fun StatusCard(
                             .clickable(
                                 interactionSource = null,
                                 indication = null,
-                            ) { navigator.openProfile(display.account.id, heroKey = avatarHeroKey) },
+                            ) { Navigator.openProfile(display.account.id) },
                     ) {
                         Text(
                             display.account.displayNameOrUsername,
@@ -137,7 +131,7 @@ fun StatusCard(
                     Spacer(Modifier.height(7.dp))
                     StatusBody(status = display)
                     display.quote?.let { quoted ->
-                        QuoteCard(status = quoted, onClick = { navigator.openThread(quoted.id) })
+                        QuoteCard(status = quoted, onClick = { Navigator.openThread(quoted.id) })
                     }
                     if (display.mediaAttachments.isNotEmpty()) {
                         MediaGrid(attachments = display.mediaAttachments)
@@ -161,8 +155,6 @@ fun StatusBody(
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
-    val actions = LocalStatusActionHandler.current
     var revealed by rememberSaveable(status.id) { androidx.compose.runtime.mutableStateOf(false) }
     val hasCw = status.spoilerText.isNotEmpty()
     val style = textStyle ?: type.bodyMedium
@@ -207,8 +199,8 @@ fun StatusBody(
             HtmlText(
                 html = status.content,
                 style = style,
-                onHashtagClick = { tag -> navigator.openHashtag(tag) },
-                onMentionClick = { acctOrUrl -> actions.openMention(status, acctOrUrl) },
+                onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+                onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
             )
         }
     }

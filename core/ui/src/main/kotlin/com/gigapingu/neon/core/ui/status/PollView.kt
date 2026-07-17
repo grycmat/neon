@@ -42,7 +42,7 @@ import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.designsystem.util.pollTimeLeft
 import com.gigapingu.neon.core.model.Poll
-import com.gigapingu.neon.core.ui.LocalStatusActionHandler
+import com.gigapingu.neon.core.ui.StatusActionService
 
 /**
  * Poll rendering + voting. Results show gradient bars; before voting the
@@ -52,7 +52,6 @@ import com.gigapingu.neon.core.ui.LocalStatusActionHandler
 fun PollView(poll: Poll, modifier: Modifier = Modifier) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val actions = LocalStatusActionHandler.current
     var selected by remember(poll.id) { mutableStateOf(setOf<Int>()) }
     val showResults = poll.showResults
     val total = if (poll.votesCount == 0) 1 else poll.votesCount
@@ -106,7 +105,7 @@ fun PollView(poll: Poll, modifier: Modifier = Modifier) {
                     onClick = if (selected.isEmpty()) {
                         null
                     } else {
-                        { actions.vote(poll, selected.sorted()) }
+                        { StatusActionService.vote(poll, selected.sorted()) }
                     },
                 )
             }

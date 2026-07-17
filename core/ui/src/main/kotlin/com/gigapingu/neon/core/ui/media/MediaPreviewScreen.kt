@@ -45,8 +45,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import com.gigapingu.neon.core.designsystem.component.neonSharedElement
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -57,7 +56,6 @@ fun MediaPreviewScreen(
     previewUrl: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val navigator = LocalNeonNavigator.current
     val scope = rememberCoroutineScope()
     var scale by remember { mutableStateOf(1f) }
     val offset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
@@ -108,7 +106,7 @@ fun MediaPreviewScreen(
                             if (scale == 1f) {
                                 val distance = offset.value.getDistance()
                                 if (distance > dismissThreshold) {
-                                    navigator.back()
+                                    Navigator.back()
                                 } else {
                                     scope.launch {
                                         offset.animateTo(
@@ -137,8 +135,8 @@ fun MediaPreviewScreen(
                 }
         ) {
             AsyncImage(
-                // Start from the already-cached grid thumbnail so the hero
-                // morph never flashes while the full-size image loads.
+                // Start from the already-cached grid thumbnail so the image
+                // never flashes while the full-size version loads.
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(url)
                     .placeholderMemoryCacheKey(previewUrl)
@@ -147,10 +145,7 @@ fun MediaPreviewScreen(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .fillMaxSize()
-                    // Pan is a layout offset (not graphicsLayer) so the shared
-                    // element pops back home from the dragged position.
                     .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) }
-                    .neonSharedElement("media-$url")
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
@@ -166,7 +161,7 @@ fun MediaPreviewScreen(
                 .size(40.dp)
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.4f))
-                .clickable { navigator.back() },
+                .clickable { Navigator.back() },
             contentAlignment = Alignment.Center
         ) {
             Icon(

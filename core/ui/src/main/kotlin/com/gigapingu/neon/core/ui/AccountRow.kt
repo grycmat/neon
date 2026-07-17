@@ -27,7 +27,6 @@ fun AccountRow(
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val bio = htmlToPlainText(account.note).replace('\n', ' ').trim()
 
     GlassCard(
@@ -35,7 +34,7 @@ fun AccountRow(
             .fillMaxWidth()
             .padding(vertical = 5.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
-        onClick = { navigator.openProfile(account.id) },
+        onClick = { Navigator.openProfile(account.id) },
     ) {
         Row {
             NeonAvatar(account = account, size = 42.dp)

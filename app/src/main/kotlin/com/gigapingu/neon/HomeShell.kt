@@ -64,7 +64,7 @@ import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.designsystem.theme.NeonAccents
 import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.feature.explore.ExploreScreen
 import com.gigapingu.neon.feature.notifications.NotificationsScreen
@@ -87,7 +87,6 @@ private val TabIcons: List<ImageVector> = listOf(
 @Composable
 fun HomeShell(viewModel: ShellViewModel) {
     val palette = NeonTheme.palette
-    val navigator = LocalNeonNavigator.current
     val me by viewModel.me.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(initialPage = 0) { 4 }
     val coroutineScope = rememberCoroutineScope()
@@ -120,7 +119,7 @@ fun HomeShell(viewModel: ShellViewModel) {
         }
         TopAppBar(
             page = pagerState.currentPage,
-            onSettingsClick = { navigator.openSettings() },
+            onSettingsClick = { Navigator.openSettings() },
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .onSizeChanged { topBarHeightPx = it.height },
@@ -139,7 +138,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                 .onSizeChanged { bottomBarHeightPx = it.height },
         )
         ComposeFab(
-            onClick = { navigator.openCompose() },
+            onClick = { Navigator.openCompose() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = bottomBarHeight + 16.dp),

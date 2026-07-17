@@ -29,8 +29,4 @@ object NeonMotion {
     /** Bouncy spring for icon pops and pressed states. */
     fun bouncy(): SpringSpec<Float> =
         spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-
-    /** Clean-settling spring for positions/sizes that shouldn't overshoot. */
-    fun settle(): SpringSpec<Float> =
-        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
 }

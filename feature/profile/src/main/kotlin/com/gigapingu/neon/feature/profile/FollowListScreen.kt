@@ -29,7 +29,7 @@ import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.Account
 import com.gigapingu.neon.core.ui.AccountRow
 import com.gigapingu.neon.core.ui.AsyncList
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -100,7 +100,6 @@ fun FollowListScreen(
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(accountId, following) { viewModel.start(accountId, following) }
@@ -113,7 +112,7 @@ fun FollowListScreen(
             ) {
                 GlassIconButton(
                     icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                    onClick = navigator::back,
+                    onClick = Navigator::back,
                     contentDescription = "Back",
                 )
                 Spacer(Modifier.width(10.dp))

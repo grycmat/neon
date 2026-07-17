@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -128,37 +127,15 @@ object PreviewFixtures {
         ),
     )
 
-    val navigator = object : NeonNavigator {
-        override fun openThread(statusId: String) = Unit
-        override fun openProfile(accountId: String, heroKey: String?) = Unit
-        override fun openHashtag(tag: String) = Unit
-        override fun openCompose(replyToId: String?, quotingId: String?) = Unit
-        override fun openFollowList(accountId: String, handle: String, following: Boolean) = Unit
-        override fun openEditProfile() = Unit
-        override fun openSettings() = Unit
-        override fun openMediaPreview(url: String, previewUrl: String?) = Unit
-        override fun back() = Unit
-    }
-
-    val actionHandler = object : StatusActionHandler {
-        override fun toggleFavourite(status: Status) = Unit
-        override fun toggleBoost(status: Status) = Unit
-        override fun vote(poll: Poll, choices: List<Int>) = Unit
-        override fun share(status: Status) = Unit
-        override fun openMention(status: Status, acctOrUrl: String) = Unit
-    }
 }
 
+// Navigator and StatusActionService no-op while uninitialized, so previews
+// need no fakes — just the theme and background.
 @Composable
 fun PreviewHarness(darkTheme: Boolean = true, content: @Composable () -> Unit) {
     NeonTheme(darkTheme = darkTheme) {
-        CompositionLocalProvider(
-            LocalNeonNavigator provides PreviewFixtures.navigator,
-            LocalStatusActionHandler provides PreviewFixtures.actionHandler,
-        ) {
-            NeonBackground(modifier = Modifier.fillMaxSize()) {
-                content()
-            }
+        NeonBackground(modifier = Modifier.fillMaxSize()) {
+            content()
         }
     }
 }

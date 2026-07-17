@@ -43,7 +43,7 @@ import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.PreviewHarness
 
 /** Settings — theme mode + account/session. */
@@ -51,7 +51,6 @@ import com.gigapingu.neon.core.ui.PreviewHarness
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val mode by viewModel.themeMode.collectAsStateWithLifecycle()
     val me by viewModel.me.collectAsStateWithLifecycle()
 
@@ -63,7 +62,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             ) {
                 GlassIconButton(
                     icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                    onClick = navigator::back,
+                    onClick = Navigator::back,
                     contentDescription = "Back",
                 )
                 Spacer(Modifier.width(10.dp))

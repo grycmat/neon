@@ -5,12 +5,9 @@ import com.gigapingu.neon.core.model.PollDraft
 import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.model.StatusContext
 import com.gigapingu.neon.core.network.ApiClient
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -19,26 +16,34 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
 /**
- * All status interactions. Emits every updated/created status on [updates] /
- * [created] so list-holding repositories (timelines, notifications, profile)
- * can patch their copies and stay in sync across screens.
+ * All status interactions. After every mutation it directly patches the
+ * singleton list repositories (timelines, notifications) and notifies any
+ * registered [StatusListener]s (screen ViewModels holding their own lists)
+ * so state stays in sync across screens.
  */
 @Singleton
 class StatusRepository @Inject constructor(
     private val api: ApiClient,
     private val json: Json,
+    private val timelines: TimelineRepository,
+    private val notifications: NotificationRepository,
 ) {
-    private val _updates = MutableSharedFlow<Status>(extraBufferCapacity = 32)
-    /** Broadcast of the latest updated status (favourite/boost/…). */
-    val updates: SharedFlow<Status> = _updates.asSharedFlow()
+    /** Implemented by ViewModels that hold status lists (thread, profile). */
+    interface StatusListener {
+        fun onStatusUpdated(status: Status) {}
+        fun onStatusCreated(status: Status) {}
+        fun onPollUpdated(poll: Poll) {}
+    }
 
-    private val _created = MutableSharedFlow<Status>(extraBufferCapacity = 8)
-    /** Newly created statuses (compose/reply/quote) — home timeline prepends these. */
-    val created: SharedFlow<Status> = _created.asSharedFlow()
+    private val listeners = CopyOnWriteArrayList<StatusListener>()
 
-    private val _pollUpdates = MutableSharedFlow<Poll>(extraBufferCapacity = 8)
-    /** Updated polls after voting — statuses are patched by poll id. */
-    val pollUpdates: SharedFlow<Poll> = _pollUpdates.asSharedFlow()
+    fun addListener(listener: StatusListener) {
+        listeners += listener
+    }
+
+    fun removeListener(listener: StatusListener) {
+        listeners -= listener
+    }
 
     suspend fun getStatus(id: String): Status =
         json.decodeFromString(Status.serializer(), api.get("/api/v1/statuses/$id"))
@@ -59,7 +64,9 @@ class StatusRepository @Inject constructor(
         )
         // reblog returns the wrapping boost — unwrap to the target status.
         if (action == "reblog" && updated.reblog != null) updated = updated.reblog!!
-        _updates.tryEmit(updated)
+        timelines.applyStatusUpdate(updated)
+        notifications.applyStatusUpdate(updated)
+        listeners.forEach { it.onStatusUpdated(updated) }
         return updated
     }
 
@@ -72,7 +79,8 @@ class StatusRepository @Inject constructor(
             Poll.serializer(),
             api.post("/api/v1/polls/${poll.id}/votes", body.toString()),
         )
-        _pollUpdates.tryEmit(updated)
+        timelines.applyPollUpdate(updated)
+        listeners.forEach { it.onPollUpdated(updated) }
         return updated
     }
 
@@ -110,14 +118,12 @@ class StatusRepository @Inject constructor(
             Status.serializer(),
             api.post("/api/v1/statuses", body.toString()),
         )
-        _created.tryEmit(status)
+        timelines.prependCreated(status)
+        listeners.forEach { it.onStatusCreated(status) }
         return status
     }
 
     suspend fun delete(id: String) {
         api.delete("/api/v1/statuses/$id")
     }
-
-    internal fun decodeStatusList(raw: String): List<Status> =
-        json.decodeFromString(ListSerializer(Status.serializer()), raw)
 }

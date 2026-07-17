@@ -23,7 +23,7 @@ core/database         Room cache (list_cache / entity_cache)
 core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
-                      NeonNavigator + StatusActionHandler CompositionLocals
+                      Navigator + StatusActionService singletons (and the NavKeys)
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills
 feature/explore       Trends + search (also pushed for hashtag taps)
@@ -35,16 +35,21 @@ feature/settings      Theme mode + logout
 ```
 
 Architecture mirrors the Flutter app: singleton repositories hold
-`StateFlow<AsyncState<…>>` per list; `StatusRepository` broadcasts
-updated/created statuses and poll updates on `SharedFlow`s, and every
-list-holding repository/ViewModel patches its copies — interactions stay in
-sync across timelines, thread, notifications and profiles.
+`StateFlow<AsyncState<…>>` per list; after every mutation `StatusRepository`
+directly calls the timeline/notification repositories and notifies registered
+listener ViewModels (thread, profile), each patching its copies — interactions
+stay in sync across timelines, thread, notifications and profiles.
+
+Navigation is a plain singleton: `Navigator` in `core/ui` holds the Nav3 back
+stack (bound by `NeonApp` while the shell is on screen) and screens call it
+directly; `StatusActionService` does the same for favourite/boost/vote/share.
+Screen transitions use the NavDisplay defaults.
 
 Root shell tabs (Home, Explore, Notifications, Profile) are hosted within a `HorizontalPager` to support swipe navigation, keeping their states alive across page swiping via `beyondViewportPageCount = 3`. A shared, glassmorphic `TopAppBar` displays page context and triggers settings.
 
 ## Building
 
-1. Open the `android/` folder in Android Studio (Narwhal or newer) and let it
+1. Open the repository root folder in Android Studio (Narwhal or newer) and let it
    sync. If you build from the CLI, run `gradle wrapper` once (the wrapper
    `.jar` is not committed) and then `./gradlew :app:assembleDebug`.
 2. No secrets needed — OAuth app registration happens dynamically against the

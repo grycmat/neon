@@ -8,6 +8,7 @@ import com.gigapingu.neon.core.data.StatusRepository
 import com.gigapingu.neon.core.data.patchPollList
 import com.gigapingu.neon.core.data.patchStatusList
 import com.gigapingu.neon.core.model.Account
+import com.gigapingu.neon.core.model.Poll
 import com.gigapingu.neon.core.model.Relationship
 import com.gigapingu.neon.core.model.Status
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,8 +36,8 @@ data class ProfileUiState(
 class ProfileViewModel @Inject constructor(
     private val accounts: AccountRepository,
     private val auth: AuthRepository,
-    statusRepository: StatusRepository,
-) : ViewModel() {
+    private val statusRepository: StatusRepository,
+) : ViewModel(), StatusRepository.StatusListener {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -47,16 +48,8 @@ class ProfileViewModel @Inject constructor(
     private var accountId: String? = null
 
     init {
-        viewModelScope.launch {
-            statusRepository.updates.collect { updated ->
-                _uiState.update { it.copy(statuses = patchStatusList(it.statuses, updated)) }
-            }
-        }
-        viewModelScope.launch {
-            statusRepository.pollUpdates.collect { poll ->
-                _uiState.update { it.copy(statuses = patchPollList(it.statuses, poll)) }
-            }
-        }
+        // Keep this profile's toots in sync with interactions made anywhere.
+        statusRepository.addListener(this)
         // Keep the self profile in sync after edits.
         viewModelScope.launch {
             auth.me.collect { me ->
@@ -65,6 +58,18 @@ class ProfileViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        statusRepository.removeListener(this)
+    }
+
+    override fun onStatusUpdated(status: Status) {
+        _uiState.update { it.copy(statuses = patchStatusList(it.statuses, status)) }
+    }
+
+    override fun onPollUpdated(poll: Poll) {
+        _uiState.update { it.copy(statuses = patchPollList(it.statuses, poll)) }
     }
 
     fun start(accountId: String) {

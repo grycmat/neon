@@ -1,15 +1,15 @@
 package com.gigapingu.neon.core.data
 
-import com.gigapingu.neon.core.data.di.ApplicationScope
+import com.gigapingu.neon.core.model.Poll
 import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.network.ApiClient
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 
 enum class TimelineKind(val label: String) {
     Home("Home"), Local("Local"), Federated("Federated");
@@ -29,15 +29,14 @@ enum class TimelineKind(val label: String) {
 
 /**
  * Holds the three timelines. Cache-first: the cached page renders instantly,
- * then the network refresh replaces it. Subscribes to StatusRepository to
- * keep interaction state in sync across screens.
+ * then the network refresh replaces it. StatusRepository calls the apply*
+ * methods directly to keep interaction state in sync across screens.
  */
 @Singleton
 class TimelineRepository @Inject constructor(
     private val api: ApiClient,
     private val cache: CacheStore,
-    private val statuses: StatusRepository,
-    @ApplicationScope scope: CoroutineScope,
+    private val json: Json,
 ) {
     private companion object {
         const val PAGE_SIZE = 20
@@ -45,16 +44,6 @@ class TimelineRepository @Inject constructor(
 
     private val timelines: Map<TimelineKind, MutableStateFlow<AsyncState<List<Status>>>> =
         TimelineKind.entries.associateWith { MutableStateFlow(AsyncState.idle()) }
-
-    init {
-        scope.launch { statuses.created.collect(::onCreated) }
-        scope.launch { statuses.updates.collect(::onStatusUpdate) }
-        scope.launch {
-            statuses.pollUpdates.collect { poll ->
-                patchAll { list -> patchPollList(list, poll) }
-            }
-        }
-    }
 
     fun timeline(kind: TimelineKind): StateFlow<AsyncState<List<Status>>> =
         timelines.getValue(kind).asStateFlow()
@@ -97,9 +86,16 @@ class TimelineRepository @Inject constructor(
         flow.value = state.withPhase(AsyncPhase.LoadingMore)
         try {
             val more = fetchPage(kind, maxId = data.last().id)
-            flow.value = state.withData(data + more, hasMore = more.size >= PAGE_SIZE)
+            // Re-read the flow: interaction patches may have landed during the
+            // fetch. Dedupe by id — LazyColumn keys would crash on repeats.
+            val current = flow.value.data ?: data
+            val seen = current.mapTo(HashSet()) { it.id }
+            flow.value = flow.value.withData(
+                current + more.filterNot { it.id in seen },
+                hasMore = more.size >= PAGE_SIZE,
+            )
         } catch (_: Exception) {
-            flow.value = state.withPhase(AsyncPhase.Ready)
+            flow.value = flow.value.withPhase(AsyncPhase.Ready)
         }
     }
 
@@ -109,18 +105,23 @@ class TimelineRepository @Inject constructor(
             put("limit", PAGE_SIZE)
             maxId?.let { put("max_id", it) }
         }
-        return statuses.decodeStatusList(api.get(kind.path, query))
+        return json.decodeFromString(ListSerializer(Status.serializer()), api.get(kind.path, query))
     }
 
-    private fun onCreated(status: Status) {
+    /** A new toot was posted — prepend it to the home timeline. */
+    fun prependCreated(status: Status) {
         val home = timelines.getValue(TimelineKind.Home)
         home.value.data?.let { data ->
             home.value = home.value.withData(listOf(status) + data)
         }
     }
 
-    private fun onStatusUpdate(updated: Status) {
+    fun applyStatusUpdate(updated: Status) {
         patchAll { list -> patchStatusList(list, updated) }
+    }
+
+    fun applyPollUpdate(poll: Poll) {
+        patchAll { list -> patchPollList(list, poll) }
     }
 
     private fun patchAll(patch: (List<Status>) -> List<Status>) {

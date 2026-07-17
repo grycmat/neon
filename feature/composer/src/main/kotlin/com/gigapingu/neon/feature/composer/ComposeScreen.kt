@@ -61,7 +61,7 @@ import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
 import com.gigapingu.neon.core.model.Status
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.QuoteCard
@@ -78,14 +78,13 @@ fun ComposeScreen(
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var textField by remember { mutableStateOf(TextFieldValue("")) }
 
     LaunchedEffect(Unit) { viewModel.start(replyToId, quotingId) }
     LaunchedEffect(Unit) { viewModel.errors.collect { snackbarHostState.showSnackbar(it) } }
-    LaunchedEffect(uiState.done) { if (uiState.done) navigator.back() }
+    LaunchedEffect(uiState.done) { if (uiState.done) Navigator.back() }
     // Prefill from the ViewModel (reply handles arrive async).
     LaunchedEffect(uiState.replyTo) {
         if (uiState.replyTo != null && textField.text.isEmpty() && uiState.text.isNotEmpty()) {
@@ -110,7 +109,7 @@ fun ComposeScreen(
             ) {
                 GlassIconButton(
                     icon = Icons.Rounded.Close,
-                    onClick = navigator::back,
+                    onClick = Navigator::back,
                     contentDescription = "Close composer",
                 )
                 Spacer(Modifier.width(10.dp))

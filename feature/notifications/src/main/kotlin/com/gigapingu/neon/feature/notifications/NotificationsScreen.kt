@@ -46,7 +46,7 @@ import com.gigapingu.neon.core.designsystem.util.relativeTime
 import com.gigapingu.neon.core.model.MastoNotification
 import com.gigapingu.neon.core.model.NotificationType
 import com.gigapingu.neon.core.ui.AsyncList
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
@@ -85,7 +85,6 @@ fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
 private fun NotificationRow(item: MastoNotification) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
 
     val (icon, color, verb) = when (item.type) {
         NotificationType.Favourite -> Triple(Icons.Rounded.Star, palette.pink, "favourited your toot")
@@ -110,9 +109,9 @@ private fun NotificationRow(item: MastoNotification) {
         onClick = {
             val status = item.status
             if (status != null) {
-                navigator.openThread(status.display.id)
+                Navigator.openThread(status.display.id)
             } else {
-                navigator.openProfile(item.account.id)
+                Navigator.openProfile(item.account.id)
             }
         },
     ) {

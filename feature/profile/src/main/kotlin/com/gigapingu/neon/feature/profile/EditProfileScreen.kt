@@ -52,7 +52,7 @@ import com.gigapingu.neon.core.designsystem.component.NeonAvatar
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 
 /**
  * Edit the logged user's profile: display name, bio, avatar/header, lock
@@ -62,14 +62,13 @@ import com.gigapingu.neon.core.ui.LocalNeonNavigator
 fun EditProfileScreen(viewModel: EditProfileViewModel = hiltViewModel()) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val account = viewModel.me
 
     LaunchedEffect(Unit) { viewModel.start(htmlToPlainText(account?.note.orEmpty())) }
     LaunchedEffect(Unit) { viewModel.errors.collect { snackbarHostState.showSnackbar(it) } }
-    LaunchedEffect(uiState.done) { if (uiState.done) navigator.back() }
+    LaunchedEffect(uiState.done) { if (uiState.done) Navigator.back() }
 
     val avatarPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
@@ -91,7 +90,7 @@ fun EditProfileScreen(viewModel: EditProfileViewModel = hiltViewModel()) {
             ) {
                 GlassIconButton(
                     icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                    onClick = navigator::back,
+                    onClick = Navigator::back,
                     contentDescription = "Back",
                 )
                 Spacer(Modifier.width(10.dp))

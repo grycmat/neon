@@ -21,9 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,17 +60,19 @@ fun <T : Any> AsyncList(
     val items = state.data.orEmpty()
 
     // Infinite scroll: trigger when the last few items become visible.
+    // Everything read inside snapshotFlow must be snapshot state — the effect
+    // launches once, so plain captures (items, onLoadMore) would go stale.
     if (onLoadMore != null) {
-        val shouldLoadMore by remember(listState, items.size) {
-            derivedStateOf {
-                val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-                items.isNotEmpty() && lastVisible >= listState.layoutInfo.totalItemsCount - 4
-            }
-        }
+        val loadMore by rememberUpdatedState(onLoadMore)
+        val canLoadMore by rememberUpdatedState(items.isNotEmpty() && state.hasMore)
         LaunchedEffect(listState) {
-            snapshotFlow { shouldLoadMore }
+            snapshotFlow {
+                val info = listState.layoutInfo
+                val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: -1
+                canLoadMore && info.totalItemsCount > 0 && lastVisible >= info.totalItemsCount - 4
+            }
                 .distinctUntilChanged()
-                .collect { if (it) onLoadMore() }
+                .collect { if (it) loadMore() }
         }
     }
 

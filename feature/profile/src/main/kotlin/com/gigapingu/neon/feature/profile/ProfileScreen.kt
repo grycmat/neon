@@ -45,7 +45,7 @@ import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.model.Relationship
 import com.gigapingu.neon.core.ui.AsyncList
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
@@ -59,11 +59,9 @@ import com.gigapingu.neon.core.ui.status.StatusCard
 fun ProfileScreen(
     accountId: String,
     isRoot: Boolean = false,
-    heroKey: String? = null,
     viewModel: ProfileViewModel = hiltViewModel(key = "profile-$accountId"),
 ) {
     val palette = NeonTheme.palette
-    val navigator = LocalNeonNavigator.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
 
@@ -95,7 +93,7 @@ fun ProfileScreen(
                             TopBar()
                         }
                         uiState.account?.let {
-                            ProfileHeader(uiState, heroKey, onToggleFollow = viewModel::toggleFollow)
+                            ProfileHeader(uiState, onToggleFollow = viewModel::toggleFollow)
                         }
                         NeonLabel(
                             "Toots",
@@ -122,7 +120,6 @@ fun ProfileScreen(
 
 @Composable
 private fun TopBar() {
-    val navigator = LocalNeonNavigator.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -131,7 +128,7 @@ private fun TopBar() {
     ) {
         GlassIconButton(
             icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-            onClick = navigator::back,
+            onClick = Navigator::back,
             contentDescription = "Back",
         )
     }
@@ -140,12 +137,10 @@ private fun TopBar() {
 @Composable
 private fun ProfileHeader(
     uiState: ProfileUiState,
-    heroKey: String? = null,
     onToggleFollow: () -> Unit,
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val account = uiState.account ?: return
     val rel = uiState.relationship
     val following = rel?.following == true
@@ -157,14 +152,14 @@ private fun ProfileHeader(
     ) {
         Column {
             Row {
-                NeonAvatar(account = account, size = 72.dp, ring = true, heroKey = heroKey)
+                NeonAvatar(account = account, size = 72.dp, ring = true)
                 Spacer(Modifier.weight(1f))
                 when {
                     uiState.isSelf -> GlassButton(
                         label = "Edit profile",
                         height = 40.dp,
                         tinted = true,
-                        onClick = navigator::openEditProfile,
+                        onClick = Navigator::openEditProfile,
                     )
                     rel != null -> {
                         if (following || requested) {
@@ -221,11 +216,11 @@ private fun ProfileHeader(
                 Stat(compactCount(account.statusesCount), "Toots")
                 StatDivider()
                 Stat(compactCount(account.followersCount), "Followers") {
-                    navigator.openFollowList(account.id, account.fullHandle, following = false)
+                    Navigator.openFollowList(account.id, account.fullHandle, following = false)
                 }
                 StatDivider()
                 Stat(compactCount(account.followingCount), "Following") {
-                    navigator.openFollowList(account.id, account.fullHandle, following = true)
+                    Navigator.openFollowList(account.id, account.fullHandle, following = true)
                 }
             }
         }

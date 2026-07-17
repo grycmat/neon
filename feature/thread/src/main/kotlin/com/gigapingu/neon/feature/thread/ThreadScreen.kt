@@ -37,7 +37,7 @@ import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.fullTime
 import com.gigapingu.neon.core.model.Status
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.MediaGrid
@@ -56,7 +56,6 @@ fun ThreadScreen(
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(statusId) { viewModel.start(statusId) }
@@ -69,7 +68,7 @@ fun ThreadScreen(
             ) {
                 GlassIconButton(
                     icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                    onClick = navigator::back,
+                    onClick = Navigator::back,
                     contentDescription = "Back",
                 )
                 Spacer(Modifier.width(10.dp))
@@ -126,12 +125,11 @@ fun ThreadScreen(
     }
 }
 
-/** The focused toot — larger type, full timestamp, prominent actions. */
+/** The focused toot — larger type, full timestamp, prominent StatusActionService. */
 @Composable
 private fun FocusedStatus(status: Status) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,7 +143,7 @@ private fun FocusedStatus(status: Status) {
                 modifier = Modifier.clickable(
                     interactionSource = null,
                     indication = null,
-                ) { navigator.openProfile(status.account.id) },
+                ) { Navigator.openProfile(status.account.id) },
             ) {
                 NeonAvatar(account = status.account, size = 46.dp, ring = true)
                 Spacer(Modifier.width(12.dp))
@@ -157,7 +155,7 @@ private fun FocusedStatus(status: Status) {
             Spacer(Modifier.height(14.dp))
             StatusBody(status = status, textStyle = type.bodyLarge.copy(fontSize = 16.sp))
             status.quote?.let { quoted ->
-                QuoteCard(status = quoted, onClick = { navigator.openThread(quoted.id) })
+                QuoteCard(status = quoted, onClick = { Navigator.openThread(quoted.id) })
             }
             if (status.mediaAttachments.isNotEmpty()) {
                 MediaGrid(attachments = status.mediaAttachments)

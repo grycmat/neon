@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,7 +58,7 @@ import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.model.SearchResults
 import com.gigapingu.neon.core.model.TrendTag
 import com.gigapingu.neon.core.ui.AccountRow
-import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
@@ -72,21 +73,18 @@ import kotlinx.serialization.json.put
 @Composable
 fun ExploreScreen(
     initialQuery: String? = null,
-    snackbarHostState: SnackbarHostState? = null,
     viewModel: ExploreViewModel = hiltViewModel(key = "explore-${initialQuery.orEmpty()}"),
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
-    val navigator = LocalNeonNavigator.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isPushed = initialQuery != null
     val shellPadding = LocalShellPadding.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { viewModel.start(initialQuery) }
-    if (snackbarHostState != null) {
-        LaunchedEffect(Unit) {
-            viewModel.errors.collect { snackbarHostState.showSnackbar(it) }
-        }
+    LaunchedEffect(Unit) {
+        viewModel.errors.collect { snackbarHostState.showSnackbar(it) }
     }
 
     // The header (back row + search field) floats over the list, like
@@ -122,7 +120,7 @@ fun ExploreScreen(
                     ) {
                         GlassIconButton(
                             icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                            onClick = navigator::back,
+                            onClick = Navigator::back,
                             contentDescription = "Back",
                         )
                         Spacer(Modifier.width(10.dp))
@@ -136,6 +134,10 @@ fun ExploreScreen(
                     onClear = viewModel::clearSearch,
                 )
             }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }

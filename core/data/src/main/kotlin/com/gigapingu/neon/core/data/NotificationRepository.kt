@@ -1,15 +1,13 @@
 package com.gigapingu.neon.core.data
 
-import com.gigapingu.neon.core.data.di.ApplicationScope
 import com.gigapingu.neon.core.model.MastoNotification
+import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.network.ApiClient
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
@@ -18,9 +16,7 @@ import kotlinx.serialization.json.Json
 class NotificationRepository @Inject constructor(
     private val api: ApiClient,
     private val cache: CacheStore,
-    statuses: StatusRepository,
     private val json: Json,
-    @ApplicationScope scope: CoroutineScope,
 ) {
     private companion object {
         const val CACHE_KEY = "notifications"
@@ -30,19 +26,16 @@ class NotificationRepository @Inject constructor(
     private val _state = MutableStateFlow<AsyncState<List<MastoNotification>>>(AsyncState.idle())
     val state: StateFlow<AsyncState<List<MastoNotification>>> = _state.asStateFlow()
 
-    init {
-        scope.launch {
-            statuses.updates.collect { updated ->
-                val current = _state.value
-                val data = current.data ?: return@collect
-                _state.value = current.withData(
-                    data.map { notification ->
-                        val status = notification.status ?: return@map notification
-                        notification.copy(status = patchStatusList(listOf(status), updated).first())
-                    },
-                )
-            }
-        }
+    /** Called by StatusRepository after a favourite/boost so wrapped statuses stay in sync. */
+    fun applyStatusUpdate(updated: Status) {
+        val current = _state.value
+        val data = current.data ?: return
+        _state.value = current.withData(
+            data.map { notification ->
+                val status = notification.status ?: return@map notification
+                notification.copy(status = patchStatusList(listOf(status), updated).first())
+            },
+        )
     }
 
     suspend fun load() {
