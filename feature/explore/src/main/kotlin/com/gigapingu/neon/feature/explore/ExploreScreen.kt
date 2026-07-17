@@ -33,13 +33,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +58,7 @@ import com.gigapingu.neon.core.model.SearchResults
 import com.gigapingu.neon.core.model.TrendTag
 import com.gigapingu.neon.core.ui.AccountRow
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
@@ -73,6 +80,7 @@ fun ExploreScreen(
     val navigator = LocalNeonNavigator.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isPushed = initialQuery != null
+    val shellPadding = LocalShellPadding.current
 
     LaunchedEffect(Unit) { viewModel.start(initialQuery) }
     if (snackbarHostState != null) {
@@ -81,34 +89,52 @@ fun ExploreScreen(
         }
     }
 
+    // The header (back row + search field) floats over the list, like
+    // HomeShell's bars, so items actually scroll up behind the translucent
+    // top app bar instead of stopping below it.
+    var headerHeightPx by remember { mutableIntStateOf(0) }
+    val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
+
     NeonBackground {
-        Column(Modifier.fillMaxSize()) {
-            if (isPushed) {
-                Row(
-                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    GlassIconButton(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                        onClick = navigator::back,
-                        contentDescription = "Back",
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Text("Explore", style = type.headlineMedium, color = palette.text)
-                }
-            }
-            SearchField(
-                query = uiState.query,
-                onQueryChange = viewModel::onQueryChange,
-                onSearch = viewModel::search,
-                onClear = viewModel::clearSearch,
-            )
+        Box(Modifier.fillMaxSize()) {
             when {
-                uiState.searching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                uiState.searching -> Box(
+                    Modifier.fillMaxSize().padding(top = headerHeight),
+                    contentAlignment = Alignment.Center,
+                ) {
                     CircularProgressIndicator(color = palette.cyan)
                 }
-                uiState.results != null -> SearchResultsList(uiState, onTagClick = viewModel::searchTag)
-                else -> Trends(uiState, onTagClick = viewModel::searchTag)
+                uiState.results != null ->
+                    SearchResultsList(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
+                else -> Trends(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
+            }
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .padding(top = shellPadding.calculateTopPadding())
+                    .onSizeChanged { headerHeightPx = it.height },
+            ) {
+                if (isPushed) {
+                    Row(
+                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        GlassIconButton(
+                            icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                            onClick = navigator::back,
+                            contentDescription = "Back",
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text("Explore", style = type.headlineMedium, color = palette.text)
+                    }
+                }
+                SearchField(
+                    query = uiState.query,
+                    onQueryChange = viewModel::onQueryChange,
+                    onSearch = viewModel::search,
+                    onClear = viewModel::clearSearch,
+                )
             }
         }
     }
@@ -173,16 +199,23 @@ private fun SearchField(
 }
 
 @Composable
-private fun Trends(uiState: ExploreUiState, onTagClick: (String) -> Unit) {
+private fun Trends(uiState: ExploreUiState, onTagClick: (String) -> Unit, topPadding: Dp = 0.dp) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     if (uiState.loadingTrends) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize().padding(top = topPadding), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = palette.cyan)
         }
         return
     }
-    LazyColumn(contentPadding = PaddingValues(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 90.dp)) {
+    LazyColumn(
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = topPadding + 10.dp,
+            end = 16.dp,
+            bottom = 90.dp + LocalShellPadding.current.calculateBottomPadding(),
+        ),
+    ) {
         if (uiState.tags.isNotEmpty()) {
             item {
                 NeonLabel("Trending tags", modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 10.dp))
@@ -213,11 +246,18 @@ private fun Trends(uiState: ExploreUiState, onTagClick: (String) -> Unit) {
 }
 
 @Composable
-private fun SearchResultsList(uiState: ExploreUiState, onTagClick: (String) -> Unit) {
+private fun SearchResultsList(uiState: ExploreUiState, onTagClick: (String) -> Unit, topPadding: Dp = 0.dp) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     val results = uiState.results ?: return
-    LazyColumn(contentPadding = PaddingValues(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 90.dp)) {
+    LazyColumn(
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = topPadding + 10.dp,
+            end = 16.dp,
+            bottom = 90.dp + LocalShellPadding.current.calculateBottomPadding(),
+        ),
+    ) {
         if (results.accounts.isNotEmpty()) {
             item {
                 NeonLabel("People", modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 4.dp))

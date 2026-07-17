@@ -46,6 +46,7 @@ import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.model.Relationship
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
@@ -64,6 +65,7 @@ fun ProfileScreen(
     val palette = NeonTheme.palette
     val navigator = LocalNeonNavigator.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val shellPadding = LocalShellPadding.current
 
     LaunchedEffect(accountId) { viewModel.start(accountId) }
 
@@ -80,7 +82,12 @@ fun ProfileScreen(
                 onRefresh = viewModel::load,
                 onLoadMore = viewModel::loadMore,
                 emptyLabel = "No toots yet",
-                contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 90.dp),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = 4.dp + shellPadding.calculateTopPadding(),
+                    end = 16.dp,
+                    bottom = 90.dp + shellPadding.calculateBottomPadding(),
+                ),
                 key = { it.id },
                 header = {
                     Column {

@@ -5,10 +5,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,10 +18,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,6 +36,7 @@ import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
+import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
 import com.gigapingu.neon.core.ui.status.StatusListSkeleton
@@ -41,11 +48,39 @@ fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
     val type = NeonTheme.type
     val kind by viewModel.kind.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val shellPadding = LocalShellPadding.current
+
+    // Pills float over the list (like HomeShell's bars) so items actually
+    // scroll up behind the translucent top app bar instead of stopping below it.
+    var pillsHeightPx by remember { mutableIntStateOf(0) }
+    val pillsHeight = with(LocalDensity.current) { pillsHeightPx.toDp() }
 
     NeonBackground {
-        Column(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize()) {
+            AsyncList(
+                state = state,
+                onRefresh = viewModel::refresh,
+                onLoadMore = viewModel::loadMore,
+                emptyLabel = "No toots yet — follow some people!",
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = pillsHeight,
+                    end = 16.dp,
+                    bottom = 90.dp + shellPadding.calculateBottomPadding(),
+                ),
+                key = { it.id },
+                loadingContent = { StatusListSkeleton() },
+            ) { status ->
+                StatusCard(status = status)
+            }
             Row(
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .padding(top = shellPadding.calculateTopPadding())
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp)
+                    .onSizeChanged { pillsHeightPx = it.height },
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 TimelineKind.entries.forEach { entry ->
@@ -55,16 +90,6 @@ fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
                         onClick = { viewModel.switchTo(entry) },
                     )
                 }
-            }
-            AsyncList(
-                state = state,
-                onRefresh = viewModel::refresh,
-                onLoadMore = viewModel::loadMore,
-                emptyLabel = "No toots yet — follow some people!",
-                key = { it.id },
-                loadingContent = { StatusListSkeleton() },
-            ) { status ->
-                StatusCard(status = status)
             }
         }
     }

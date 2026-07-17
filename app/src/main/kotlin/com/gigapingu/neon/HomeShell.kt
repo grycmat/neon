@@ -15,6 +15,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,9 +40,12 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +53,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +65,7 @@ import com.gigapingu.neon.core.designsystem.theme.NeonAccents
 import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.feature.explore.ExploreScreen
 import com.gigapingu.neon.feature.notifications.NotificationsScreen
 import com.gigapingu.neon.feature.profile.ProfileScreen
@@ -85,15 +92,22 @@ fun HomeShell(viewModel: ShellViewModel) {
     val pagerState = rememberPagerState(initialPage = 0) { 4 }
     val coroutineScope = rememberCoroutineScope()
 
+    // Measured bar heights (insets included) feed LocalShellPadding so tab
+    // content starts below the floating bars but scrolls behind them.
+    var topBarHeightPx by remember { mutableIntStateOf(0) }
+    var bottomBarHeightPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val bottomBarHeight = with(density) { bottomBarHeightPx.toDp() }
+    val shellPadding = PaddingValues(
+        top = with(density) { topBarHeightPx.toDp() },
+        bottom = bottomBarHeight,
+    )
+
     Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            TopAppBar(
-                page = pagerState.currentPage,
-                onSettingsClick = { navigator.openSettings() }
-            )
+        CompositionLocalProvider(LocalShellPadding provides shellPadding) {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
                 beyondViewportPageCount = 3,
             ) { page ->
                 when (page) {
@@ -103,22 +117,32 @@ fun HomeShell(viewModel: ShellViewModel) {
                     else -> me?.let { ProfileScreen(accountId = it.id, isRoot = true) }
                 }
             }
-            TabBar(
-                // Continuous page position so the pill tracks the swipe live.
-                position = (pagerState.currentPage + pagerState.currentPageOffsetFraction)
-                    .coerceIn(0f, (TabIcons.size - 1).toFloat()),
-                onChanged = { page ->
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(page)
-                    }
-                }
-            )
         }
+        TopAppBar(
+            page = pagerState.currentPage,
+            onSettingsClick = { navigator.openSettings() },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .onSizeChanged { topBarHeightPx = it.height },
+        )
+        TabBar(
+            // Continuous page position so the pill tracks the swipe live.
+            position = (pagerState.currentPage + pagerState.currentPageOffsetFraction)
+                .coerceIn(0f, (TabIcons.size - 1).toFloat()),
+            onChanged = { page ->
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(page)
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { bottomBarHeightPx = it.height },
+        )
         ComposeFab(
             onClick = { navigator.openCompose() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 96.dp),
+                .padding(end = 20.dp, bottom = bottomBarHeight + 16.dp),
         )
     }
 }
@@ -166,14 +190,14 @@ private fun ComposeFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TopAppBar(page: Int, onSettingsClick: () -> Unit) {
+private fun TopAppBar(page: Int, onSettingsClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
 
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
-            .background(palette.surfaceSolid.copy(alpha = .72f))
+            .background(palette.surfaceSolid.copy(alpha = .60f))
             .statusBarsPadding(),
     ) {
         Row(
@@ -237,13 +261,13 @@ private fun TopAppBar(page: Int, onSettingsClick: () -> Unit) {
 }
 
 @Composable
-private fun TabBar(position: Float, onChanged: (Int) -> Unit) {
+private fun TabBar(position: Float, onChanged: (Int) -> Unit, modifier: Modifier = Modifier) {
     val palette = NeonTheme.palette
     val pillShape = RoundedCornerShape(15.dp)
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
-            .background(palette.surfaceSolid.copy(alpha = .72f)),
+            .background(palette.surfaceSolid.copy(alpha = .60f)),
     ) {
         Box(
             Modifier

@@ -47,6 +47,7 @@ import com.gigapingu.neon.core.model.MastoNotification
 import com.gigapingu.neon.core.model.NotificationType
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.LocalNeonNavigator
+import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import java.time.Instant
@@ -57,6 +58,7 @@ fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val shellPadding = LocalShellPadding.current
 
     NeonBackground {
         Column(Modifier.fillMaxSize()) {
@@ -65,6 +67,12 @@ fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
                 onRefresh = viewModel::refresh,
                 onLoadMore = viewModel::loadMore,
                 emptyLabel = "All quiet — for now.",
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = 8.dp + shellPadding.calculateTopPadding(),
+                    end = 16.dp,
+                    bottom = 90.dp + shellPadding.calculateBottomPadding(),
+                ),
                 key = { it.id },
             ) { notification ->
                 NotificationRow(item = notification)
