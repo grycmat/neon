@@ -78,9 +78,9 @@ fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
+                    .onSizeChanged { pillsHeightPx = it.height }
                     .padding(top = shellPadding.calculateTopPadding())
-                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp)
-                    .onSizeChanged { pillsHeightPx = it.height },
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 TimelineKind.entries.forEach { entry ->
