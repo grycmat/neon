@@ -38,7 +38,15 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.MediaAttachment
+import com.gigapingu.neon.core.model.MediaType
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.media.VideoPlayer
+import androidx.compose.material.icons.rounded.Fullscreen
+import androidx.compose.material.icons.rounded.VolumeOff
+import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.sp
 
 /** 1–4 media attachments in a rounded grid. Videos/gifs get a play badge. */
 @Composable
@@ -129,42 +137,98 @@ fun MediaGrid(
 @Composable
 private fun Tile(attachment: MediaAttachment, onClick: ((MediaAttachment) -> Unit)?) {
     val palette = NeonTheme.palette
-    val clickModifier = if (onClick != null) {
-        Modifier.clickable { onClick(attachment) }
+    var muted by remember { mutableStateOf(true) }
+
+    val clickModifier = if (attachment.isPlayable) {
+        if (attachment.type == MediaType.Gifv) {
+            if (onClick != null) {
+                Modifier.clickable { onClick(attachment) }
+            } else {
+                Modifier.clickable {
+                    Navigator.openMediaPreview(attachment.url, attachment.preview.ifEmpty { null }, attachment.rawType)
+                }
+            }
+        } else {
+            Modifier.clickable { muted = !muted }
+        }
     } else {
-        Modifier.clickable {
-            Navigator.openMediaPreview(attachment.url, attachment.preview.ifEmpty { null })
+        if (onClick != null) {
+            Modifier.clickable { onClick(attachment) }
+        } else {
+            Modifier.clickable {
+                Navigator.openMediaPreview(attachment.url, attachment.preview.ifEmpty { null }, attachment.rawType)
+            }
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.gradientSoft)
             .then(clickModifier),
     ) {
-        if (attachment.preview.isNotEmpty()) {
-            AsyncImage(
-                model = attachment.preview,
-                contentDescription = attachment.altText.ifEmpty { null },
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
         if (attachment.isPlayable) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = .45f))
-                    .border(1.dp, Color.White.copy(alpha = .6f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Rounded.PlayArrow,
-                    contentDescription = "Play",
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp),
+            VideoPlayer(
+                url = attachment.url,
+                modifier = Modifier.fillMaxSize(),
+                muted = muted,
+                looping = attachment.type == MediaType.Gifv,
+                useController = false,
+            )
+
+            if (attachment.type == MediaType.Video) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(8.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+                        contentDescription = if (muted) "Muted" else "Unmuted",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .clickable {
+                            if (onClick != null) {
+                                onClick(attachment)
+                            } else {
+                                Navigator.openMediaPreview(
+                                    url = attachment.url,
+                                    previewUrl = attachment.preview.ifEmpty { null },
+                                    type = attachment.rawType
+                                )
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Fullscreen,
+                        contentDescription = "Fullscreen",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        } else {
+            if (attachment.preview.isNotEmpty()) {
+                AsyncImage(
+                    model = attachment.preview,
+                    contentDescription = attachment.altText.ifEmpty { null },
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }

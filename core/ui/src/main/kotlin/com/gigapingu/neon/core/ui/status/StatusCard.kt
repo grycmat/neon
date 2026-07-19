@@ -157,6 +157,9 @@ fun StatusCard(
                         onToggleReveal = { revealed = !revealed }
                     )
                     if (!hasCw || revealed) {
+                        display.card?.let { card ->
+                            LinkPreviewCard(card = card)
+                        }
                         display.quote?.let { quoted ->
                             QuoteCard(status = quoted, onClick = { Navigator.openThread(quoted.id) })
                         }

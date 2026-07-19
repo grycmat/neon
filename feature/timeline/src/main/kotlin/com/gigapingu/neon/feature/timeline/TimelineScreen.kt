@@ -38,6 +38,18 @@ import com.gigapingu.neon.core.ui.PaneSelection
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
 import com.gigapingu.neon.core.ui.status.StatusListSkeleton
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import com.gigapingu.neon.core.designsystem.component.GlassButton
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 /**
  * Home / Local / Federated timelines behind a segmented pill switcher.
@@ -51,12 +63,25 @@ fun TimelineScreen(
     val palette = NeonTheme.palette
     val kind by viewModel.kind.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val newTootsCount by viewModel.currentNewTootsCount.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     // Pills float over the list (like HomeShell's bars) so items actually
     // scroll up behind the translucent top app bar instead of stopping below it.
     var pillsHeightPx by remember { mutableIntStateOf(0) }
     val pillsHeight = with(LocalDensity.current) { pillsHeightPx.toDp() }
+
+    LaunchedEffect(listState, kind) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .distinctUntilChanged()
+            .collect { isAtTop ->
+                if (isAtTop) {
+                    viewModel.clearNewToots(kind)
+                }
+            }
+    }
 
     NeonBackground {
         Box(Modifier.fillMaxSize()) {
@@ -66,6 +91,7 @@ fun TimelineScreen(
                 onLoadMore = viewModel::loadMore,
                 emptyLabel = "No toots yet — follow some people!",
                 modifier = Modifier.fillMaxSize(),
+                listState = listState,
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     top = pillsHeight,
@@ -96,6 +122,26 @@ fun TimelineScreen(
                         onClick = { viewModel.switchTo(entry) },
                     )
                 }
+            }
+
+            AnimatedVisibility(
+                visible = newTootsCount > 0,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = pillsHeight + 8.dp)
+            ) {
+                GlassButton(
+                    label = "↑ $newTootsCount new toots",
+                    tinted = true,
+                    onClick = {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
+                        }
+                        viewModel.clearNewToots(kind)
+                    }
+                )
             }
         }
     }

@@ -24,9 +24,9 @@ Full codebase audit and step-by-step plan to a shippable release.
 | Bookmarks | ❌ Missing |
 | Status edit / delete-and-redraft | ❌ Missing |
 | Mute / Block / Report | ❌ Missing |
-| Hashtag timeline | ❌ Missing (opens search instead) |
+| Hashtag timeline | ✅ Complete |
 | Push notifications | ❌ Missing |
-| Video playback (Media3 / ExoPlayer) | ⚠️ Partial / unverified |
+| Video playback (Media3 / ExoPlayer) | ✅ Complete |
 | Streaming (WebSocket) | ❌ Post-MVP |
 
 ---
@@ -97,24 +97,24 @@ Full codebase audit and step-by-step plan to a shippable release.
 > **Estimate: 2–3 days**
 > Goal: media works fully, timeline feels alive.
 
-- [ ] **Video / gifv playback**
+- [x] **Video / gifv playback**
   - Add `androidx.media3:media3-exoplayer` + `media3-ui` dependencies.
   - Replace the static thumbnail in `MediaGrid` for `type == "video"` / `"gifv"` with an
     inline `ExoPlayer` composable (muted, looping for gifv; unmuted on tap for video).
   - Full-screen video in `MediaPreviewScreen`.
 
-- [ ] **Hashtag timeline**
+- [x] **Hashtag timeline**
   - Add `HashtagTimelineScreen` that reuses the `TimelineRepository`-style pattern but hits
     `GET /api/v1/timelines/tag/:hashtag`.
   - Change `Navigator.openHashtag()` to push `HashtagTimelineKey` instead of `HashtagKey`
     (which currently opens Explore / search).
 
-- [ ] **"New toots" banner + scroll-to-top**
+- [x] **"New toots" banner + scroll-to-top**
   - After a pull-to-refresh or timed background check, show a pill-shaped banner
     "↑ N new toots" that, when tapped, scrolls the list to the top.
   - Requires tracking the first visible item index in `TimelineScreen`.
 
-- [ ] **Link preview card**
+- [x] **Link preview card**
   - Add `card` field to the `Status` model
     (maps to `GET /api/v1/statuses/:id` → `card` object: title, description, image, url).
   - Add a `LinkPreviewCard` composable rendered below `StatusBody` when `card != null`.

@@ -52,6 +52,7 @@ data class Status(
     val poll: Poll? = null,
     val mentions: List<StatusMention> = emptyList(),
     val tags: List<StatusTag> = emptyList(),
+    val card: PreviewCard? = null,
 ) {
     /** The status to render (unwraps boosts). */
     val display: Status get() = reblog ?: this
@@ -71,6 +72,14 @@ data class StatusMention(
 data class StatusTag(
     val name: String = "",
     val url: String = "",
+)
+
+@Serializable
+data class PreviewCard(
+    val url: String = "",
+    val title: String = "",
+    val description: String = "",
+    val image: String? = null,
 )
 
 /** GET /api/v1/statuses/:id/context — thread ancestors + descendants. */

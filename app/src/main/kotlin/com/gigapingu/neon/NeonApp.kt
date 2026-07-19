@@ -33,6 +33,7 @@ import com.gigapingu.neon.core.ui.ComposeKey
 import com.gigapingu.neon.core.ui.EditProfileKey
 import com.gigapingu.neon.core.ui.FollowListKey
 import com.gigapingu.neon.core.ui.HashtagKey
+import com.gigapingu.neon.core.ui.HashtagTimelineKey
 import com.gigapingu.neon.core.ui.HomeKey
 import com.gigapingu.neon.core.ui.MediaPreviewKey
 import com.gigapingu.neon.core.ui.Navigator
@@ -49,6 +50,7 @@ import com.gigapingu.neon.feature.profile.FollowListScreen
 import com.gigapingu.neon.feature.profile.ProfileScreen
 import com.gigapingu.neon.feature.settings.SettingsScreen
 import com.gigapingu.neon.feature.thread.ThreadScreen
+import com.gigapingu.neon.feature.timeline.HashtagTimelineScreen
 
 // NavDisplay.DEFAULT_TRANSITION_DURATION_MILLISECOND (internal in alpha05).
 private const val NAV_TRANSITION_MS = 400
@@ -163,8 +165,11 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
             entry<EditProfileKey> { EditProfileScreen() }
             entry<SettingsKey> { SettingsScreen() }
             entry<BookmarksKey> { BookmarksScreen() }
+            entry<HashtagTimelineKey> { key ->
+                HashtagTimelineScreen(hashtag = key.hashtag)
+            }
             entry<MediaPreviewKey> { key ->
-                MediaPreviewScreen(url = key.url, previewUrl = key.previewUrl)
+                MediaPreviewScreen(url = key.url, previewUrl = key.previewUrl, type = key.type)
             }
         },
     )

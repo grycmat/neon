@@ -52,6 +52,7 @@ import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.hingePaneWidth
 import com.gigapingu.neon.core.ui.isBigScreen
+import com.gigapingu.neon.core.ui.status.LinkPreviewCard
 import com.gigapingu.neon.core.ui.status.MediaGrid
 import com.gigapingu.neon.core.ui.status.PollView
 import com.gigapingu.neon.core.ui.status.QuoteCard
@@ -362,6 +363,9 @@ private fun FocusedStatus(status: Status) {
                 onToggleReveal = { revealed = !revealed }
             )
             if (!hasCw || revealed) {
+                status.card?.let { card ->
+                    LinkPreviewCard(card = card)
+                }
                 status.quote?.let { quoted ->
                     QuoteCard(status = quoted, onClick = { Navigator.openThread(quoted.id) })
                 }

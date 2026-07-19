@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.media.VideoPlayer
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ import kotlinx.coroutines.launch
 fun MediaPreviewScreen(
     url: String,
     previewUrl: String? = null,
+    type: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -134,23 +136,37 @@ fun MediaPreviewScreen(
                     )
                 }
         ) {
-            AsyncImage(
-                // Start from the already-cached grid thumbnail so the image
-                // never flashes while the full-size version loads.
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(url)
-                    .placeholderMemoryCacheKey(previewUrl)
-                    .build(),
-                contentDescription = "Media Preview",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) }
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    }
-            )
+            val isVideo = type == "video" || type == "gifv"
+            val isGifv = type == "gifv"
+            if (isVideo) {
+                VideoPlayer(
+                    url = url,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) },
+                    muted = isGifv,
+                    looping = isGifv,
+                    useController = !isGifv,
+                )
+            } else {
+                AsyncImage(
+                    // Start from the already-cached grid thumbnail so the image
+                    // never flashes while the full-size version loads.
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(url)
+                        .placeholderMemoryCacheKey(previewUrl)
+                        .build(),
+                    contentDescription = "Media Preview",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) }
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                )
+            }
         }
 
         // Floating Close Button in top-left

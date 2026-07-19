@@ -44,7 +44,10 @@ data object EditProfileKey : NavKey
 data object SettingsKey : NavKey
 
 @Serializable
-data class MediaPreviewKey(val url: String, val previewUrl: String? = null) : NavKey
+data class MediaPreviewKey(val url: String, val previewUrl: String? = null, val type: String? = null) : NavKey
+
+@Serializable
+data class HashtagTimelineKey(val hashtag: String) : NavKey
 
 /**
  * Global navigation. NeonApp sets [backStack] while the authenticated shell is
@@ -70,7 +73,7 @@ object Navigator {
     }
 
     fun openHashtag(tag: String) {
-        backStack?.add(HashtagKey("#$tag"))
+        backStack?.add(HashtagTimelineKey(tag))
     }
 
     fun openCompose(
@@ -110,8 +113,8 @@ object Navigator {
     }
 
     /** [previewUrl] is the already-cached thumbnail shown while [url] loads. */
-    fun openMediaPreview(url: String, previewUrl: String? = null) {
-        backStack?.add(MediaPreviewKey(url, previewUrl))
+    fun openMediaPreview(url: String, previewUrl: String? = null, type: String? = null) {
+        backStack?.add(MediaPreviewKey(url, previewUrl, type))
     }
 
     fun back() {
