@@ -34,13 +34,20 @@ import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.LocalShellPadding
+import com.gigapingu.neon.core.ui.PaneSelection
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.status.StatusCard
 import com.gigapingu.neon.core.ui.status.StatusListSkeleton
 
-/** Home / Local / Federated timelines behind a segmented pill switcher. */
+/**
+ * Home / Local / Federated timelines behind a segmented pill switcher.
+ * [selectedStatusId] marks the toot open in the big-screen detail pane.
+ */
 @Composable
-fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
+fun TimelineScreen(
+    selectedStatusId: String? = null,
+    viewModel: TimelineViewModel = hiltViewModel(),
+) {
     val palette = NeonTheme.palette
     val kind by viewModel.kind.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -68,7 +75,9 @@ fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
                 key = { it.id },
                 loadingContent = { StatusListSkeleton() },
             ) { status ->
-                StatusCard(status = status)
+                PaneSelection(selected = status.display.id == selectedStatusId) {
+                    StatusCard(status = status)
+                }
             }
             Row(
                 modifier = Modifier

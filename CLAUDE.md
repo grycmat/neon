@@ -18,7 +18,7 @@ DataStore for credentials/settings.
 ## Build & run
 
 - Open the repo root in Android Studio (Narwhal or newer) and let it sync — this is the normal workflow.
-- From the CLI: run `gradle wrapper` once (the wrapper `.jar` is not committed), then:
+- From the CLI (the Gradle wrapper is committed):
   - `./gradlew :app:assembleDebug` — build the debug APK
   - `./gradlew :app:installDebug` — build and install on a connected device/emulator
   - `./gradlew build` — full build of all modules
@@ -136,6 +136,30 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
   state survives swiping, and draws the shared glassmorphic top app bar itself
   — tab screens must not add their own headers or `statusBarsPadding`
   (`ProfileScreen` pads conditionally because it is also pushed standalone).
+
+### Big screens (unfolded foldables / tablets)
+
+`core/ui/.../BigScreen.kt` is the whole adaptive vocabulary — no adaptive
+library: `isBigScreen()` (window width ≥ 640dp, re-reads on fold/unfold),
+`hingePaneWidth(inShell)` (left-pane width so the pane divider lands on the
+window centre = the hinge; `inShell` subtracts the nav rail), and
+`PaneSelection` (gradient edge marker on the list row open in a detail pane).
+Past the threshold, from the "Neon Foldable" design:
+- `HomeShell` swaps the bottom tab bar + FAB for a left nav rail (`ShellRail`)
+  and turns the Home and Notifications tabs into list-detail
+  (`ShellListDetail`, composed in `app` because list and detail are different
+  feature modules): `Navigator.threadPaneHandler` — bound by HomeShell while
+  it is on screen, same pattern as `Navigator.backStack` — reroutes
+  `openThread` from the visible list tab into an embedded
+  `ThreadScreen(embedded = true)` right pane instead of pushing.
+- Pushed screens adapt themselves: `ThreadScreen` goes focus mode (toot left
+  of the hinge, replies + reply bar right), `ExploreScreen` and
+  `ProfileScreen` split at the hinge, `FollowListScreen` chunks into two
+  columns, `ComposeScreen` becomes a centered 620dp dialog, `SettingsScreen`
+  caps its content width. Phone layouts are untouched below the threshold.
+- Not ported from the design (intentional): the two-column federated feed,
+  the quote popover (bottom sheet stays), and a persistent rail under pushed
+  screens (pushes cover the full window, keeping Nav3's global transitions).
 
 ### Motion
 

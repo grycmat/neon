@@ -23,7 +23,8 @@ core/database         Room cache (list_cache / entity_cache)
 core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
-                      MediaPreviewScreen (interactive full-screen viewer), Navigator + StatusActionService singletons (and the NavKeys)
+                      MediaPreviewScreen (interactive full-screen viewer), Navigator + StatusActionService singletons,
+                      BigScreen.kt (adaptive UI helpers, hinge width, row select indicator), and NavKeys
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills
 feature/explore       Trends + search (also pushed for hashtag taps)
@@ -58,6 +59,21 @@ Screens are split into a stateful ViewModel-connected wrapper and a stateless la
 ## Layout & Shell Padding
 
 To support the glassy translucent design, root shell screens (like timelines) render under translucent/glassmorphic bars (top app bar and bottom TabBar) using `LocalShellPadding.current` for inset handling. Headers (like the segmented pills on `TimelineScreen` or search bar on `ExploreScreen`) use a translucent solid background and adjust padding dynamically depending on whether they are root tabs or pushed onto the backstack.
+
+## Big Screens (Foldables & Tablets)
+
+Above 640dp of window width (`core/ui/.../BigScreen.kt`), the shell swaps the bottom tab bar + FAB for a left nav rail (`ShellRail`), and layouts transition to two-pane with the divider hinge-aligned to the window centre:
+- **Root Shell Tabs**:
+  - **Home & Notifications**: Become list-detail dual panes (`ShellListDetail`). Thread detail views open in the right pane via `Navigator.threadPaneHandler` rather than pushing.
+  - **Explore**: Splits at the hinge. Trending tags or search results (people + tags) display on the left, and trending/search toots on the right. Tags feature Sparkline charts (`TrendSpark`) of recent activity.
+  - **Profile**: Splits at the hinge. Profile details and follow action headers align on the left, and the user's feed of toots scrolls on the right.
+- **Pushed Screens**:
+  - **Thread**: Enters focus mode, placing the focused toot left of the hinge and replies + reply bar on the right.
+  - **Follow/Directory Lists**: Split into a clean two-column directory list (chunked into pairs in `AsyncList`).
+  - **Compose**: Becomes a centered 620dp dialog with tap-outside dismiss behavior.
+  - **Settings**: Caps its content width to 560dp.
+
+Phone layouts remain untouched below the threshold.
 
 ## Building
 

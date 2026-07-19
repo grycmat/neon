@@ -43,7 +43,15 @@ data class MediaPreviewKey(val url: String, val previewUrl: String? = null) : Na
 object Navigator {
     var backStack: NavBackStack? = null
 
+    /**
+     * Big-screen HomeShell binds this while it is on screen: when it returns
+     * true the thread was shown in the shell's detail pane and nothing is
+     * pushed. Null (phones, pushed screens) means every thread push navigates.
+     */
+    var threadPaneHandler: ((String) -> Boolean)? = null
+
     fun openThread(statusId: String) {
+        if (threadPaneHandler?.invoke(statusId) == true) return
         backStack?.add(ThreadKey(statusId))
     }
 

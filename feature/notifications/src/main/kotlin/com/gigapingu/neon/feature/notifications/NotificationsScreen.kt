@@ -48,13 +48,20 @@ import com.gigapingu.neon.core.model.NotificationType
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
+import com.gigapingu.neon.core.ui.PaneSelection
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import java.time.Instant
 
-/** Notifications feed — favourite / boost / follow / mention / poll rows. */
+/**
+ * Notifications feed — favourite / boost / follow / mention / poll rows.
+ * [selectedStatusId] marks the toot open in the big-screen detail pane.
+ */
 @Composable
-fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
+fun NotificationsScreen(
+    selectedStatusId: String? = null,
+    viewModel: NotificationsViewModel = hiltViewModel(),
+) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -75,7 +82,12 @@ fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
                 ),
                 key = { it.id },
             ) { notification ->
-                NotificationRow(item = notification)
+                PaneSelection(
+                    selected = selectedStatusId != null &&
+                        notification.status?.display?.id == selectedStatusId,
+                ) {
+                    NotificationRow(item = notification)
+                }
             }
         }
     }

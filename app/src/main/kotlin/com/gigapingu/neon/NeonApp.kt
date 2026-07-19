@@ -49,7 +49,7 @@ import com.gigapingu.neon.feature.settings.SettingsScreen
 import com.gigapingu.neon.feature.thread.ThreadScreen
 
 // NavDisplay.DEFAULT_TRANSITION_DURATION_MILLISECOND (internal in alpha05).
-private const val NAV_TRANSITION_MS = 700
+private const val NAV_TRANSITION_MS = 400
 
 private fun popSlide(): ContentTransform =
     slideInHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 } togetherWith

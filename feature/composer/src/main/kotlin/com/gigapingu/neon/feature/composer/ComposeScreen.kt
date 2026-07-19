@@ -6,15 +6,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -43,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +68,7 @@ import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
+import com.gigapingu.neon.core.ui.isBigScreen
 import com.gigapingu.neon.core.ui.status.QuoteCard
 
 /**
@@ -97,12 +102,10 @@ fun ComposeScreen(
     ) { uris -> viewModel.pickMedia(uris) }
 
     NeonBackground {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .imePadding(),
-        ) {
+        // Everything between the header row and the toolbar is shared between
+        // the phone full-screen sheet and the big-screen centered dialog.
+        val body: @Composable (Modifier) -> Unit = { bodyModifier ->
+        Column(bodyModifier) {
             Row(
                 modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -286,6 +289,53 @@ fun ComposeScreen(
                     )
                 }
             }
+        }
+        }
+
+        if (isBigScreen()) {
+            // Centered dialog over the neon backdrop; tapping outside cancels.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = Navigator::back,
+                    )
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .imePadding(),
+                contentAlignment = Alignment.Center,
+            ) {
+                val dialogShape = RoundedCornerShape(26.dp)
+                Box(
+                    modifier = Modifier
+                        .width(620.dp)
+                        .fillMaxHeight(.88f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { /* swallow taps so they don't dismiss */ }
+                        .shadow(
+                            elevation = 24.dp,
+                            shape = dialogShape,
+                            ambientColor = palette.shadow,
+                            spotColor = palette.shadow,
+                        )
+                        .clip(dialogShape)
+                        .background(palette.surfaceSolid)
+                        .border(1.dp, palette.border, dialogShape),
+                ) {
+                    body(Modifier.fillMaxSize())
+                }
+            }
+        } else {
+            body(
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .imePadding(),
+            )
         }
         SnackbarHost(
             hostState = snackbarHostState,

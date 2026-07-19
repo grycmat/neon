@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.graphics.SolidColor
@@ -51,6 +53,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
@@ -63,7 +66,11 @@ import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
+import com.gigapingu.neon.core.ui.hingePaneWidth
+import com.gigapingu.neon.core.ui.isBigScreen
 import com.gigapingu.neon.core.ui.status.StatusCard
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -94,6 +101,10 @@ fun ExploreScreen(
     var headerHeightPx by remember { mutableIntStateOf(0) }
     val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
 
+    // Big screens split into hinge-aligned panes: trends / people+tags left,
+    // toots right. Null pane width = phone single column.
+    val paneWidth = if (isBigScreen()) hingePaneWidth(inShell = !isPushed) else null
+
     NeonBackground {
         Box(Modifier.fillMaxSize()) {
             when {
@@ -103,9 +114,26 @@ fun ExploreScreen(
                 ) {
                     CircularProgressIndicator(color = palette.cyan)
                 }
-                uiState.results != null ->
+                uiState.results != null -> if (paneWidth != null) {
+                    SearchResultsBig(
+                        uiState,
+                        onTagClick = viewModel::searchTag,
+                        topPadding = headerHeight,
+                        paneWidth = paneWidth,
+                    )
+                } else {
                     SearchResultsList(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
-                else -> Trends(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
+                }
+                else -> if (paneWidth != null) {
+                    TrendsBig(
+                        uiState,
+                        onTagClick = viewModel::searchTag,
+                        topPadding = headerHeight,
+                        paneWidth = paneWidth,
+                    )
+                } else {
+                    Trends(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
+                }
             }
             Column(
                 modifier = Modifier
@@ -294,6 +322,193 @@ private fun SearchResultsList(uiState: ExploreUiState, onTagClick: (String) -> U
                     Text("Nothing found", style = type.bodyMedium, color = palette.textMute)
                 }
             }
+        }
+    }
+}
+
+/** Big-screen trends: ranked tag cards left of the hinge, trending toots right. */
+@Composable
+private fun TrendsBig(
+    uiState: ExploreUiState,
+    onTagClick: (String) -> Unit,
+    topPadding: Dp,
+    paneWidth: Dp,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    if (uiState.loadingTrends) {
+        Box(Modifier.fillMaxSize().padding(top = topPadding), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = palette.cyan)
+        }
+        return
+    }
+    val contentPadding = PaddingValues(
+        start = 16.dp,
+        top = topPadding + 10.dp,
+        end = 16.dp,
+        bottom = 90.dp + LocalShellPadding.current.calculateBottomPadding(),
+    )
+    Row(Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.width(paneWidth).fillMaxHeight(),
+            contentPadding = contentPadding,
+        ) {
+            item {
+                NeonLabel("Trending now", modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 4.dp))
+            }
+            if (uiState.tags.isEmpty()) {
+                item { PaneEmpty("No trends available on this instance") }
+            }
+            items(count = uiState.tags.size, key = { uiState.tags[it].name }) { index ->
+                val tag = uiState.tags[index]
+                TrendCard(rank = index + 1, tag = tag, onClick = { onTagClick(tag.name) })
+            }
+        }
+        PaneDivider()
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            contentPadding = contentPadding,
+        ) {
+            item {
+                NeonLabel("Trending toots", modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 4.dp))
+            }
+            if (uiState.trending.isEmpty()) {
+                item { PaneEmpty("No trends available on this instance") }
+            }
+            items(count = uiState.trending.size, key = { uiState.trending[it].id }) { index ->
+                StatusCard(status = uiState.trending[index])
+            }
+        }
+    }
+}
+
+/** Big-screen search results: people + tags left of the hinge, toots right. */
+@Composable
+private fun SearchResultsBig(
+    uiState: ExploreUiState,
+    onTagClick: (String) -> Unit,
+    topPadding: Dp,
+    paneWidth: Dp,
+) {
+    val results = uiState.results ?: return
+    val contentPadding = PaddingValues(
+        start = 16.dp,
+        top = topPadding + 10.dp,
+        end = 16.dp,
+        bottom = 90.dp + LocalShellPadding.current.calculateBottomPadding(),
+    )
+    Row(Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.width(paneWidth).fillMaxHeight(),
+            contentPadding = contentPadding,
+        ) {
+            if (results.accounts.isNotEmpty()) {
+                item {
+                    NeonLabel("People", modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 4.dp))
+                }
+                items(count = results.accounts.size, key = { "a" + results.accounts[it].id }) { index ->
+                    AccountRow(account = results.accounts[index])
+                }
+                item { Spacer(Modifier.height(14.dp)) }
+            }
+            if (results.hashtags.isNotEmpty()) {
+                item {
+                    NeonLabel("Tags", modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 10.dp))
+                    TagWrap(tags = results.hashtags, showUses = false, onTagClick = onTagClick)
+                }
+            }
+            if (results.accounts.isEmpty() && results.hashtags.isEmpty()) {
+                item { PaneEmpty("No people or tags found") }
+            }
+        }
+        PaneDivider()
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            contentPadding = contentPadding,
+        ) {
+            item {
+                NeonLabel("Toots", modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 4.dp))
+            }
+            if (results.statuses.isEmpty()) {
+                item { PaneEmpty("No toots found") }
+            }
+            items(count = results.statuses.size, key = { "s" + results.statuses[it].id }) { index ->
+                StatusCard(status = results.statuses[index])
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaneDivider() {
+    Box(
+        Modifier
+            .width(1.dp)
+            .fillMaxHeight()
+            .background(NeonTheme.palette.divider),
+    )
+}
+
+@Composable
+private fun PaneEmpty(message: String) {
+    Box(Modifier.fillMaxWidth().padding(vertical = 50.dp), contentAlignment = Alignment.Center) {
+        Text(message, style = NeonTheme.type.bodyMedium, color = NeonTheme.palette.textMute)
+    }
+}
+
+/** Ranked trend row (design 04): rank · tag + uses · usage spark bars. */
+@Composable
+private fun TrendCard(rank: Int, tag: TrendTag, onClick: () -> Unit) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    GlassCard(
+        modifier = Modifier.padding(vertical = 5.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        onClick = onClick,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "$rank",
+                style = type.titleMedium,
+                color = palette.textMute,
+                modifier = Modifier.width(26.dp),
+            )
+            Column(Modifier.weight(1f)) {
+                Text("#${tag.name}", style = type.titleSmall, color = palette.text)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "${compactCount(tag.uses)} toots",
+                    style = type.bodySmall,
+                    color = palette.textDim,
+                )
+            }
+            TrendSpark(tag)
+        }
+    }
+}
+
+/** Tiny bar chart of the tag's daily uses, oldest → newest. */
+@Composable
+private fun TrendSpark(tag: TrendTag) {
+    val values = tag.history.mapNotNull { day ->
+        ((day as? JsonObject)?.get("uses") as? JsonPrimitive)?.content?.toFloatOrNull()
+    }.reversed().takeLast(8)
+    if (values.size < 2) return
+    val palette = NeonTheme.palette
+    val max = values.max().coerceAtLeast(1f)
+    Row(
+        modifier = Modifier.height(24.dp).padding(start = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        values.forEach { value ->
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .fillMaxHeight((value / max).coerceIn(.18f, 1f))
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Brush.verticalGradient(listOf(palette.cyan, palette.purple))),
+            )
         }
     }
 }

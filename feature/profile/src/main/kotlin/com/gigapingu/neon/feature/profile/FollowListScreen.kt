@@ -1,5 +1,6 @@
 package com.gigapingu.neon.feature.profile
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +31,7 @@ import com.gigapingu.neon.core.model.Account
 import com.gigapingu.neon.core.ui.AccountRow
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.isBigScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -125,14 +127,42 @@ fun FollowListScreen(
                     Text(handle, style = type.bodySmall, color = palette.textDim)
                 }
             }
-            AsyncList(
-                state = state,
-                onRefresh = viewModel::refresh,
-                onLoadMore = viewModel::loadMore,
-                emptyLabel = "Nobody here yet",
-                key = { it.id },
-            ) { account ->
-                AccountRow(account = account)
+            if (isBigScreen()) {
+                // Two-column directory (design 12): rows are chunked pairs so
+                // AsyncList keeps its pull-to-refresh + infinite scroll.
+                val pairedState = AsyncState(
+                    phase = state.phase,
+                    data = state.data?.chunked(2),
+                    error = state.error,
+                    hasMore = state.hasMore,
+                )
+                AsyncList(
+                    state = pairedState,
+                    onRefresh = viewModel::refresh,
+                    onLoadMore = viewModel::loadMore,
+                    emptyLabel = "Nobody here yet",
+                    key = { it.first().id },
+                ) { pair ->
+                    Row {
+                        Box(Modifier.weight(1f)) {
+                            AccountRow(account = pair[0])
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Box(Modifier.weight(1f)) {
+                            pair.getOrNull(1)?.let { AccountRow(account = it) }
+                        }
+                    }
+                }
+            } else {
+                AsyncList(
+                    state = state,
+                    onRefresh = viewModel::refresh,
+                    onLoadMore = viewModel::loadMore,
+                    emptyLabel = "Nobody here yet",
+                    key = { it.id },
+                ) { account ->
+                    AccountRow(account = account)
+                }
             }
         }
     }

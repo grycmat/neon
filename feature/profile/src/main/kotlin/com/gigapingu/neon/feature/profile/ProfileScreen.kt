@@ -8,13 +8,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,6 +52,8 @@ import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
+import com.gigapingu.neon.core.ui.hingePaneWidth
+import com.gigapingu.neon.core.ui.isBigScreen
 import com.gigapingu.neon.core.ui.status.StatusCard
 
 /**
@@ -69,12 +74,73 @@ fun ProfileScreen(
 
     NeonBackground {
         val modifier = if (isRoot) Modifier.fillMaxSize() else Modifier.fillMaxSize().statusBarsPadding()
+        val listState = AsyncState(
+            phase = if (uiState.loadingStatuses) AsyncPhase.Loading else AsyncPhase.Ready,
+            data = if (uiState.account == null) null else uiState.statuses,
+            hasMore = uiState.hasMore,
+        )
+        if (isBigScreen()) {
+            // Identity column left of the hinge, toots column right (design 06).
+            Row(modifier) {
+                Column(
+                    Modifier
+                        .width(hingePaneWidth(inShell = isRoot))
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            start = 16.dp,
+                            top = 4.dp + shellPadding.calculateTopPadding(),
+                            end = 16.dp,
+                            bottom = 30.dp + shellPadding.calculateBottomPadding(),
+                        ),
+                ) {
+                    if (!isRoot) {
+                        TopBar()
+                    }
+                    if (uiState.account != null) {
+                        ProfileHeader(uiState, onToggleFollow = viewModel::toggleFollow)
+                    } else {
+                        Box(
+                            Modifier.fillMaxWidth().padding(40.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(color = palette.cyan)
+                        }
+                    }
+                }
+                Box(
+                    Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(palette.divider),
+                )
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    AsyncList(
+                        state = listState,
+                        onRefresh = viewModel::load,
+                        onLoadMore = viewModel::loadMore,
+                        emptyLabel = "No toots yet",
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            top = 4.dp + shellPadding.calculateTopPadding(),
+                            end = 16.dp,
+                            bottom = 90.dp + shellPadding.calculateBottomPadding(),
+                        ),
+                        key = { it.id },
+                        header = {
+                            NeonLabel(
+                                "Toots",
+                                modifier = Modifier.padding(start = 6.dp, top = 12.dp, end = 6.dp, bottom = 8.dp),
+                            )
+                        },
+                    ) { status ->
+                        StatusCard(status = status)
+                    }
+                }
+            }
+            return@NeonBackground
+        }
         Column(modifier) {
-            val listState = AsyncState(
-                phase = if (uiState.loadingStatuses) AsyncPhase.Loading else AsyncPhase.Ready,
-                data = if (uiState.account == null) null else uiState.statuses,
-                hasMore = uiState.hasMore,
-            )
             AsyncList(
                 state = listState,
                 onRefresh = viewModel::load,

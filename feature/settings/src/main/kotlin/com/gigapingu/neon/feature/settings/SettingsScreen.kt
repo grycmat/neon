@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -70,6 +71,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
             Column(
                 Modifier
+                    // Cap + centre on big screens; no-op at phone widths.
+                    .align(Alignment.CenterHorizontally)
+                    .widthIn(max = 560.dp)
                     .verticalScroll(rememberScrollState())
                     .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 30.dp),
             ) {
