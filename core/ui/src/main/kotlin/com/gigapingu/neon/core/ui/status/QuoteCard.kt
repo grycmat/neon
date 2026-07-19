@@ -80,7 +80,7 @@ fun QuoteCard(
             style = type.bodyMedium.copy(fontSize = 13.5.sp),
         )
         if (status.mediaAttachments.isNotEmpty()) {
-            MediaGrid(attachments = status.mediaAttachments)
+            MediaGrid(attachments = status.mediaAttachments, sensitive = status.sensitive)
         }
     }
 }

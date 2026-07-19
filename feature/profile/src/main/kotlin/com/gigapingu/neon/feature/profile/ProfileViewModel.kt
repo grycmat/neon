@@ -72,6 +72,10 @@ class ProfileViewModel @Inject constructor(
         _uiState.update { it.copy(statuses = patchPollList(it.statuses, poll)) }
     }
 
+    override fun onStatusDeleted(id: String) {
+        _uiState.update { it.copy(statuses = it.statuses.filterNot { s -> s.id == id || s.reblog?.id == id }) }
+    }
+
     fun start(accountId: String) {
         if (this.accountId == accountId) return
         this.accountId = accountId

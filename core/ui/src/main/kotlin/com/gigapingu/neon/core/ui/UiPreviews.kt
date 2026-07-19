@@ -194,7 +194,13 @@ private fun StatusCardMediaPreview() {
 private fun StatusBodyPreview() {
     PreviewHarness {
         Column(Modifier.padding(16.dp)) {
-            StatusBody(status = PreviewFixtures.cwStatus)
+            var revealed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            StatusBody(
+                status = PreviewFixtures.cwStatus,
+                revealed = revealed,
+                onToggleReveal = { revealed = !revealed }
+            )
+            androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp))
             StatusBody(status = PreviewFixtures.status)
         }
     }

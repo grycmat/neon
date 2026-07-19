@@ -124,6 +124,10 @@ class TimelineRepository @Inject constructor(
         patchAll { list -> patchPollList(list, poll) }
     }
 
+    fun applyStatusDelete(deletedId: String) {
+        patchAll { list -> list.filterNot { it.id == deletedId || it.reblog?.id == deletedId } }
+    }
+
     private fun patchAll(patch: (List<Status>) -> List<Status>) {
         timelines.values.forEach { flow ->
             flow.value.data?.let { data -> flow.value = flow.value.withData(patch(data)) }

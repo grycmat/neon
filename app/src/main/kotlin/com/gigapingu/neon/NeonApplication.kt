@@ -5,6 +5,7 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.request.crossfade
+import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.SearchRepository
 import com.gigapingu.neon.core.data.StatusRepository
 import com.gigapingu.neon.core.ui.StatusActionService
@@ -15,10 +16,11 @@ import javax.inject.Inject
 class NeonApplication : Application(), SingletonImageLoader.Factory {
     @Inject lateinit var statusRepository: StatusRepository
     @Inject lateinit var searchRepository: SearchRepository
+    @Inject lateinit var authRepository: AuthRepository
 
     override fun onCreate() {
         super.onCreate()
-        StatusActionService.init(this, statusRepository, searchRepository)
+        StatusActionService.init(this, statusRepository, searchRepository, authRepository)
     }
 
     // Global crossfade so avatars and media fade in instead of popping.

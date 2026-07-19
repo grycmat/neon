@@ -22,6 +22,7 @@ data class ThreadUiState(
     val status: Status? = null,
     val context: StatusContext? = null,
     val loading: Boolean = true,
+    val refreshing: Boolean = false,
     val error: String? = null,
 )
 
@@ -77,6 +78,23 @@ class ThreadViewModel @Inject constructor(
         if (status.inReplyToId != null) statusId?.let { load(it) }
     }
 
+    override fun onStatusDeleted(id: String) {
+        _uiState.update { state ->
+            if (state.status?.id == id || state.status?.reblog?.id == id) {
+                state.copy(status = null, error = "This toot has been deleted")
+            } else {
+                state.copy(
+                    context = state.context?.let {
+                        StatusContext(
+                            ancestors = it.ancestors.filterNot { s -> s.id == id || s.reblog?.id == id },
+                            descendants = it.descendants.filterNot { s -> s.id == id || s.reblog?.id == id },
+                        )
+                    }
+                )
+            }
+        }
+    }
+
     fun start(statusId: String) {
         if (this.statusId == statusId) return
         this.statusId = statusId
@@ -84,22 +102,22 @@ class ThreadViewModel @Inject constructor(
     }
 
     fun refresh() {
-        statusId?.let { load(it) }
+        statusId?.let { load(it, isRefresh = true) }
     }
 
-    private fun load(id: String) {
-        _uiState.update { it.copy(error = null) }
+    private fun load(id: String, isRefresh: Boolean = false) {
+        _uiState.update { it.copy(error = null, loading = !isRefresh, refreshing = isRefresh) }
         viewModelScope.launch {
             try {
                 coroutineScope {
                     val status = async { statuses.getStatus(id) }
                     val context = async { statuses.getContext(id) }
                     _uiState.update {
-                        it.copy(status = status.await(), context = context.await(), loading = false)
+                        it.copy(status = status.await(), context = context.await(), loading = false, refreshing = false)
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(loading = false, error = e.message ?: "Could not load thread") }
+                _uiState.update { it.copy(loading = false, refreshing = false, error = e.message ?: "Could not load thread") }
             }
         }
     }

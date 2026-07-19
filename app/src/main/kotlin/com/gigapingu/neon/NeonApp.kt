@@ -73,10 +73,32 @@ fun NeonApp(viewModel: ShellViewModel, modifier: Modifier = Modifier) {
     Crossfade(targetState = authStatus, label = "authGate") { status ->
         when (status) {
             AuthStatus.Unknown -> NeonBackground(modifier = modifier.fillMaxSize()) {
-                CircularProgressIndicator(
-                    color = NeonTheme.palette.cyan,
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                val restoreError by viewModel.restoreError.collectAsStateWithLifecycle()
+                if (restoreError != null) {
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
+                    ) {
+                        androidx.compose.material3.Text(
+                            text = restoreError ?: "Could not restore account details.",
+                            style = NeonTheme.type.bodyMedium,
+                            color = NeonTheme.palette.textDim,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
+                        com.gigapingu.neon.core.designsystem.component.GlassButton(
+                            label = "Retry",
+                            onClick = viewModel::performRestore,
+                        )
+                    }
+                } else {
+                    CircularProgressIndicator(
+                        color = NeonTheme.palette.cyan,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
             }
 
             AuthStatus.Unauthenticated -> LoginScreen()

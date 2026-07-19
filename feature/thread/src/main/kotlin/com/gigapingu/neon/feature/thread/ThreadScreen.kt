@@ -98,7 +98,7 @@ private fun PhoneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
             return@Column
         }
         PullToRefreshBox(
-            isRefreshing = false,
+            isRefreshing = uiState.refreshing,
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -128,7 +128,7 @@ private fun TwoPaneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
                 }
             } else {
                 PullToRefreshBox(
-                    isRefreshing = false,
+                    isRefreshing = uiState.refreshing,
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
@@ -200,7 +200,7 @@ private fun EmbeddedThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
             return@Column
         }
         PullToRefreshBox(
-            isRefreshing = false,
+            isRefreshing = uiState.refreshing,
             onRefresh = onRefresh,
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) {
@@ -352,14 +352,24 @@ private fun FocusedStatus(status: Status) {
                 }
             }
             Spacer(Modifier.height(14.dp))
-            StatusBody(status = status, textStyle = type.bodyLarge.copy(fontSize = 16.sp))
-            status.quote?.let { quoted ->
-                QuoteCard(status = quoted, onClick = { Navigator.openThread(quoted.id) })
+            val hasCw = status.spoilerText.isNotEmpty()
+            var revealed by rememberSaveable(status.id) { androidx.compose.runtime.mutableStateOf(false) }
+
+            StatusBody(
+                status = status,
+                textStyle = type.bodyLarge.copy(fontSize = 16.sp),
+                revealed = revealed,
+                onToggleReveal = { revealed = !revealed }
+            )
+            if (!hasCw || revealed) {
+                status.quote?.let { quoted ->
+                    QuoteCard(status = quoted, onClick = { Navigator.openThread(quoted.id) })
+                }
+                if (status.mediaAttachments.isNotEmpty()) {
+                    MediaGrid(attachments = status.mediaAttachments, sensitive = status.sensitive)
+                }
+                status.poll?.let { PollView(poll = it) }
             }
-            if (status.mediaAttachments.isNotEmpty()) {
-                MediaGrid(attachments = status.mediaAttachments)
-            }
-            status.poll?.let { PollView(poll = it) }
             Spacer(Modifier.height(12.dp))
             Text(fullTime(status.createdAt), style = type.bodySmall, color = palette.textMute)
             StatusActions(status = status)

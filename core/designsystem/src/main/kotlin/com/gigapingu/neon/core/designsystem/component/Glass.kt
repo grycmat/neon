@@ -38,12 +38,14 @@ import com.gigapingu.neon.core.designsystem.theme.NeonDims
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 
 /** Glass surface card — rgba white fill, hairline border, soft shadow. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(start = 16.dp, top = 15.dp, end = 16.dp, bottom = 12.dp),
     radius: Dp = NeonDims.RadiusCard,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     highlighted: Boolean = false,
     content: @Composable () -> Unit,
 ) {
@@ -56,11 +58,12 @@ fun GlassCard(
             .background(if (highlighted) palette.surfaceHi else palette.surface)
             .border(1.dp, if (highlighted) palette.borderStrong else palette.border, shape)
             .then(
-                if (onClick != null) {
-                    Modifier.clickable(
+                if (onClick != null || onLongClick != null) {
+                    Modifier.combinedClickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onClick,
+                        onClick = onClick ?: {},
+                        onLongClick = onLongClick,
                     )
                 } else {
                     Modifier

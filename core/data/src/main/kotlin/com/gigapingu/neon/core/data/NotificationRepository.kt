@@ -78,6 +78,14 @@ class NotificationRepository @Inject constructor(
         }
     }
 
+    fun applyStatusDelete(deletedId: String) {
+        val current = _state.value
+        val data = current.data ?: return
+        _state.value = current.withData(
+            data.filterNot { it.status?.id == deletedId || it.status?.reblog?.id == deletedId }
+        )
+    }
+
     private suspend fun fetchPage(maxId: String?): List<MastoNotification> {
         val query = buildMap {
             put("limit", PAGE_SIZE)

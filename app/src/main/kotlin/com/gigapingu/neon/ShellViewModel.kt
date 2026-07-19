@@ -9,8 +9,10 @@ import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.model.Account
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -24,10 +26,24 @@ class ShellViewModel @Inject constructor(
     val authStatus: StateFlow<AuthStatus> = auth.status
     val me: StateFlow<Account?> = auth.me
 
+    private val _restoreError = MutableStateFlow<String?>(null)
+    val restoreError: StateFlow<String?> = _restoreError.asStateFlow()
+
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.Dark)
 
     init {
-        viewModelScope.launch { auth.restore() }
+        performRestore()
+    }
+
+    fun performRestore() {
+        viewModelScope.launch {
+            _restoreError.value = null
+            try {
+                auth.restore()
+            } catch (e: Exception) {
+                _restoreError.value = e.message ?: "Could not restore auth status"
+            }
+        }
     }
 }

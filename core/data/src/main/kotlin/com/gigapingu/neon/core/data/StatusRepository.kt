@@ -33,6 +33,7 @@ class StatusRepository @Inject constructor(
         fun onStatusUpdated(status: Status) {}
         fun onStatusCreated(status: Status) {}
         fun onPollUpdated(poll: Poll) {}
+        fun onStatusDeleted(id: String) {}
     }
 
     private val listeners = CopyOnWriteArrayList<StatusListener>()
@@ -125,5 +126,8 @@ class StatusRepository @Inject constructor(
 
     suspend fun delete(id: String) {
         api.delete("/api/v1/statuses/$id")
+        timelines.applyStatusDelete(id)
+        notifications.applyStatusDelete(id)
+        listeners.forEach { it.onStatusDeleted(id) }
     }
 }

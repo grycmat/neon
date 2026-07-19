@@ -247,7 +247,7 @@ private fun BoostSheet(
 }
 
 @Composable
-private fun SheetOption(
+fun SheetOption(
     icon: ImageVector,
     color: Color,
     title: String,
