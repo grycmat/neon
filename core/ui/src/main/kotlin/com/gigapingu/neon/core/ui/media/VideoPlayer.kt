@@ -1,5 +1,6 @@
 package com.gigapingu.neon.core.ui.media
 
+import android.view.ViewGroup
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -8,6 +9,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -24,12 +28,12 @@ fun VideoPlayer(
     useController: Boolean = true,
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val exoPlayer = remember(url) {
         ExoPlayer.Builder(context).build().apply {
             val mediaItem = MediaItem.fromUri(url)
             setMediaItem(mediaItem)
-            repeatMode = if (looping) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
-            volume = if (muted) 0f else 1f
             prepare()
             playWhenReady = true
         }
@@ -37,6 +41,28 @@ fun VideoPlayer(
 
     LaunchedEffect(muted) {
         exoPlayer.volume = if (muted) 0f else 1f
+    }
+
+    LaunchedEffect(looping) {
+        exoPlayer.repeatMode = if (looping) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> {
+                    exoPlayer.pause()
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    exoPlayer.play()
+                }
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     DisposableEffect(exoPlayer) {
@@ -48,9 +74,15 @@ fun VideoPlayer(
     AndroidView(
         factory = { ctx ->
             PlayerView(ctx).apply {
-                player = exoPlayer
-                useController = useController
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                )
             }
+        },
+        update = { playerView ->
+            playerView.player = exoPlayer
+            playerView.useController = useController
         },
         modifier = modifier
     )

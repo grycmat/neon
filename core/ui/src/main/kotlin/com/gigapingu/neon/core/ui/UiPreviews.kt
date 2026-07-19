@@ -2,6 +2,7 @@ package com.gigapingu.neon.core.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,6 +25,8 @@ import com.gigapingu.neon.core.ui.status.StatusBody
 import com.gigapingu.neon.core.ui.status.StatusCard
 import com.gigapingu.neon.core.ui.status.StatusListSkeleton
 import java.time.Instant
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 /** Sample data + no-op locals so status components can be previewed in isolation. */
 object PreviewFixtures {

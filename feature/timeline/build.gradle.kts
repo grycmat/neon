@@ -24,7 +24,10 @@ kotlin {
 }
 
 dependencies {
+    implementation(projects.core.network)
+    implementation(projects.core.data)
     implementation(projects.core.ui)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.hilt.android)

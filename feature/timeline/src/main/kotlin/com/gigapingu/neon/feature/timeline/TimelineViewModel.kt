@@ -45,7 +45,7 @@ class TimelineViewModel @Inject constructor(
                 timelines.timeline(k).collect { state ->
                     val newData = state.data
                     val oldData = lastSeenLists[k]
-                    if (newData != null && oldData != null && newData !== oldData) {
+                    if (newData != null && oldData != null && (newData !== oldData)) {
                         val oldTopId = oldData.firstOrNull()?.id
                         if (oldTopId != null) {
                             val newTopIndex = newData.indexOfFirst { it.id == oldTopId }

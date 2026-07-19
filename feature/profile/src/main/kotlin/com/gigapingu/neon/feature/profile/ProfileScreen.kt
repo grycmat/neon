@@ -362,6 +362,8 @@ private fun ProfileHeaderPreview() {
                     relationship = Relationship(id = "1", followedBy = true),
                 ),
                 onToggleFollow = {},
+                onToggleMute = {},
+                onToggleBlock = {},
             )
         }
     }
@@ -375,6 +377,8 @@ private fun ProfileHeaderVariantsPreview() {
             ProfileHeader(
                 uiState = ProfileUiState(account = PreviewFixtures.account, isSelf = true),
                 onToggleFollow = {},
+                onToggleMute = {},
+                onToggleBlock = {},
             )
             ProfileHeader(
                 uiState = ProfileUiState(
@@ -382,6 +386,8 @@ private fun ProfileHeaderVariantsPreview() {
                     relationship = Relationship(id = "2", following = true),
                 ),
                 onToggleFollow = {},
+                onToggleMute = {},
+                onToggleBlock = {},
             )
         }
     }

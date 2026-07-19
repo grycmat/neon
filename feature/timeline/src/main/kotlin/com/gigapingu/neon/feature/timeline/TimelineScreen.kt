@@ -74,7 +74,7 @@ fun TimelineScreen(
     val pillsHeight = with(LocalDensity.current) { pillsHeightPx.toDp() }
 
     LaunchedEffect(listState, kind) {
-        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+        snapshotFlow { (listState.firstVisibleItemIndex == 0) && (listState.firstVisibleItemScrollOffset == 0) }
             .distinctUntilChanged()
             .collect { isAtTop ->
                 if (isAtTop) {
@@ -130,7 +130,7 @@ fun TimelineScreen(
                 exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = pillsHeight + 8.dp)
+                    .padding(top = pillsHeight + 8.dp),
             ) {
                 GlassButton(
                     label = "↑ $newTootsCount new toots",
@@ -178,7 +178,7 @@ private fun SegmentPillPreview() {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TimelineKind.entries.forEachIndexed { index, entry ->
-                SegmentPill(label = entry.label, active = index == 0, onClick = {})
+                SegmentPill(label = entry.label, active = index == 0) {}
             }
         }
     }

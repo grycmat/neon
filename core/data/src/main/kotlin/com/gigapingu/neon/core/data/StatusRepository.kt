@@ -156,7 +156,7 @@ class StatusRepository @Inject constructor(
             if (mediaIds.isNotEmpty()) {
                 putJsonArray("media_ids") { mediaIds.forEach { add(it) } }
             } else {
-                putJsonArray("media_ids")
+                putJsonArray("media_ids") {}
             }
             poll?.let {
                 putJsonObject("poll") {

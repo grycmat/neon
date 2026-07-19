@@ -88,7 +88,7 @@ class HashtagTimelineViewModel @Inject constructor(
     fun loadMore() {
         val state = _state.value
         val data = state.data
-        if (data == null || !state.hasMore || state.phase == AsyncPhase.LoadingMore) return
+        if (data == null || !state.hasMore || (state.phase == AsyncPhase.LoadingMore)) return
         _state.value = state.withPhase(AsyncPhase.LoadingMore)
         viewModelScope.launch {
             try {
@@ -130,7 +130,7 @@ class HashtagTimelineViewModel @Inject constructor(
     override fun onStatusDeleted(id: String) {
         _state.value.data?.let { data ->
             _state.value = _state.value.withData(
-                data.filterNot { it.id == id || it.reblog?.id == id }
+                data.filterNot { it.id == id || it.reblog?.id == id },
             )
         }
     }

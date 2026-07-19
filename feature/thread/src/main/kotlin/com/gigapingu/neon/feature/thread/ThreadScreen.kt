@@ -28,6 +28,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +60,8 @@ import com.gigapingu.neon.core.ui.status.QuoteCard
 import com.gigapingu.neon.core.ui.status.StatusActions
 import com.gigapingu.neon.core.ui.status.StatusBody
 import com.gigapingu.neon.core.ui.status.StatusCard
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 /**
  * Thread view: ancestors → focused toot (large) → descendants. Three layouts:
