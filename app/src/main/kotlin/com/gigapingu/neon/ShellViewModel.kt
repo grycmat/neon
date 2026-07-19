@@ -32,6 +32,20 @@ class ShellViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.Dark)
 
+    val notificationsEnabled: StateFlow<Boolean> = settings.notificationsEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    private val _selectedTab = MutableStateFlow<Int?>(null)
+    val selectedTab: StateFlow<Int?> = _selectedTab.asStateFlow()
+
+    fun selectTab(page: Int) {
+        _selectedTab.value = page
+    }
+
+    fun clearSelectedTab() {
+        _selectedTab.value = null
+    }
+
     init {
         performRestore()
     }

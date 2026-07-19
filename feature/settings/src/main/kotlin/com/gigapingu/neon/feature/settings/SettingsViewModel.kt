@@ -22,11 +22,18 @@ class SettingsViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.Dark)
 
+    val notificationsEnabled: StateFlow<Boolean> = settings.notificationsEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
     val me: StateFlow<Account?> = auth.me
     val instance: String? get() = auth.instance
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settings.setThemeMode(mode) }
+    }
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settings.setNotificationsEnabled(enabled) }
     }
 
     fun logout() {

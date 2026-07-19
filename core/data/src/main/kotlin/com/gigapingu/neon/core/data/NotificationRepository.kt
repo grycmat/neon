@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+
 
 /** Notifications list with Room cache + status sync. */
 @Singleton
@@ -111,4 +113,57 @@ class NotificationRepository @Inject constructor(
         _state.value = AsyncState.ready(emptyList(), hasMore = false)
         cache.putList(CACHE_KEY, emptyList(), MastoNotification.serializer()) { it.id }
     }
+
+    suspend fun registerPushWithInstance(endpointUrl: String, p256dh: String, auth: String) {
+        val request = RegisterPushRequest(
+            subscription = PushSubscriptionPayload(
+                endpoint = endpointUrl,
+                keys = PushKeys(p256dh = p256dh, auth = auth)
+            ),
+            data = PushData(alerts = PushAlerts())
+        )
+        val bodyJson = json.encodeToString(RegisterPushRequest.serializer(), request)
+        api.post("/api/v1/push/subscription", bodyJson)
+    }
+
+    suspend fun getNotification(id: String): MastoNotification {
+        return json.decodeFromString(
+            MastoNotification.serializer(),
+            api.get("/api/v1/notifications/$id")
+        )
+    }
 }
+
+@Serializable
+data class PushKeys(
+    val p256dh: String,
+    val auth: String
+)
+
+@Serializable
+data class PushSubscriptionPayload(
+    val endpoint: String,
+    val keys: PushKeys
+)
+
+@Serializable
+data class PushAlerts(
+    val follow: Boolean = true,
+    val favourite: Boolean = true,
+    val reblog: Boolean = true,
+    val mention: Boolean = true,
+    val poll: Boolean = true,
+    val status: Boolean = true
+)
+
+@Serializable
+data class PushData(
+    val alerts: PushAlerts
+)
+
+@Serializable
+data class RegisterPushRequest(
+    val subscription: PushSubscriptionPayload,
+    val data: PushData
+)
+

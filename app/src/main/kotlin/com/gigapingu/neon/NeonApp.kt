@@ -120,7 +120,19 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
 
     DisposableEffect(backStack) {
         Navigator.backStack = backStack
-        onDispose { if (Navigator.backStack === backStack) Navigator.backStack = null }
+        Navigator.bindNotificationHandler { statusId, openNotifications ->
+            if (statusId != null) {
+                Navigator.openThread(statusId)
+            } else if (openNotifications) {
+                viewModel.selectTab(2)
+            }
+        }
+        onDispose {
+            if (Navigator.backStack === backStack) {
+                Navigator.backStack = null
+                Navigator.unbindNotificationHandler()
+            }
+        }
     }
 
     NavDisplay(

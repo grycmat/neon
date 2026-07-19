@@ -30,5 +30,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.datastore.preferences)
     implementation(libs.hilt.android)
+    implementation(libs.unifiedpush.connector)
     ksp(libs.hilt.compiler)
 }

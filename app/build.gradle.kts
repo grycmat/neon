@@ -38,6 +38,17 @@ android {
     }
 }
 
+configurations.configureEach {
+    val tink = "com.google.crypto.tink:tink-android:1.20.0"
+    resolutionStrategy {
+        force(tink)
+        dependencySubstitution {
+            substitute(module("com.google.crypto.tink:tink")).using(module(tink))
+        }
+    }
+}
+
+
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -72,6 +83,8 @@ dependencies {
 
     // For the app-wide ImageLoader (crossfade) built in NeonApplication.
     implementation(libs.coil.compose)
+    implementation(libs.unifiedpush.connector)
 
     debugImplementation(libs.compose.ui.tooling)
+
 }

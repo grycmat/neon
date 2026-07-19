@@ -1,6 +1,7 @@
 package com.gigapingu.neon.core.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -20,6 +21,7 @@ class SettingsRepository @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
+    private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
 
     val themeMode: Flow<ThemeMode> = context.settingsStore.data.map { prefs ->
         when (prefs[themeModeKey]) {
@@ -29,6 +31,10 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    val notificationsEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
+        prefs[notificationsEnabledKey] ?: true
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         context.settingsStore.edit { prefs ->
             prefs[themeModeKey] = when (mode) {
@@ -36,6 +42,12 @@ class SettingsRepository @Inject constructor(
                 ThemeMode.System -> "system"
                 ThemeMode.Dark -> "dark"
             }
+        }
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.settingsStore.edit { prefs ->
+            prefs[notificationsEnabledKey] = enabled
         }
     }
 }

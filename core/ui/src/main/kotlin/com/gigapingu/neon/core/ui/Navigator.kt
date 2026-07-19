@@ -56,6 +56,33 @@ data class HashtagTimelineKey(val hashtag: String) : NavKey
 object Navigator {
     var backStack: NavBackStack? = null
 
+    private var onPendingNotification: ((String?, Boolean) -> Unit)? = null
+    private var pendingStatusId: String? = null
+    private var pendingOpenNotifications: Boolean = false
+
+    fun handleNotificationClick(statusId: String?, openNotificationsTab: Boolean) {
+        val handler = onPendingNotification
+        if (handler != null) {
+            handler(statusId, openNotificationsTab)
+        } else {
+            pendingStatusId = statusId
+            pendingOpenNotifications = openNotificationsTab
+        }
+    }
+
+    fun bindNotificationHandler(handler: (String?, Boolean) -> Unit) {
+        onPendingNotification = handler
+        if (pendingStatusId != null || pendingOpenNotifications) {
+            handler(pendingStatusId, pendingOpenNotifications)
+            pendingStatusId = null
+            pendingOpenNotifications = false
+        }
+    }
+
+    fun unbindNotificationHandler() {
+        onPendingNotification = null
+    }
+
     /**
      * Big-screen HomeShell binds this while it is on screen: when it returns
      * true the thread was shown in the shell's detail pane and nothing is

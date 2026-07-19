@@ -106,8 +106,16 @@ private val TabIcons: List<ImageVector> = listOf(
 @Composable
 fun HomeShell(viewModel: ShellViewModel) {
     val me by viewModel.me.collectAsStateWithLifecycle()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(initialPage = 0) { 4 }
     val coroutineScope = rememberCoroutineScope()
+
+    androidx.compose.runtime.LaunchedEffect(selectedTab) {
+        selectedTab?.let { page ->
+            pagerState.animateScrollToPage(page)
+            viewModel.clearSelectedTab()
+        }
+    }
     val big = isBigScreen()
     var showClearConfirm by remember { mutableStateOf(false) }
 
