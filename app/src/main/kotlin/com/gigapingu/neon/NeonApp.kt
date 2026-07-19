@@ -28,6 +28,7 @@ import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
+import com.gigapingu.neon.core.ui.BookmarksKey
 import com.gigapingu.neon.core.ui.ComposeKey
 import com.gigapingu.neon.core.ui.EditProfileKey
 import com.gigapingu.neon.core.ui.FollowListKey
@@ -42,6 +43,7 @@ import com.gigapingu.neon.core.ui.media.MediaPreviewScreen
 import com.gigapingu.neon.feature.auth.LoginScreen
 import com.gigapingu.neon.feature.composer.ComposeScreen
 import com.gigapingu.neon.feature.explore.ExploreScreen
+import com.gigapingu.neon.feature.profile.BookmarksScreen
 import com.gigapingu.neon.feature.profile.EditProfileScreen
 import com.gigapingu.neon.feature.profile.FollowListScreen
 import com.gigapingu.neon.feature.profile.ProfileScreen
@@ -142,7 +144,14 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
                     NavDisplay.popTransitionSpec { composerExit() } +
                     NavDisplay.predictivePopTransitionSpec { composerExit() },
             ) { key ->
-                ComposeScreen(replyToId = key.replyToId, quotingId = key.quotingId)
+                ComposeScreen(
+                    replyToId = key.replyToId,
+                    quotingId = key.quotingId,
+                    editStatusId = key.editStatusId,
+                    redraftText = key.redraftText,
+                    redraftSpoilerText = key.redraftSpoilerText,
+                    redraftVisibility = key.redraftVisibility,
+                )
             }
             entry<FollowListKey> { key ->
                 FollowListScreen(
@@ -153,6 +162,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
             }
             entry<EditProfileKey> { EditProfileScreen() }
             entry<SettingsKey> { SettingsScreen() }
+            entry<BookmarksKey> { BookmarksScreen() }
             entry<MediaPreviewKey> { key ->
                 MediaPreviewScreen(url = key.url, previewUrl = key.previewUrl)
             }

@@ -114,6 +114,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 }
                 Spacer(Modifier.height(14.dp))
                 GlassButton(
+                    label = "Bookmarks",
+                    onClick = Navigator::openBookmarks,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
                     label = "Log out",
                     onClick = viewModel::logout,
                     modifier = Modifier.fillMaxWidth(),

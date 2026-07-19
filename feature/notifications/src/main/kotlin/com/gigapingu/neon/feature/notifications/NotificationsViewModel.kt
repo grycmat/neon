@@ -28,4 +28,16 @@ class NotificationsViewModel @Inject constructor(
     fun loadMore() {
         viewModelScope.launch { notifications.loadMore() }
     }
+
+    fun dismiss(id: String) {
+        viewModelScope.launch {
+            runCatching { notifications.dismiss(id) }
+        }
+    }
+
+    fun clearAll() {
+        viewModelScope.launch {
+            runCatching { notifications.clear() }
+        }
+    }
 }

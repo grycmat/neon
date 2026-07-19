@@ -3,6 +3,7 @@ package com.gigapingu.neon.core.ui
 import android.app.Application
 import android.content.Intent
 import android.widget.Toast
+import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.SearchRepository
 import com.gigapingu.neon.core.data.StatusRepository
@@ -25,17 +26,20 @@ object StatusActionService {
     private var statuses: StatusRepository? = null
     private var search: SearchRepository? = null
     private var auth: AuthRepository? = null
+    private var accounts: AccountRepository? = null
 
     fun init(
         app: Application,
         statuses: StatusRepository,
         search: SearchRepository,
         auth: AuthRepository,
+        accounts: AccountRepository,
     ) {
         this.app = app
         this.statuses = statuses
         this.search = search
         this.auth = auth
+        this.accounts = accounts
     }
 
     fun isOwnStatus(status: Status): Boolean {
@@ -46,29 +50,40 @@ object StatusActionService {
         statuses?.delete(status.id)
     }
 
-    fun editStatusPlaceholder(status: Status) {
-        app?.let { Toast.makeText(it, "Edit will be available in Milestone 2", Toast.LENGTH_SHORT).show() }
+    fun editStatus(status: Status) {
+        Navigator.openCompose(editStatusId = status.id)
     }
 
-    fun redraftStatusPlaceholder(status: Status) {
-        app?.let { Toast.makeText(it, "Delete & re-draft will be available in Milestone 2", Toast.LENGTH_SHORT).show() }
+    fun redraftStatus(status: Status) = guarded {
+        val source = statuses?.getSource(status.id) ?: return@guarded
+        statuses?.delete(status.id)
+        Navigator.openCompose(
+            redraftText = source.text,
+            redraftSpoilerText = source.spoilerText,
+            redraftVisibility = status.visibility,
+        )
     }
 
-    fun muteAccountPlaceholder(account: Account) {
-        app?.let { Toast.makeText(it, "Mute will be available in Milestone 2", Toast.LENGTH_SHORT).show() }
+    fun muteAccount(account: Account) = guarded {
+        accounts?.mute(account.id)
+        app?.let { Toast.makeText(it, "Muted @${account.acct}", Toast.LENGTH_SHORT).show() }
     }
 
-    fun blockAccountPlaceholder(account: Account) {
-        app?.let { Toast.makeText(it, "Block will be available in Milestone 2", Toast.LENGTH_SHORT).show() }
+    fun blockAccount(account: Account) = guarded {
+        accounts?.block(account.id)
+        app?.let { Toast.makeText(it, "Blocked @${account.acct}", Toast.LENGTH_SHORT).show() }
     }
 
-    fun reportStatusPlaceholder(status: Status) {
-        app?.let { Toast.makeText(it, "Report will be available in Milestone 2", Toast.LENGTH_SHORT).show() }
+    fun reportStatus(status: Status, comment: String? = null) = guarded {
+        accounts?.report(accountId = status.account.id, statusId = status.id, comment = comment)
+        app?.let { Toast.makeText(it, "Reported status", Toast.LENGTH_SHORT).show() }
     }
 
     fun toggleFavourite(status: Status) = guarded { statuses?.favourite(status) }
 
     fun toggleBoost(status: Status) = guarded { statuses?.reblog(status) }
+
+    fun toggleBookmark(status: Status) = guarded { statuses?.bookmark(status) }
 
     fun vote(poll: Poll, choices: List<Int>) = guarded { statuses?.vote(poll, choices) }
 

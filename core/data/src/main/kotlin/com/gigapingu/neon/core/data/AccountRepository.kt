@@ -10,6 +10,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 
 /** Profiles, relationships, follow lists, and profile editing. */
 @Singleton
@@ -105,5 +108,44 @@ class AccountRepository @Inject constructor(
         cache.putEntity("account:${account.id}", account, Account.serializer())
         cache.putEntity("me", account, Account.serializer())
         return account
+    }
+
+    suspend fun mute(id: String): Relationship =
+        json.decodeFromString(
+            Relationship.serializer(),
+            api.post("/api/v1/accounts/$id/mute"),
+        )
+
+    suspend fun unmute(id: String): Relationship =
+        json.decodeFromString(
+            Relationship.serializer(),
+            api.post("/api/v1/accounts/$id/unmute"),
+        )
+
+    suspend fun block(id: String): Relationship =
+        json.decodeFromString(
+            Relationship.serializer(),
+            api.post("/api/v1/accounts/$id/block"),
+        )
+
+    suspend fun unblock(id: String): Relationship =
+        json.decodeFromString(
+            Relationship.serializer(),
+            api.post("/api/v1/accounts/$id/unblock"),
+        )
+
+    suspend fun report(
+        accountId: String,
+        statusId: String? = null,
+        comment: String? = null,
+    ) {
+        val body = kotlinx.serialization.json.buildJsonObject {
+            put("account_id", accountId)
+            statusId?.let {
+                putJsonArray("status_ids") { add(it) }
+            }
+            comment?.let { put("comment", it) }
+        }
+        api.post("/api/v1/reports", body.toString())
     }
 }

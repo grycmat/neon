@@ -96,4 +96,19 @@ class NotificationRepository @Inject constructor(
             api.get("/api/v1/notifications", query),
         )
     }
+
+    suspend fun dismiss(id: String) {
+        api.post("/api/v1/notifications/$id/dismiss")
+        val current = _state.value
+        val data = current.data ?: return
+        val filtered = data.filterNot { it.id == id }
+        _state.value = current.withData(filtered)
+        cache.putList(CACHE_KEY, filtered, MastoNotification.serializer()) { it.id }
+    }
+
+    suspend fun clear() {
+        api.post("/api/v1/notifications/clear")
+        _state.value = AsyncState.ready(emptyList(), hasMore = false)
+        cache.putList(CACHE_KEY, emptyList(), MastoNotification.serializer()) { it.id }
+    }
 }

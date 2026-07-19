@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.FormatQuote
 import androidx.compose.material.icons.rounded.AlternateEmail
 import androidx.compose.material.icons.rounded.PersonAddAlt
 import androidx.compose.material.icons.rounded.Poll
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
@@ -86,7 +87,10 @@ fun NotificationsScreen(
                     selected = selectedStatusId != null &&
                         notification.status?.display?.id == selectedStatusId,
                 ) {
-                    NotificationRow(item = notification)
+                    NotificationRow(
+                        item = notification,
+                        onDismiss = { viewModel.dismiss(notification.id) }
+                    )
                 }
             }
         }
@@ -94,7 +98,7 @@ fun NotificationsScreen(
 }
 
 @Composable
-private fun NotificationRow(item: MastoNotification) {
+private fun NotificationRow(item: MastoNotification, onDismiss: () -> Unit) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
 
@@ -168,11 +172,25 @@ private fun NotificationRow(item: MastoNotification) {
                 }
             }
             Spacer(Modifier.width(8.dp))
-            Text(
-                relativeTime(item.createdAt),
-                style = type.bodySmall,
-                color = palette.textMute,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    relativeTime(item.createdAt),
+                    style = type.bodySmall,
+                    color = palette.textMute,
+                )
+                Spacer(Modifier.height(4.dp))
+                androidx.compose.material3.IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Dismiss notification",
+                        tint = palette.textMute,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -190,11 +208,11 @@ private fun previewNotification(id: String, type: String, withStatus: Boolean = 
 private fun NotificationRowPreview() {
     PreviewHarness {
         Column(Modifier.padding(16.dp)) {
-            NotificationRow(item = previewNotification("1", "favourite"))
-            NotificationRow(item = previewNotification("2", "reblog"))
-            NotificationRow(item = previewNotification("3", "mention"))
-            NotificationRow(item = previewNotification("4", "follow", withStatus = false))
-            NotificationRow(item = previewNotification("5", "poll"))
+            NotificationRow(item = previewNotification("1", "favourite"), onDismiss = {})
+            NotificationRow(item = previewNotification("2", "reblog"), onDismiss = {})
+            NotificationRow(item = previewNotification("3", "mention"), onDismiss = {})
+            NotificationRow(item = previewNotification("4", "follow", withStatus = false), onDismiss = {})
+            NotificationRow(item = previewNotification("5", "poll"), onDismiss = {})
         }
     }
 }

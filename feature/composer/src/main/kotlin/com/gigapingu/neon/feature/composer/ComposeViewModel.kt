@@ -51,6 +51,7 @@ data class ComposeUiState(
     val suggestions: List<Account> = emptyList(),
     val posting: Boolean = false,
     val done: Boolean = false,
+    val editingStatusId: String? = null,
 ) {
     val canPost: Boolean
         get() = !posting && !uploading && text.isNotBlank() && text.length <= MAX_CHARS
@@ -87,10 +88,57 @@ class ComposeViewModel @Inject constructor(
         }
     }
 
-    /** Loads reply/quote context; prefills @-handles when replying. */
-    fun start(replyToId: String?, quotingId: String?) {
+    /** Loads reply/quote/edit context; prefills @-handles when replying. */
+    fun start(
+        replyToId: String?,
+        quotingId: String?,
+        editStatusId: String? = null,
+        redraftText: String? = null,
+        redraftSpoilerText: String? = null,
+        redraftVisibility: String? = null,
+    ) {
         if (initialized) return
         initialized = true
+
+        if (redraftText != null) {
+            _uiState.update {
+                it.copy(
+                    title = "Re-draft",
+                    text = redraftText,
+                    showCw = !redraftSpoilerText.isNullOrEmpty(),
+                    cwText = redraftSpoilerText.orEmpty(),
+                    visibility = redraftVisibility ?: "public",
+                )
+            }
+            return
+        }
+
+        if (editStatusId != null) {
+            _uiState.update { it.copy(title = "Edit toot", posting = true) }
+            viewModelScope.launch {
+                try {
+                    val original = statuses.getStatus(editStatusId)
+                    val source = statuses.getSource(editStatusId)
+                    _uiState.update {
+                        it.copy(
+                            title = "Edit toot",
+                            editingStatusId = editStatusId,
+                            text = source.text,
+                            showCw = source.spoilerText.isNotEmpty(),
+                            cwText = source.spoilerText,
+                            visibility = original.visibility,
+                            media = original.mediaAttachments,
+                            posting = false,
+                        )
+                    }
+                } catch (e: Exception) {
+                    _errors.tryEmit("Could not load status to edit: ${e.message}")
+                    _uiState.update { it.copy(posting = false) }
+                }
+            }
+            return
+        }
+
         if (replyToId == null && quotingId == null) return
         viewModelScope.launch {
             try {
@@ -226,15 +274,26 @@ class ComposeViewModel @Inject constructor(
                         null
                     }
                 }
-                statuses.create(
-                    text = state.text.trim(),
-                    visibility = state.visibility,
-                    inReplyToId = state.replyTo?.id,
-                    quotedStatusId = state.quoting?.id,
-                    spoilerText = if (state.showCw) state.cwText.trim() else null,
-                    mediaIds = state.media.map { it.id },
-                    poll = draft,
-                )
+                if (state.editingStatusId != null) {
+                    statuses.edit(
+                        id = state.editingStatusId,
+                        text = state.text.trim(),
+                        visibility = state.visibility,
+                        spoilerText = if (state.showCw) state.cwText.trim() else null,
+                        mediaIds = state.media.map { it.id },
+                        poll = draft,
+                    )
+                } else {
+                    statuses.create(
+                        text = state.text.trim(),
+                        visibility = state.visibility,
+                        inReplyToId = state.replyTo?.id,
+                        quotedStatusId = state.quoting?.id,
+                        spoilerText = if (state.showCw) state.cwText.trim() else null,
+                        mediaIds = state.media.map { it.id },
+                        poll = draft,
+                    )
+                }
                 _uiState.update { it.copy(done = true) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(posting = false) }

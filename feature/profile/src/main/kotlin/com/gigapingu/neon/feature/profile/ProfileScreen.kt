@@ -20,6 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.VolumeMute
+import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -98,7 +101,12 @@ fun ProfileScreen(
                         TopBar()
                     }
                     if (uiState.account != null) {
-                        ProfileHeader(uiState, onToggleFollow = viewModel::toggleFollow)
+                        ProfileHeader(
+                            uiState = uiState,
+                            onToggleFollow = viewModel::toggleFollow,
+                            onToggleMute = viewModel::toggleMute,
+                            onToggleBlock = viewModel::toggleBlock,
+                        )
                     } else {
                         Box(
                             Modifier.fillMaxWidth().padding(40.dp),
@@ -159,7 +167,12 @@ fun ProfileScreen(
                             TopBar()
                         }
                         uiState.account?.let {
-                            ProfileHeader(uiState, onToggleFollow = viewModel::toggleFollow)
+                            ProfileHeader(
+                                uiState = uiState,
+                                onToggleFollow = viewModel::toggleFollow,
+                                onToggleMute = viewModel::toggleMute,
+                                onToggleBlock = viewModel::toggleBlock,
+                            )
                         }
                         NeonLabel(
                             "Toots",
@@ -204,6 +217,8 @@ private fun TopBar() {
 private fun ProfileHeader(
     uiState: ProfileUiState,
     onToggleFollow: () -> Unit,
+    onToggleMute: () -> Unit,
+    onToggleBlock: () -> Unit,
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
@@ -217,7 +232,7 @@ private fun ProfileHeader(
         contentPadding = PaddingValues(18.dp),
     ) {
         Column {
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 NeonAvatar(account = account, size = 72.dp, ring = true)
                 Spacer(Modifier.weight(1f))
                 when {
@@ -228,21 +243,37 @@ private fun ProfileHeader(
                         onClick = Navigator::openEditProfile,
                     )
                     rel != null -> {
-                        if (following || requested) {
-                            GlassButton(
-                                label = if (requested) "Requested" else "Following",
-                                height = 40.dp,
-                                onClick = if (uiState.followBusy) null else onToggleFollow,
-                                modifier = Modifier.width(118.dp),
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            GlassIconButton(
+                                icon = if (rel.muting) Icons.Rounded.VolumeMute else Icons.Rounded.VolumeUp,
+                                tinted = rel.muting,
+                                onClick = onToggleMute,
+                                contentDescription = if (rel.muting) "Unmute" else "Mute",
                             )
-                        } else {
-                            GradientButton(
-                                label = "Follow",
-                                height = 40.dp,
-                                busy = uiState.followBusy,
-                                onClick = onToggleFollow,
-                                modifier = Modifier.width(118.dp),
+                            Spacer(Modifier.width(8.dp))
+                            GlassIconButton(
+                                icon = Icons.Rounded.Block,
+                                tinted = rel.blocking,
+                                onClick = onToggleBlock,
+                                contentDescription = if (rel.blocking) "Unblock" else "Block",
                             )
+                            Spacer(Modifier.width(8.dp))
+                            if (following || requested) {
+                                GlassButton(
+                                    label = if (requested) "Requested" else "Following",
+                                    height = 40.dp,
+                                    onClick = if (uiState.followBusy) null else onToggleFollow,
+                                    modifier = Modifier.width(118.dp),
+                                )
+                            } else {
+                                GradientButton(
+                                    label = "Follow",
+                                    height = 40.dp,
+                                    busy = uiState.followBusy,
+                                    onClick = onToggleFollow,
+                                    modifier = Modifier.width(118.dp),
+                                )
+                            }
                         }
                     }
                 }

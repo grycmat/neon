@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ModeComment
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.FormatQuote
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.Repeat
@@ -102,6 +104,12 @@ fun StatusActions(status: Status, modifier: Modifier = Modifier) {
                 active = status.favourited,
                 activeColor = palette.pink,
                 onClick = { StatusActionService.toggleFavourite(status) },
+            )
+            ActionItem(
+                icon = if (status.bookmarked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+                active = status.bookmarked,
+                activeColor = palette.cyan,
+                onClick = { StatusActionService.toggleBookmark(status) },
             )
             ActionItem(
                 icon = Icons.Rounded.IosShare,

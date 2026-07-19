@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Delete
@@ -35,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,6 +67,8 @@ fun StatusCard(
     val type = NeonTheme.type
     val display = status.display
     var showContextMenu by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
+    var reportComment by remember { mutableStateOf("") }
 
     GlassCard(
         modifier = modifier
@@ -171,6 +176,64 @@ fun StatusCard(
         StatusContextMenuSheet(
             status = status,
             onDismiss = { showContextMenu = false },
+            onRequestReport = { showReportDialog = true },
+        )
+    }
+    if (showReportDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showReportDialog = false },
+            title = { Text("Report @${display.account.acct}", color = palette.text) },
+            text = {
+                Column {
+                    Text(
+                        "Please provide an optional comment for the moderators:",
+                        color = palette.textDim,
+                        style = type.bodySmall
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    BasicTextField(
+                        value = reportComment,
+                        onValueChange = { reportComment = it },
+                        textStyle = type.bodyMedium.copy(color = palette.text),
+                        cursorBrush = SolidColor(palette.cyan),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(palette.surface, RoundedCornerShape(8.dp))
+                            .border(1.dp, palette.border, RoundedCornerShape(8.dp))
+                            .padding(10.dp)
+                            .heightIn(min = 60.dp),
+                        decorationBox = { inner ->
+                            if (reportComment.isEmpty()) {
+                                Text("Write comment here...", style = type.bodyMedium, color = palette.textMute)
+                            }
+                            inner()
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        StatusActionService.reportStatus(display, reportComment)
+                        showReportDialog = false
+                        reportComment = ""
+                    }
+                ) {
+                    Text("Report", color = palette.pink)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showReportDialog = false
+                        reportComment = ""
+                    }
+                ) {
+                    Text("Cancel", color = palette.textMute)
+                }
+            },
+            containerColor = palette.surfaceSolid,
+            shape = RoundedCornerShape(20.dp),
         )
     }
 }
@@ -244,6 +307,7 @@ val FocusedBodyFontSize = 16.sp
 fun StatusContextMenuSheet(
     status: Status,
     onDismiss: () -> Unit,
+    onRequestReport: () -> Unit,
 ) {
     val palette = NeonTheme.palette
     val isOwn = StatusActionService.isOwnStatus(status)
@@ -264,7 +328,7 @@ fun StatusContextMenuSheet(
                     subtitle = "Modify this status",
                     onClick = {
                         onDismiss()
-                        StatusActionService.editStatusPlaceholder(status)
+                        StatusActionService.editStatus(status)
                     }
                 )
                 SheetOption(
@@ -284,7 +348,7 @@ fun StatusContextMenuSheet(
                     subtitle = "Delete and open composer with its content",
                     onClick = {
                         onDismiss()
-                        StatusActionService.redraftStatusPlaceholder(status)
+                        StatusActionService.redraftStatus(status)
                     }
                 )
             } else {
@@ -295,7 +359,7 @@ fun StatusContextMenuSheet(
                     subtitle = "Hide posts from this user in your timelines",
                     onClick = {
                         onDismiss()
-                        StatusActionService.muteAccountPlaceholder(status.account)
+                        StatusActionService.muteAccount(status.account)
                     }
                 )
                 SheetOption(
@@ -305,7 +369,7 @@ fun StatusContextMenuSheet(
                     subtitle = "Block posts and profile of this user",
                     onClick = {
                         onDismiss()
-                        StatusActionService.blockAccountPlaceholder(status.account)
+                        StatusActionService.blockAccount(status.account)
                     }
                 )
                 SheetOption(
@@ -315,7 +379,7 @@ fun StatusContextMenuSheet(
                     subtitle = "Report this post to your instance moderators",
                     onClick = {
                         onDismiss()
-                        StatusActionService.reportStatusPlaceholder(status)
+                        onRequestReport()
                     }
                 )
             }

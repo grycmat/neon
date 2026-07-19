@@ -37,10 +37,12 @@ import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -80,6 +82,7 @@ import com.gigapingu.neon.core.ui.hingePaneWidth
 import com.gigapingu.neon.core.ui.isBigScreen
 import com.gigapingu.neon.feature.explore.ExploreScreen
 import com.gigapingu.neon.feature.notifications.NotificationsScreen
+import com.gigapingu.neon.feature.notifications.NotificationsViewModel
 import com.gigapingu.neon.feature.profile.ProfileScreen
 import com.gigapingu.neon.feature.thread.ThreadScreen
 import com.gigapingu.neon.feature.timeline.TimelineScreen
@@ -106,6 +109,7 @@ fun HomeShell(viewModel: ShellViewModel) {
     val pagerState = rememberPagerState(initialPage = 0) { 4 }
     val coroutineScope = rememberCoroutineScope()
     val big = isBigScreen()
+    var showClearConfirm by remember { mutableStateOf(false) }
 
     // Detail-pane selection per list-detail tab (big screens only).
     var homeThreadId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -202,6 +206,7 @@ fun HomeShell(viewModel: ShellViewModel) {
             TopAppBar(
                 page = pagerState.currentPage,
                 onSettingsClick = { Navigator.openSettings() },
+                onClearClick = { showClearConfirm = true },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { topBarHeightPx = it.height },
@@ -221,6 +226,32 @@ fun HomeShell(viewModel: ShellViewModel) {
                     .padding(end = 20.dp, bottom = bottomBarHeight + 16.dp),
             )
         }
+    }
+
+    if (showClearConfirm) {
+        val notificationsViewModel: NotificationsViewModel = hiltViewModel()
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text("Clear all notifications", color = NeonTheme.palette.text) },
+            text = { Text("Are you sure you want to clear all your notifications?", color = NeonTheme.palette.textDim) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        notificationsViewModel.clearAll()
+                        showClearConfirm = false
+                    }
+                ) {
+                    Text("Clear", color = NeonTheme.palette.pink)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showClearConfirm = false }) {
+                    Text("Cancel", color = NeonTheme.palette.textMute)
+                }
+            },
+            containerColor = NeonTheme.palette.surfaceSolid,
+            shape = RoundedCornerShape(20.dp),
+        )
     }
 }
 
@@ -411,7 +442,12 @@ private fun ComposeFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TopAppBar(page: Int, onSettingsClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun TopAppBar(
+    page: Int,
+    onSettingsClick: () -> Unit,
+    onClearClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
 
@@ -465,6 +501,14 @@ private fun TopAppBar(page: Int, onSettingsClick: () -> Unit, modifier: Modifier
                         NeonLabel("Live")
                     }
                 }
+            }
+            if (page == 2 && onClearClick != null) {
+                GlassIconButton(
+                    icon = Icons.Rounded.Delete,
+                    onClick = onClearClick,
+                    contentDescription = "Clear all notifications",
+                )
+                Spacer(Modifier.width(8.dp))
             }
             GlassIconButton(
                 icon = Icons.Outlined.Settings,

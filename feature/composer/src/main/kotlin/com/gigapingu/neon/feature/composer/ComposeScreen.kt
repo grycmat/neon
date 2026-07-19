@@ -79,6 +79,10 @@ import com.gigapingu.neon.core.ui.status.QuoteCard
 fun ComposeScreen(
     replyToId: String? = null,
     quotingId: String? = null,
+    editStatusId: String? = null,
+    redraftText: String? = null,
+    redraftSpoilerText: String? = null,
+    redraftVisibility: String? = null,
     viewModel: ComposeViewModel = hiltViewModel(),
 ) {
     val palette = NeonTheme.palette
@@ -87,12 +91,21 @@ fun ComposeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var textField by remember { mutableStateOf(TextFieldValue("")) }
 
-    LaunchedEffect(Unit) { viewModel.start(replyToId, quotingId) }
+    LaunchedEffect(Unit) {
+        viewModel.start(
+            replyToId = replyToId,
+            quotingId = quotingId,
+            editStatusId = editStatusId,
+            redraftText = redraftText,
+            redraftSpoilerText = redraftSpoilerText,
+            redraftVisibility = redraftVisibility,
+        )
+    }
     LaunchedEffect(Unit) { viewModel.errors.collect { snackbarHostState.showSnackbar(it) } }
     LaunchedEffect(uiState.done) { if (uiState.done) Navigator.back() }
-    // Prefill from the ViewModel (reply handles arrive async).
-    LaunchedEffect(uiState.replyTo) {
-        if (uiState.replyTo != null && textField.text.isEmpty() && uiState.text.isNotEmpty()) {
+    // Prefill from the ViewModel (reply handles or edit/redraft source arrive async/sync).
+    LaunchedEffect(uiState.text) {
+        if (textField.text.isEmpty() && uiState.text.isNotEmpty()) {
             textField = TextFieldValue(uiState.text, selection = TextRange(uiState.text.length))
         }
     }

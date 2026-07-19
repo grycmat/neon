@@ -22,7 +22,17 @@ data class ProfileKey(val accountId: String) : NavKey
 data class HashtagKey(val query: String) : NavKey
 
 @Serializable
-data class ComposeKey(val replyToId: String? = null, val quotingId: String? = null) : NavKey
+data class ComposeKey(
+    val replyToId: String? = null,
+    val quotingId: String? = null,
+    val editStatusId: String? = null,
+    val redraftText: String? = null,
+    val redraftSpoilerText: String? = null,
+    val redraftVisibility: String? = null,
+) : NavKey
+
+@Serializable
+data object BookmarksKey : NavKey
 
 @Serializable
 data class FollowListKey(val accountId: String, val handle: String, val following: Boolean) : NavKey
@@ -63,8 +73,28 @@ object Navigator {
         backStack?.add(HashtagKey("#$tag"))
     }
 
-    fun openCompose(replyToId: String? = null, quotingId: String? = null) {
-        backStack?.add(ComposeKey(replyToId = replyToId, quotingId = quotingId))
+    fun openCompose(
+        replyToId: String? = null,
+        quotingId: String? = null,
+        editStatusId: String? = null,
+        redraftText: String? = null,
+        redraftSpoilerText: String? = null,
+        redraftVisibility: String? = null,
+    ) {
+        backStack?.add(
+            ComposeKey(
+                replyToId = replyToId,
+                quotingId = quotingId,
+                editStatusId = editStatusId,
+                redraftText = redraftText,
+                redraftSpoilerText = redraftSpoilerText,
+                redraftVisibility = redraftVisibility,
+            )
+        )
+    }
+
+    fun openBookmarks() {
+        backStack?.add(BookmarksKey)
     }
 
     fun openFollowList(accountId: String, handle: String, following: Boolean) {

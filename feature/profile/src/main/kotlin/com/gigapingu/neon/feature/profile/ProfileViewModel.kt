@@ -136,4 +136,30 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
+
+    fun toggleMute() {
+        val id = accountId ?: return
+        val rel = _uiState.value.relationship ?: return
+        viewModelScope.launch {
+            try {
+                val updated = if (rel.muting) accounts.unmute(id) else accounts.mute(id)
+                _uiState.update { it.copy(relationship = updated) }
+            } catch (e: Exception) {
+                _errors.tryEmit(e.message ?: "Could not update mute state")
+            }
+        }
+    }
+
+    fun toggleBlock() {
+        val id = accountId ?: return
+        val rel = _uiState.value.relationship ?: return
+        viewModelScope.launch {
+            try {
+                val updated = if (rel.blocking) accounts.unblock(id) else accounts.block(id)
+                _uiState.update { it.copy(relationship = updated) }
+            } catch (e: Exception) {
+                _errors.tryEmit(e.message ?: "Could not update block state")
+            }
+        }
+    }
 }
