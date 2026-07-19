@@ -20,20 +20,30 @@ app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs 
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database         Room cache (list_cache / entity_cache)
-core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings
+core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Media, Search, Settings
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
-core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
-                      MediaPreviewScreen (interactive full-screen viewer), Navigator + StatusActionService singletons,
+core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCard, StatusActions, AccountRow, AsyncList,
+                      VideoPlayer (ExoPlayer), MediaPreviewScreen (interactive full-screen viewer), Navigator + StatusActionService singletons,
                       BigScreen.kt (adaptive UI helpers, hinge width, row select indicator), and NavKeys
 feature/auth          Login + in-app OAuth WebView
-feature/timeline      Home / Local / Federated with segmented pills
+feature/timeline      Home / Local / Federated with segmented pills, Hashtag timeline
 feature/explore       Trends + search (also pushed for hashtag taps)
 feature/notifications Notifications feed
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
-feature/profile       Profile, follow lists, edit profile
+feature/profile       Profile, follow lists, Bookmarks, edit profile
 feature/settings      Theme mode + logout
 ```
+
+## Features
+
+- **Timelines**: Home, Local, Federated timelines (with pull-to-refresh and "new toots" banner), plus hashtag-specific timelines.
+- **Bookmarks**: Dedicated Bookmarks tab/screen to save and view bookmarked statuses.
+- **Interactive Thread View**: Full discussion view with collapsible Content Warnings (CW) and sensitive media blur overlays.
+- **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts.
+- **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.
+- **Dynamic Shell & Navigation**: Translucent bottom tab bar (Home, Explore, Notifications, Profile), shared glassy TopAppBar, custom slide transitions, and predictive back support.
+- **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).
 
 Architecture mirrors the Flutter app: singleton repositories hold
 `StateFlow<AsyncState<…>>` per list; after every mutation `StatusRepository`

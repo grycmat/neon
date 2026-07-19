@@ -18,12 +18,12 @@ Full codebase audit and step-by-step plan to a shippable release.
 | Settings (theme + logout) | ✅ Complete |
 | Design system + adaptive big-screen layouts | ✅ Complete |
 | Room cache (offline-first, cache-first) | ✅ Complete |
-| CW expand / collapse in status card | ⚠️ Logic missing |
-| Sensitive media blur | ❌ Missing |
-| Pull-to-refresh spinner | ⚠️ Hardcoded `false` — never shows |
-| Bookmarks | ❌ Missing |
-| Status edit / delete-and-redraft | ❌ Missing |
-| Mute / Block / Report | ❌ Missing |
+| CW expand / collapse in status card | ✅ Complete |
+| Sensitive media blur | ✅ Complete |
+| Pull-to-refresh spinner | ✅ Complete |
+| Bookmarks | ✅ Complete |
+| Status edit / delete-and-redraft | ✅ Complete |
+| Mute / Block / Report | ✅ Complete |
 | Hashtag timeline | ✅ Complete |
 | Push notifications | ❌ Missing |
 | Video playback (Media3 / ExoPlayer) | ✅ Complete |
@@ -35,22 +35,22 @@ Full codebase audit and step-by-step plan to a shippable release.
 > **Estimate: 1–2 days**
 > Goal: make what exists work correctly end-to-end.
 
-- [ ] **Fix pull-to-refresh spinner** — `PullToRefreshBox(isRefreshing = false, …)` is hardcoded in
+- [x] **Fix pull-to-refresh spinner** — `PullToRefreshBox(isRefreshing = false, …)` is hardcoded in
   `TimelineScreen`, `NotificationsScreen`, and `ThreadScreen`. Wire the actual
   `AsyncPhase.Refreshing` / `AsyncPhase.LoadingMore` state from each ViewModel.
 
-- [ ] **Content Warning expand / collapse** — `Status.spoilerText` is decoded but `StatusCard`
+- [x] **Content Warning expand / collapse** — `Status.spoilerText` is decoded but `StatusCard`
   renders it without a show/hide toggle. Add a collapsible CW banner that hides the body
   until tapped; remember the expanded state per-item.
 
-- [ ] **Sensitive media blur** — `Status.sensitive` flag exists in the model. `MediaGrid` should
+- [x] **Sensitive media blur** — `Status.sensitive` flag exists in the model. `MediaGrid` should
   blur all thumbnails and show a "Show sensitive content" overlay tap target.
 
-- [ ] **Startup error boundary** — `AuthRepository.restore()` can throw (network down on first
+- [x] **Startup error boundary** — `AuthRepository.restore()` can throw (network down on first
   launch). The `AuthStatus.Unknown` spinner loops forever. Catch the exception and
   transition to `Unauthenticated` with a retry button.
 
-- [ ] **Status context menu** — add a long-press bottom sheet on `StatusCard` with:
+- [x] **Status context menu** — add a long-press bottom sheet on `StatusCard` with:
   - *Own toots:* Edit, Delete, Delete & re-draft
   - *Other toots:* Mute account, Block account, Report
 
@@ -60,7 +60,7 @@ Full codebase audit and step-by-step plan to a shippable release.
 > **Estimate: 3–5 days**
 > Goal: close the feature gaps that users expect in any Mastodon client.
 
-- [ ] **Bookmarks**
+- [x] **Bookmarks**
   - Add `bookmark` / `unbookmark` toggle to `StatusRepository`
     (`POST /api/v1/statuses/:id/bookmark|unbookmark`).
   - Add bookmark icon to `StatusActions` (next to share).
@@ -68,25 +68,25 @@ Full codebase audit and step-by-step plan to a shippable release.
   - Add `BookmarksKey` nav key, `BookmarksScreen` (reuse `AsyncList` + `StatusCard`).
   - Wire route in `NeonApp.kt` and add entry point (settings or profile header).
 
-- [ ] **Status edit**
+- [x] **Status edit**
   - Add `PUT /api/v1/statuses/:id` in `StatusRepository`.
   - Open `ComposeScreen` pre-filled with the existing text / media / poll / CW when "Edit"
     is picked from the context menu. Post as an edit (not a new status).
 
-- [ ] **Delete & re-draft**
+- [x] **Delete & re-draft**
   - `DELETE /api/v1/statuses/:id` (already in `StatusRepository.delete()`).
   - Open `ComposeScreen` with the deleted status's text pre-filled.
 
-- [ ] **Mute / Block**
+- [x] **Mute / Block**
   - Add `mute(id)` / `unmute(id)` and `block(id)` / `unblock(id)` to `AccountRepository`
     (`POST /api/v1/accounts/:id/mute|unmute|block|unblock`).
   - Surface in the status context menu and on the `ProfileScreen` action bar.
 
-- [ ] **Report**
+- [x] **Report**
   - Add `POST /api/v1/reports` (with optional comment) to `AccountRepository`.
   - Surface as the last item in the status context menu.
 
-- [ ] **Notification dismiss / clear**
+- [x] **Notification dismiss / clear**
   - Add dismiss icon (×) per `NotificationRow` → `POST /api/v1/notifications/:id/dismiss`.
   - Add "Clear all" action in `NotificationsScreen` top bar →
     `POST /api/v1/notifications/clear`.
@@ -140,7 +140,7 @@ Full codebase audit and step-by-step plan to a shippable release.
   - Add `semantics { role = Role.Button }` where appropriate.
   - Verify focus traversal order in `ComposeScreen` and `ProfileScreen`.
 
-- [ ] **Error retry button**
+- [x] **Error retry button**
   - `AsyncList` already shows error text. Add a "Retry" `GlassButton` below it that calls
     the `onRefresh` callback.
 
