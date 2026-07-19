@@ -1,6 +1,15 @@
 package com.gigapingu.neon
 
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -39,6 +48,24 @@ import com.gigapingu.neon.feature.profile.ProfileScreen
 import com.gigapingu.neon.feature.settings.SettingsScreen
 import com.gigapingu.neon.feature.thread.ThreadScreen
 
+// NavDisplay.DEFAULT_TRANSITION_DURATION_MILLISECOND (internal in alpha05).
+private const val NAV_TRANSITION_MS = 700
+
+private fun popSlide(): ContentTransform =
+    slideInHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 } togetherWith
+        slideOutHorizontally(tween(NAV_TRANSITION_MS)) { it }
+
+// Composer opens like a bottom sheet: up over the current screen, back down on
+// pop. The near-1f fades keep the screen underneath composed and still for the
+// whole slide (ExitTransition.KeepUntilTransitionsFinished is internal).
+private fun composerEnter(): ContentTransform =
+    slideInVertically(tween(NAV_TRANSITION_MS)) { it } togetherWith
+        fadeOut(tween(NAV_TRANSITION_MS), targetAlpha = 0.999f)
+
+private fun composerExit(): ContentTransform =
+    fadeIn(tween(NAV_TRANSITION_MS), initialAlpha = 0.999f) togetherWith
+        slideOutVertically(tween(NAV_TRANSITION_MS)) { it }
+
 /** Routes between login and the main shell based on auth state (Flutter's _AuthGate). */
 @Composable
 fun NeonApp(viewModel: ShellViewModel, modifier: Modifier = Modifier) {
@@ -72,6 +99,12 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
         backStack = backStack,
         modifier = modifier.fillMaxSize(),
         onBack = { count -> repeat(count) { backStack.removeLastOrNull() } },
+        transitionSpec = {
+            slideInHorizontally(tween(NAV_TRANSITION_MS)) { it } togetherWith
+                slideOutHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 }
+        },
+        popTransitionSpec = { popSlide() },
+        predictivePopTransitionSpec = { popSlide() },
         entryDecorators = listOf(
             rememberSceneSetupNavEntryDecorator(),
             rememberSavedStateNavEntryDecorator(),
@@ -82,7 +115,11 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
             entry<ThreadKey> { key -> ThreadScreen(statusId = key.statusId) }
             entry<ProfileKey> { key -> ProfileScreen(accountId = key.accountId) }
             entry<HashtagKey> { key -> ExploreScreen(initialQuery = key.query) }
-            entry<ComposeKey> { key ->
+            entry<ComposeKey>(
+                metadata = NavDisplay.transitionSpec { composerEnter() } +
+                    NavDisplay.popTransitionSpec { composerExit() } +
+                    NavDisplay.predictivePopTransitionSpec { composerExit() },
+            ) { key ->
                 ComposeScreen(replyToId = key.replyToId, quotingId = key.quotingId)
             }
             entry<FollowListKey> { key ->

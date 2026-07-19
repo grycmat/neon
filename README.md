@@ -23,7 +23,7 @@ core/database         Room cache (list_cache / entity_cache)
 core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
-                      Navigator + StatusActionService singletons (and the NavKeys)
+                      MediaPreviewScreen (interactive full-screen viewer), Navigator + StatusActionService singletons (and the NavKeys)
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills
 feature/explore       Trends + search (also pushed for hashtag taps)
@@ -43,9 +43,21 @@ stay in sync across timelines, thread, notifications and profiles.
 Navigation is a plain singleton: `Navigator` in `core/ui` holds the Nav3 back
 stack (bound by `NeonApp` while the shell is on screen) and screens call it
 directly; `StatusActionService` does the same for favourite/boost/vote/share.
-Screen transitions use the NavDisplay defaults.
+Screen transitions slide right-to-left on push and mirror back left-to-right
+on pop, with the predictive back gesture driving the same slide. The composer
+(`ComposeKey`) overrides this to slide up from the bottom like a sheet and back
+down on pop. The predictive back gesture is enabled via `android:enableOnBackInvokedCallback="true"`
+in the manifest.
 
 Root shell tabs (Home, Explore, Notifications, Profile) are hosted within a `HorizontalPager` to support swipe navigation, keeping their states alive across page swiping via `beyondViewportPageCount = 3`. A shared, glassmorphic `TopAppBar` displays page context and triggers settings.
+
+## Previews & Stateless Screens
+
+Screens are split into a stateful ViewModel-connected wrapper and a stateless layout composable taking state and callback lambdas. Android Studio `@Preview`s target the stateless layout composable. Mock data for previews resides in `PreviewFixtures` (`core/ui/.../UiPreviews.kt`), with common design-system previews in `core/designsystem/.../ComponentPreviews.kt`.
+
+## Layout & Shell Padding
+
+To support the glassy translucent design, root shell screens (like timelines) render under translucent/glassmorphic bars (top app bar and bottom TabBar) using `LocalShellPadding.current` for inset handling. Headers (like the segmented pills on `TimelineScreen` or search bar on `ExploreScreen`) use a translucent solid background and adjust padding dynamically depending on whether they are root tabs or pushed onto the backstack.
 
 ## Building
 

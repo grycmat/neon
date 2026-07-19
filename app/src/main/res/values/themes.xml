@@ -3,7 +3,7 @@
     <!-- Splash (androidx.core:core-splashscreen) → hands off to the main theme. -->
     <style name="Theme.Neon" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#07060D</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_monochrome</item>
         <item name="postSplashScreenTheme">@style/Theme.Neon.Main</item>
     </style>
 

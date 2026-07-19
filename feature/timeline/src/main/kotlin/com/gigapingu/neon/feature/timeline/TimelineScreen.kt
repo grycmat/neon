@@ -7,13 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +42,6 @@ import com.gigapingu.neon.core.ui.status.StatusListSkeleton
 @Composable
 fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
     val palette = NeonTheme.palette
-    val type = NeonTheme.type
     val kind by viewModel.kind.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
@@ -78,9 +74,10 @@ fun TimelineScreen(viewModel: TimelineViewModel = hiltViewModel()) {
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
+                    .background(palette.surfaceSolid.copy(alpha = .80f))
                     .onSizeChanged { pillsHeightPx = it.height }
                     .padding(top = shellPadding.calculateTopPadding())
-                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 TimelineKind.entries.forEach { entry ->

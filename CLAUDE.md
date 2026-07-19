@@ -110,8 +110,15 @@ Built on **Navigation 3** (`androidx.navigation3`, still pre-1.0 — see below),
 wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
 - Routes are serializable `NavKey`s (`core/ui/.../Navigator.kt`), pushed onto
   a `NavBackStack` via `entryProvider { entry<SomeKey> { ... } }`. Screen
-  transitions are the NavDisplay defaults — do not add custom
-  `transitionSpec`s or shared-element/hero animations.
+  transitions are set globally on `NavDisplay` in `NeonApp.kt`: pushes slide in
+  right-to-left (old screen parallaxes left); pops — button and predictive back
+  gesture alike — play the exact mirror, sliding out left-to-right
+  (`android:enableOnBackInvokedCallback="true"` is set in the app manifest so
+  the gesture drives the pop animation). One per-entry exception: `ComposeKey`
+  overrides via `NavDisplay.transitionSpec`/`popTransitionSpec`/
+  `predictivePopTransitionSpec` metadata to slide up from the bottom like a
+  sheet and back down on pop. Don't add further per-entry transition metadata
+  or shared-element/hero animations.
 - `NeonApp` first gates on `ShellViewModel.authStatus` (Unknown / Unauthenticated
   / Authenticated) before mounting the real nav graph.
 - Navigation and status actions are **plain singleton `object`s in `core/ui`**,
@@ -136,7 +143,8 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
 vocabulary for **in-screen feedback only**: `quick()` tweens for short fades
 (titles, counters, pane crossfades), `bouncy()` springs for icon pops and
 pressed states, `screen()` for larger in-screen reveals (poll bars, boost
-spin). Screen-to-screen transitions deliberately use framework defaults.
+spin). Screen-to-screen transitions are the global slide/predictive-back specs
+on `NavDisplay` (see Navigation above), not part of `NeonMotion`.
 
 ### Compose previews & stateless screens
 

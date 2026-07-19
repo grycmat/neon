@@ -266,7 +266,7 @@ private fun TabBar(position: Float, onChanged: (Int) -> Unit, modifier: Modifier
     Column(
         modifier
             .fillMaxWidth()
-            .background(palette.surfaceSolid.copy(alpha = .60f)),
+            .background(palette.surfaceSolid.copy(alpha = .90f)),
     ) {
         Box(
             Modifier
