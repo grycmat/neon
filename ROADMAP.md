@@ -126,8 +126,6 @@ Full codebase audit and step-by-step plan to a shippable release.
 > Goal: the app can reach users even when closed; screen-reader users can use it.
 
 - [ ] **Push notifications**
-  - Decide delivery mechanism: [UnifiedPush](https://unifiedpush.org/) (preferred,
-    no Google dependency) or Firebase Cloud Messaging.
   - Register a push subscription with the Mastodon instance:
     `POST /api/v1/push/subscription` (Web Push RFC 8030).
   - Create a `NotificationService` / `BroadcastReceiver` that decrypts the payload and
