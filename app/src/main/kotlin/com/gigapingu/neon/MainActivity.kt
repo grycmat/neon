@@ -91,6 +91,11 @@ class MainActivity : ComponentActivity() {
                     UnifiedPush.tryUseCurrentOrDefaultDistributor(this@MainActivity) { success ->
                         if (success) {
                             UnifiedPush.register(this@MainActivity)
+                        } else {
+                            android.util.Log.w(
+                                "NeonPush",
+                                "No UnifiedPush distributor available — install one (e.g. ntfy) to receive push notifications"
+                            )
                         }
                     }
                 } else if (authStatus == AuthStatus.Authenticated) {
