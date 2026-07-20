@@ -6,6 +6,8 @@ import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.data.SettingsRepository
 import com.gigapingu.neon.core.data.ThemeMode
+import com.gigapingu.neon.core.data.TimelineKind
+import com.gigapingu.neon.core.data.TimelineRepository
 import com.gigapingu.neon.core.model.Account
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -21,6 +23,7 @@ import kotlinx.coroutines.launch
 class ShellViewModel @Inject constructor(
     private val auth: AuthRepository,
     settings: SettingsRepository,
+    private val timelines: TimelineRepository,
 ) : ViewModel() {
 
     val authStatus: StateFlow<AuthStatus> = auth.status
@@ -48,6 +51,16 @@ class ShellViewModel @Inject constructor(
 
     init {
         performRestore()
+
+        viewModelScope.launch {
+            authStatus.collect { status ->
+                if (status == AuthStatus.Authenticated) {
+                    TimelineKind.entries.forEach { kind ->
+                        launch { timelines.load(kind) }
+                    }
+                }
+            }
+        }
     }
 
     fun performRestore() {
