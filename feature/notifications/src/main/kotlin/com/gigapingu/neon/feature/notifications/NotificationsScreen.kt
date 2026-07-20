@@ -164,7 +164,7 @@ private fun NotificationRow(item: MastoNotification, onDismiss: () -> Unit) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         preview,
-                        maxLines = 2,
+                        maxLines = if (item.type == NotificationType.Mention) 10 else 2,
                         overflow = TextOverflow.Ellipsis,
                         style = type.bodySmall,
                         color = palette.textDim,
