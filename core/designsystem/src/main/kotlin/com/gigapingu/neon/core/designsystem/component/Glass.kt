@@ -150,11 +150,13 @@ fun GlassButton(
     onClick: (() -> Unit)? = null,
     height: Dp = NeonDims.ButtonHeight,
     tinted: Boolean = false,
+    alpha: Float = 1f,
 ) {
     val palette = NeonTheme.palette
     val shape = RoundedCornerShape(NeonDims.RadiusButton)
     Row(
         modifier = modifier
+            .alpha(alpha)
             .height(height)
             .clip(shape)
             .background(if (tinted) palette.cyan.copy(alpha = .08f) else palette.surface)
