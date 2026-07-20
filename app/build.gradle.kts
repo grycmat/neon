@@ -83,7 +83,7 @@ dependencies {
 
     // For the app-wide ImageLoader (crossfade) built in NeonApplication.
     implementation(libs.coil.compose)
-    implementation(libs.unifiedpush.connector)
+
 
     debugImplementation(libs.compose.ui.tooling)
 

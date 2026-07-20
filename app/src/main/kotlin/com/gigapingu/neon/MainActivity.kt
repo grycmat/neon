@@ -18,7 +18,7 @@ import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.Navigator
 import dagger.hilt.android.AndroidEntryPoint
-import org.unifiedpush.android.connector.UnifiedPush
+
 import androidx.compose.runtime.setValue
 
 @AndroidEntryPoint
@@ -86,22 +86,7 @@ class MainActivity : ComponentActivity() {
 
             splash.setKeepOnScreenCondition { authStatus == AuthStatus.Unknown }
 
-            LaunchedEffect(authStatus, notificationsEnabled, hasNotificationPermission) {
-                if (authStatus == AuthStatus.Authenticated && notificationsEnabled && hasNotificationPermission) {
-                    UnifiedPush.tryUseCurrentOrDefaultDistributor(this@MainActivity) { success ->
-                        if (success) {
-                            UnifiedPush.register(this@MainActivity)
-                        } else {
-                            android.util.Log.w(
-                                "NeonPush",
-                                "No UnifiedPush distributor available — install one (e.g. ntfy) to receive push notifications"
-                            )
-                        }
-                    }
-                } else if (authStatus == AuthStatus.Authenticated) {
-                    runCatching { UnifiedPush.unregister(this@MainActivity) }
-                }
-            }
+
 
             val darkTheme = when (themeMode) {
                 ThemeMode.Dark -> true

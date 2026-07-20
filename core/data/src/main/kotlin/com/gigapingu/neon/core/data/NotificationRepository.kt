@@ -114,17 +114,7 @@ class NotificationRepository @Inject constructor(
         cache.putList(CACHE_KEY, emptyList(), MastoNotification.serializer()) { it.id }
     }
 
-    suspend fun registerPushWithInstance(endpointUrl: String, p256dh: String, auth: String) {
-        val request = RegisterPushRequest(
-            subscription = PushSubscriptionPayload(
-                endpoint = endpointUrl,
-                keys = PushKeys(p256dh = p256dh, auth = auth)
-            ),
-            data = PushData(alerts = PushAlerts())
-        )
-        val bodyJson = json.encodeToString(RegisterPushRequest.serializer(), request)
-        api.post("/api/v1/push/subscription", bodyJson)
-    }
+
 
     suspend fun getNotification(id: String): MastoNotification {
         return json.decodeFromString(
@@ -134,40 +124,5 @@ class NotificationRepository @Inject constructor(
     }
 }
 
-@Serializable
-data class PushKeys(
-    val p256dh: String,
-    val auth: String
-)
 
-@Serializable
-data class PushSubscriptionPayload(
-    val endpoint: String,
-    val keys: PushKeys,
-    // Follow standardized webpush (RFC8030+RFC8291+RFC8292) so the payload is
-    // encrypted with aes128gcm, which the UnifiedPush connector can decrypt.
-    // Mastodon defaults this to false (legacy aesgcm); requires instance >= 4.4.
-    val standard: Boolean = true
-)
-
-@Serializable
-data class PushAlerts(
-    val follow: Boolean = true,
-    val favourite: Boolean = true,
-    val reblog: Boolean = true,
-    val mention: Boolean = true,
-    val poll: Boolean = true,
-    val status: Boolean = true
-)
-
-@Serializable
-data class PushData(
-    val alerts: PushAlerts
-)
-
-@Serializable
-data class RegisterPushRequest(
-    val subscription: PushSubscriptionPayload,
-    val data: PushData
-)
 

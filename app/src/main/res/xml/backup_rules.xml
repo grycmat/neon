@@ -2,7 +2,5 @@
 <!-- Credentials (DataStore) stay on-device; the Room cache is just a cache. -->
 <full-backup-content>
     <exclude domain="file" path="datastore/neon_credentials.preferences_pb" />
-    <exclude domain="database" path="unifiedpush-connector" />
-    <exclude domain="database" path="unifiedpush-connector-journal" />
-    <exclude domain="sharedpref" path="unifiedpush.connector.xml" />
+
 </full-backup-content>

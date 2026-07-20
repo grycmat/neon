@@ -22,7 +22,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import org.unifiedpush.android.connector.UnifiedPush
+
 
 enum class AuthStatus { Unknown, Unauthenticated, Authenticated }
 
@@ -181,7 +181,7 @@ class AuthRepository @Inject constructor(
         context.credentialStore.edit { it.clear() }
         cache.clear()
         api.reset()
-        runCatching { UnifiedPush.unregister(context) }
+
         _me.value = null
         _status.value = AuthStatus.Unauthenticated
     }
