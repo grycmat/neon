@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.MediaRepository
 import com.gigapingu.neon.core.data.SearchRepository
 import com.gigapingu.neon.core.data.StatusRepository
@@ -64,6 +65,7 @@ class ComposeViewModel @Inject constructor(
     private val statuses: StatusRepository,
     private val media: MediaRepository,
     private val search: SearchRepository,
+    private val auth: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ComposeUiState())
@@ -144,15 +146,24 @@ class ComposeViewModel @Inject constructor(
             try {
                 if (replyToId != null) {
                     val reply = statuses.getStatus(replyToId)
+                    val me = auth.me.value
                     val handles = buildSet {
-                        add("@${reply.account.acct}")
-                        reply.mentions.forEach { add("@${it.acct}") }
+                        val replyAcct = reply.account.acct
+                        if (me == null || replyAcct != me.acct) {
+                            add("@$replyAcct")
+                        }
+                        reply.mentions.forEach {
+                            if (me == null || it.acct != me.acct) {
+                                add("@${it.acct}")
+                            }
+                        }
                     }
+                    val initialText = if (handles.isNotEmpty()) handles.joinToString(" ") + " " else ""
                     _uiState.update {
                         it.copy(
                             title = "Reply",
                             replyTo = reply,
-                            text = handles.joinToString(" ") + " ",
+                            text = initialText,
                             visibility = reply.visibility,
                         )
                     }
