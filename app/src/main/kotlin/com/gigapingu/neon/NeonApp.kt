@@ -124,7 +124,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
             if (statusId != null) {
                 Navigator.openThread(statusId)
             } else if (openNotifications) {
-                viewModel.selectTab(2)
+                viewModel.selectTab(1)
             }
         }
         onDispose {

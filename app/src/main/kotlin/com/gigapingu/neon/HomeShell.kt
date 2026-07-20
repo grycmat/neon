@@ -91,8 +91,8 @@ import kotlinx.coroutines.launch
 
 private val TabIcons: List<ImageVector> = listOf(
     Icons.Rounded.Home,
-    Icons.Rounded.Search,
     Icons.Outlined.NotificationsNone,
+    Icons.Rounded.Search,
     Icons.Outlined.PersonOutline,
 )
 
@@ -132,7 +132,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                         homeThreadId = statusId
                         true
                     }
-                    2 -> {
+                    1 -> {
                         notifThreadId = statusId
                         true
                     }
@@ -169,14 +169,14 @@ fun HomeShell(viewModel: ShellViewModel) {
                     } else {
                         TimelineScreen()
                     }
-                    1 -> ExploreScreen()
-                    2 -> if (big) {
+                    1 -> if (big) {
                         ShellListDetail(detailId = notifThreadId) {
                             NotificationsScreen(selectedStatusId = notifThreadId)
                         }
                     } else {
                         NotificationsScreen()
                     }
+                    2 -> ExploreScreen()
                     else -> me?.let { ProfileScreen(accountId = it.id, isRoot = true) }
                 }
             }
@@ -487,8 +487,8 @@ private fun TopAppBar(
             ) { p ->
                 val (title, icon) = when (p) {
                     0 -> Pair("Home", Icons.Rounded.Home)
-                    1 -> Pair("Explore", Icons.Rounded.Search)
-                    2 -> Pair("Notifications", Icons.Outlined.NotificationsNone)
+                    1 -> Pair("Notifications", Icons.Outlined.NotificationsNone)
+                    2 -> Pair("Explore", Icons.Rounded.Search)
                     else -> Pair("Profile", Icons.Outlined.PersonOutline)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -504,13 +504,13 @@ private fun TopAppBar(
                         style = type.headlineMedium,
                         color = palette.text,
                     )
-                    if (p == 2) {
+                    if (p == 1) {
                         Spacer(Modifier.width(8.dp))
                         NeonLabel("Live")
                     }
                 }
             }
-            if (page == 2 && onClearClick != null) {
+            if (page == 1 && onClearClick != null) {
                 GlassIconButton(
                     icon = Icons.Rounded.Delete,
                     onClick = onClearClick,
