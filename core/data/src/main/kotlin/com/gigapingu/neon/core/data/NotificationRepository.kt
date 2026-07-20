@@ -143,7 +143,11 @@ data class PushKeys(
 @Serializable
 data class PushSubscriptionPayload(
     val endpoint: String,
-    val keys: PushKeys
+    val keys: PushKeys,
+    // Follow standardized webpush (RFC8030+RFC8291+RFC8292) so the payload is
+    // encrypted with aes128gcm, which the UnifiedPush connector can decrypt.
+    // Mastodon defaults this to false (legacy aesgcm); requires instance >= 4.4.
+    val standard: Boolean = true
 )
 
 @Serializable
