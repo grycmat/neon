@@ -20,7 +20,8 @@ app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs 
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database         Room cache (list_cache / entity_cache)
-core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Media, Search, Settings
+core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Media, Search, Settings;
+                      push/ (Web Push subscription + on-device decryption)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCard, StatusActions, AccountRow, AsyncList,
                       VideoPlayer (ExoPlayer), MediaPreviewScreen (interactive full-screen viewer), Navigator + StatusActionService singletons,
@@ -28,7 +29,7 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCar
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills, Hashtag timeline
 feature/explore       Trends + search (also pushed for hashtag taps)
-feature/notifications Notifications feed
+feature/notifications Notifications feed, NeonFirebaseMessagingService + FcmTokenProvider (FCM push)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, Bookmarks, edit profile
@@ -44,6 +45,7 @@ feature/settings      Theme mode + logout
 - **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.
 - **Dynamic Shell & Navigation**: Translucent bottom tab bar (Home, Explore, Notifications, Profile), shared glassy TopAppBar, custom slide transitions, and predictive back support.
 - **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).
+- **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Taps deep-link to the relevant thread.
 
 Architecture mirrors the Flutter app: singleton repositories hold
 `StateFlow<AsyncState<…>>` per list; after every mutation `StatusRepository`
@@ -90,10 +92,17 @@ Phone layouts remain untouched below the threshold.
 1. Open the repository root folder in Android Studio (Narwhal or newer) and let it
    sync. If you build from the CLI, run `gradle wrapper` once (the wrapper
    `.jar` is not committed) and then `./gradlew :app:assembleDebug`.
-2. No secrets needed — OAuth app registration happens dynamically against the
-   instance you enter at login (redirect `neon://oauth` is intercepted inside
-   the WebView, so no manifest scheme is required). Defaults live in
-   `core/data/.../NeonConfig.kt`.
+2. No secrets needed to build or run the core app — OAuth app registration
+   happens dynamically against the instance you enter at login (redirect
+   `neon://oauth` is intercepted inside the WebView, so no manifest scheme is
+   required). Defaults live in `core/data/.../NeonConfig.kt`.
+3. **Push notifications** need two gitignored files (a clean checkout builds
+   without them, push just won't deliver):
+   - `google-services.json` at the app module root for Firebase/FCM.
+   - `secrets.properties` at the repo root with `RELAY_BASE_URL` (your deployed
+     `mastodon-fcm-relay` host) — copy `secrets.properties.example`. It's read
+     into `BuildConfig.RELAY_BASE_URL`, falling back to the `RELAY_BASE_URL` env
+     var, then `https://relay.example.com`.
 
 ## Known caveats
 
@@ -106,5 +115,5 @@ Phone layouts remain untouched below the threshold.
   system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
   from the AndroidX downloadable-fonts docs — the base64 certs must match
   exactly.
-- Push notifications and streaming are not implemented (parity with the Flutter version, which also lacks them).
+- Streaming is not implemented (parity with the Flutter version, which also lacks it). Push notifications **are** implemented (see Features), ahead of the Flutter sibling.
 

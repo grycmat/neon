@@ -23,11 +23,20 @@ DataStore for credentials/settings.
   - `./gradlew :app:installDebug` — build and install on a connected device/emulator
   - `./gradlew build` — full build of all modules
   - `./gradlew :core:data:build` (etc.) — build a single module
-- No secrets are required to build or run. OAuth app registration happens
-  dynamically against whatever instance the user enters at login; the redirect
-  `neon://oauth` is intercepted inside an in-app WebView, so no manifest
+- A clean checkout builds and runs with **no secrets**: OAuth app registration
+  happens dynamically against whatever instance the user enters at login; the
+  redirect `neon://oauth` is intercepted inside an in-app WebView, so no manifest
   intent-filter/scheme is needed. Defaults (redirect URI, scopes, default
   instance) live in `core/data/.../NeonConfig.kt`.
+- **Push notifications** (see Architecture below) need real config, gitignored:
+  - `google-services.json` at the app module root for Firebase/FCM. Without it
+    the `com.google.gms.google-services` Gradle plugin fails, so a build that
+    doesn't touch Firebase is unaffected but installing/running with push is.
+  - `secrets.properties` at the repo root with `RELAY_BASE_URL` (the deployed
+    `mastodon-fcm-relay` host). Copy `secrets.properties.example`. It is read in
+    `core/data/build.gradle.kts` into `BuildConfig.RELAY_BASE_URL`; absent, it
+    falls back to `RELAY_BASE_URL` env var, then `https://relay.example.com`
+    (builds fine, push just won't deliver).
 - There is currently no automated test suite in this repo.
 
 ## Architecture
@@ -39,7 +48,8 @@ app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs 
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database          Room cache (list_cache / entity_cache tables)
-core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings
+core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings;
+                      push/ (Web Push subscription + on-device decryption, see Push notifications)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
                       MediaPreviewScreen (full-screen viewer), PreviewFixtures,
@@ -47,7 +57,7 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions,
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills
 feature/explore       Trends + search (also pushed for hashtag taps)
-feature/notifications Notifications feed
+feature/notifications Notifications feed; NeonFirebaseMessagingService + FcmTokenProvider (push)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, edit profile
@@ -103,6 +113,36 @@ runtime to whichever instance host + token the user authenticated with —
 there is no Retrofit and no compile-time base URL. Repositories build request
 bodies manually with `kotlinx.serialization`'s `buildJsonObject` DSL and parse
 responses with per-model `KSerializer`s, rather than generating API interfaces.
+
+### Push notifications
+
+Delivered over **FCM data messages** relayed through a self-hosted
+`mastodon-fcm-relay`, with **all decryption on-device** — the relay never sees
+plaintext. The device subscribes to Mastodon Web Push (RFC 8030/8188/8291)
+pointing the endpoint at the relay, which forwards each still-encrypted payload
+via FCM. Pieces:
+- `core/data/push/PushKeyManager` — generates + persists the P-256 ECDH keypair
+  and 16-byte auth secret in `EncryptedSharedPreferences`. Only the public key +
+  auth secret ever leave the device.
+- `core/data/push/PushRepository` — `POST/DELETE /api/v1/push/subscription`. The
+  FCM token is URL-encoded into the endpoint path (`RELAY_BASE_URL/push/<token>`)
+  so the relay knows which device to forward to. Registers with `standard=true`
+  (aes128gcm; Mastodon ≥ 4.4).
+- `core/data/push/WebPushDecryptor` — pure crypto, no Firebase/network; decrypts
+  both modern `aes128gcm` and legacy `aesgcm` payloads.
+- `feature/notifications/FcmTokenProvider` — suspending wrapper over the FCM token
+  Task. `NeonFirebaseMessagingService` receives messages, decrypts, resolves the
+  status (best-effort) to deep-link, and posts to the `neon_notifications` channel
+  (created in `NeonApplication.onCreate`).
+- **Sync loop**: `ShellViewModel.syncPushRegistration(hasPermission)` is the single
+  entry point, called from a `MainActivity` `LaunchedEffect` keyed on auth status,
+  the `notificationsEnabled` setting, and `POST_NOTIFICATIONS` permission (re-checked
+  on `ON_RESUME`). It registers when all three hold, else unregisters;
+  `PushRepository` de-dupes redundant re-registration by last token. `AuthRepository`
+  logout unregisters (while the token is still valid) then wipes the keypair.
+- Notification taps route through `Navigator.handleNotificationClick` (via
+  `MainActivity.handleNotificationIntent` on `status_id` / `open_notifications`
+  extras).
 
 ### Navigation
 
@@ -188,9 +228,10 @@ reworking a screen so it stays previewable without Hilt/ViewModels.
 - **Downloadable fonts** (Space Grotesk + Manrope): if they silently fall back
   to the system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
   from the AndroidX downloadable-fonts docs — the base64 certs must match exactly.
-- Push notifications and streaming are intentionally not implemented yet
-  (parity with the Flutter version, which also lacks them) — don't treat their
-  absence as a bug. (The media viewer *is* implemented:
+- Streaming is intentionally not implemented yet (parity with the Flutter
+  version) — don't treat its absence as a bug. **Push notifications, by contrast,
+  are now implemented** (see Push notifications above), ahead of the Flutter
+  sibling. (The media viewer is also implemented:
   `core/ui/.../media/MediaPreviewScreen.kt`, opened via
   `Navigator.openMediaPreview`; `MediaGrid` falls back to it when no
   custom click handler is given.)

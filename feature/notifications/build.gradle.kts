@@ -37,10 +37,15 @@ kotlin {
 
 dependencies {
     implementation(projects.core.ui)
+    implementation(projects.core.data)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.serialization.json)
+
+    // FCM: the messaging service + token provider for push delivery.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)

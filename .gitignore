@@ -39,6 +39,13 @@ build/
 .env.*
 !.env.example
 
+# Firebase (per-project config, not committed)
+google-services.json
+**/google-services.json
+
+# Build-time secrets (relay URL, etc.) — keep infra out of source. Template: secrets.properties.example
+secrets.properties
+
 # Symbolication related
 app.*.symbols
 
