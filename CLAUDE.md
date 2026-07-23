@@ -48,7 +48,7 @@ app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs 
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database          Room cache (list_cache / entity_cache tables)
-core/data             Repositories: Auth, Timeline, Status, Notification, Account, Media, Search, Settings;
+core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Media, Search, Settings;
                       push/ (Web Push subscription + on-device decryption, see Push notifications)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
@@ -57,7 +57,8 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions,
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills
 feature/explore       Trends + search (also pushed for hashtag taps)
-feature/notifications Notifications feed; NeonFirebaseMessagingService + FcmTokenProvider (push)
+feature/notifications Notifications feed; NeonFirebaseMessagingService + NeonC2dmReceiver +
+                      PushMessageHandler + FcmTokenProvider (push)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, edit profile
@@ -131,9 +132,25 @@ via FCM. Pieces:
 - `core/data/push/WebPushDecryptor` — pure crypto, no Firebase/network; decrypts
   both modern `aes128gcm` and legacy `aesgcm` payloads.
 - `feature/notifications/FcmTokenProvider` — suspending wrapper over the FCM token
-  Task. `NeonFirebaseMessagingService` receives messages, decrypts, resolves the
-  status (best-effort) to deep-link, and posts to the `neon_notifications` channel
-  (created in `NeonApplication.onCreate`).
+  Task. `PushMessageHandler` holds the shared decrypt-and-post logic (decrypts,
+  resolves the status best-effort to deep-link, posts to the `neon_notifications`
+  channel created in `NeonApplication.onCreate`) and is called from **two**
+  entry points, both registered in `app/AndroidManifest.xml`:
+  - `NeonFirebaseMessagingService` (`FirebaseMessagingService.onMessageReceived`) — the
+    modern path.
+  - `NeonC2dmReceiver` — a manifest `BroadcastReceiver` for the legacy
+    `com.google.android.c2dm.intent.RECEIVE` system broadcast, deliberately mirroring
+    how the official `org.joinmastodon.android` app receives push. This exists because
+    some OEMs (observed: Samsung's `Freecess`/`BaseRestrictionMgr`) silently drop a
+    `Service` wake-up for a backgrounded/rarely-used app well before Android's own
+    Doze/App-Standby checks ever run, with no error surfaced anywhere, while a
+    broadcast to a signature-permission-protected receiver (`com.google.android.c2dm.permission.SEND`,
+    requires the matching `<permission>`/`<uses-permission>` block for
+    `${applicationId}.permission.C2D_MESSAGE`) is exempt from those limits. Both
+    entry points can fire for the same message; that's harmless since
+    `PushMessageHandler` always resolves the same `notification_id` and
+    `NotificationManagerCompat.notify()` on a duplicate id just overwrites in place.
+    Full investigation writeup: `notification_report.md`.
 - **Sync loop**: `ShellViewModel.syncPushRegistration(hasPermission)` is the single
   entry point, called from a `MainActivity` `LaunchedEffect` keyed on auth status,
   the `notificationsEnabled` setting, and `POST_NOTIFICATIONS` permission (re-checked
