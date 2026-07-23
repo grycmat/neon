@@ -29,7 +29,8 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCar
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills, Hashtag timeline
 feature/explore       Trends + search (also pushed for hashtag taps)
-feature/notifications Notifications feed, NeonFirebaseMessagingService + FcmTokenProvider (FCM push)
+feature/notifications Notifications feed, NeonFirebaseMessagingService + NeonC2dmReceiver +
+                      PushMessageHandler + FcmTokenProvider (FCM push)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, Bookmarks, edit profile
@@ -45,7 +46,7 @@ feature/settings      Theme mode + logout
 - **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.
 - **Dynamic Shell & Navigation**: Translucent bottom tab bar (Home, Explore, Notifications, Profile), shared glassy TopAppBar, custom slide transitions, and predictive back support.
 - **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).
-- **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Taps deep-link to the relevant thread.
+- **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Delivered via two manifest entry points — the modern `FirebaseMessagingService` and a legacy C2DM `BroadcastReceiver` mirroring the official Mastodon app — since some OEMs silently drop background `Service` wake-ups well before Doze/App-Standby checks apply (see `notification_report.md`). Taps deep-link to the relevant thread.
 
 Architecture mirrors the Flutter app: singleton repositories hold
 `StateFlow<AsyncState<…>>` per list; after every mutation `StatusRepository`
