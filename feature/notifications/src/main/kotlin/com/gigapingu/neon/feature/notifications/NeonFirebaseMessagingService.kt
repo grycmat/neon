@@ -64,6 +64,7 @@ class NeonFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        Log.i(NEON_PUSH_TAG, "onMessageReceived: data keys=${message.data.keys}")
         val data = message.data
         val body = data["body"]
         val contentEncoding = data["contentEncoding"]
@@ -72,7 +73,10 @@ class NeonFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
         scope.launch {
-            if (!settingsRepository.notificationsEnabled.first()) return@launch
+            if (!settingsRepository.notificationsEnabled.first()) {
+                Log.w(NEON_PUSH_TAG, "Dropping push: notifications disabled in settings")
+                return@launch
+            }
             try {
                 val keys = pushKeyManager.getOrCreateKeys()
                 val plaintext = decryptor.decrypt(
@@ -83,9 +87,14 @@ class NeonFirebaseMessagingService : FirebaseMessagingService() {
                     keys = keys,
                 )
                 val payload = json.parseToJsonElement(String(plaintext, Charsets.UTF_8)).jsonObject
+                Log.i(NEON_PUSH_TAG, "Decrypted push payload: $payload")
                 // Mastodon sends notification_id as a JSON number on many versions
                 // (mastodon#32749) — .content handles both number and string forms.
-                val notificationId = payload["notification_id"]?.jsonPrimitive?.content ?: return@launch
+                val notificationId = payload["notification_id"]?.jsonPrimitive?.content
+                if (notificationId == null) {
+                    Log.w(NEON_PUSH_TAG, "Dropping push: no notification_id in payload")
+                    return@launch
+                }
                 val title = payload["title"]?.jsonPrimitive?.content ?: "Neon"
                 val text = payload["body"]?.jsonPrimitive?.content.orEmpty()
                 showNotification(notificationId, title, text)
@@ -131,6 +140,9 @@ class NeonFirebaseMessagingService : FirebaseMessagingService() {
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
             NotificationManagerCompat.from(this).notify(notificationId.hashCode(), notification)
+            Log.i(NEON_PUSH_TAG, "Notification posted: id=$notificationId title=$title")
+        } else {
+            Log.w(NEON_PUSH_TAG, "Dropping push: POST_NOTIFICATIONS permission not granted")
         }
     }
 }
