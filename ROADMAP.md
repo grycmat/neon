@@ -25,7 +25,7 @@ Full codebase audit and step-by-step plan to a shippable release.
 | Status edit / delete-and-redraft | ✅ Complete |
 | Mute / Block / Report | ✅ Complete |
 | Hashtag timeline | ✅ Complete |
-| Push notifications | ❌ Missing |
+| Push notifications | ✅ Complete (FCM relay + on-device Web Push decryption) |
 | Video playback (Media3 / ExoPlayer) | ✅ Complete |
 | Streaming (WebSocket) | ❌ Post-MVP |
 
@@ -125,12 +125,19 @@ Full codebase audit and step-by-step plan to a shippable release.
 > **Estimate: 2–3 days**
 > Goal: the app can reach users even when closed; screen-reader users can use it.
 
-- [ ] **Push notifications**
-  - Register a push subscription with the Mastodon instance:
-    `POST /api/v1/push/subscription` (Web Push RFC 8030).
-  - Create a `NotificationService` / `BroadcastReceiver` that decrypts the payload and
-    posts a system notification via `NotificationManager`.
-  - Deep-link taps into `ThreadScreen` or `NotificationsScreen`.
+- [x] **Push notifications**
+  - Registers a Web Push subscription (`POST /api/v1/push/subscription`, RFC 8030/8291,
+    `standard=true` aes128gcm) via `PushRepository`, with the on-device P-256 keypair +
+    auth secret from `PushKeyManager` (stored in `EncryptedSharedPreferences`).
+  - Delivery is over **FCM data messages** relayed through a self-hosted
+    `mastodon-fcm-relay` (endpoint path carries the FCM token) — the relay never sees
+    plaintext. `NeonFirebaseMessagingService` decrypts on-device (`WebPushDecryptor`,
+    aes128gcm + legacy aesgcm) and posts via `NotificationManager`.
+  - `ShellViewModel.syncPushRegistration` reconciles subscription state against auth +
+    the notifications setting + `POST_NOTIFICATIONS` permission; logout tears it down.
+  - Deep-links taps into `ThreadScreen` / `NotificationsScreen` via
+    `Navigator.handleNotificationClick`.
+  - Requires `google-services.json` + `secrets.properties` (`RELAY_BASE_URL`); see README.
 
 - [ ] **Accessibility pass**
   - Add meaningful `contentDescription` to all icon-only buttons

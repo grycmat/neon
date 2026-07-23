@@ -86,7 +86,9 @@ class MainActivity : ComponentActivity() {
 
             splash.setKeepOnScreenCondition { authStatus == AuthStatus.Unknown }
 
-
+            LaunchedEffect(authStatus, notificationsEnabled, hasNotificationPermission) {
+                viewModel.syncPushRegistration(hasNotificationPermission)
+            }
 
             val darkTheme = when (themeMode) {
                 ThemeMode.Dark -> true

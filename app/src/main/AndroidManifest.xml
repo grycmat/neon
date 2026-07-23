@@ -25,6 +25,17 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name="com.gigapingu.neon.feature.notifications.NeonFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.messaging.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_neon" />
 
     </application>
 

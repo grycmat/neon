@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.gigapingu.neon.core.data.di.ApplicationScope
+import com.gigapingu.neon.core.data.push.PushKeyManager
+import com.gigapingu.neon.core.data.push.PushRepository
 import com.gigapingu.neon.core.model.Account
 import com.gigapingu.neon.core.network.ApiClient
 import com.gigapingu.neon.core.network.ApiException
@@ -44,6 +46,8 @@ class AuthRepository @Inject constructor(
     private val api: ApiClient,
     private val cache: CacheStore,
     private val json: Json,
+    private val pushRepository: PushRepository,
+    private val pushKeyManager: PushKeyManager,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     private object Keys {
@@ -178,9 +182,13 @@ class AuthRepository @Inject constructor(
                 api.post("/oauth/revoke", body.toString())
             } // best effort
         }
+        // Remove the relay push subscription while the token is still valid, then
+        // drop the on-device keypair so a fresh account starts clean.
+        runCatching { pushRepository.unregister() }
         context.credentialStore.edit { it.clear() }
         cache.clear()
         api.reset()
+        pushKeyManager.clear()
 
         _me.value = null
         _status.value = AuthStatus.Unauthenticated

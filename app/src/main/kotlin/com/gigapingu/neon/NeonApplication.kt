@@ -1,8 +1,8 @@
 package com.gigapingu.neon
 
 import android.app.Application
-import androidx.core.app.NotificationChannelCompat
-import androidx.core.app.NotificationManagerCompat
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -29,17 +29,14 @@ class NeonApplication : Application(), SingletonImageLoader.Factory {
         createNotificationChannel()
     }
 
-    // Required on minSdk 26+: notify() to a missing channel is silently dropped.
-    // Idempotent — creating an existing channel is a no-op.
+    /** Channel for FCM-delivered Mastodon notifications (minSdk 26, always available). */
     private fun createNotificationChannel() {
-        val channel = NotificationChannelCompat.Builder(
+        val channel = NotificationChannel(
             NEON_NOTIFICATION_CHANNEL_ID,
-            NotificationManagerCompat.IMPORTANCE_DEFAULT
-        )
-            .setName(getString(R.string.notification_channel_name))
-            .setDescription(getString(R.string.notification_channel_description))
-            .build()
-        NotificationManagerCompat.from(this).createNotificationChannel(channel)
+            "Notifications",
+            NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply { description = "Mentions, favourites, boosts, follows and more" }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     // Global crossfade so avatars and media fade in instead of popping.
