@@ -5,10 +5,10 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,6 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -63,16 +64,27 @@ private fun popSlide(): ContentTransform =
     slideInHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 } togetherWith
         slideOutHorizontally(tween(NAV_TRANSITION_MS)) { it }
 
-// Composer opens like a bottom sheet: up over the current screen, back down on
-// pop. The near-1f fades keep the screen underneath composed and still for the
-// whole slide (ExitTransition.KeepUntilTransitionsFinished is internal).
+// Composer opens by expanding out of the compose FAB's bottom-end corner,
+// and collapses back into it on pop. The near-1f fades keep the screen
+// underneath composed and still for the whole transform
+// (ExitTransition.KeepUntilTransitionsFinished is internal).
+private val ComposerFabOrigin = TransformOrigin(0.9f, 0.93f)
+
 private fun composerEnter(): ContentTransform =
-    slideInVertically(tween(NAV_TRANSITION_MS)) { it } togetherWith
+    (scaleIn(
+        tween(NAV_TRANSITION_MS),
+        initialScale = 0.15f,
+        transformOrigin = ComposerFabOrigin,
+    ) + fadeIn(tween(NAV_TRANSITION_MS / 2))) togetherWith
         fadeOut(tween(NAV_TRANSITION_MS), targetAlpha = 0.999f)
 
 private fun composerExit(): ContentTransform =
     fadeIn(tween(NAV_TRANSITION_MS), initialAlpha = 0.999f) togetherWith
-        slideOutVertically(tween(NAV_TRANSITION_MS)) { it }
+        (scaleOut(
+            tween(NAV_TRANSITION_MS),
+            targetScale = 0.15f,
+            transformOrigin = ComposerFabOrigin,
+        ) + fadeOut(tween(NAV_TRANSITION_MS / 2, delayMillis = NAV_TRANSITION_MS / 2)))
 
 /** Routes between login and the main shell based on auth state (Flutter's _AuthGate). */
 @Composable
