@@ -51,17 +51,17 @@ core/database          Room cache (list_cache / entity_cache tables)
 core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Media, Search, Settings;
                       push/ (Web Push subscription + on-device decryption, see Push notifications)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
-core/ui               StatusCard, MediaGrid, PollView, QuoteCard, StatusActions, AccountRow, AsyncList,
-                      MediaPreviewScreen (full-screen viewer), PreviewFixtures,
+core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCard, StatusActions, AccountRow, AsyncList,
+                      VideoPlayer (ExoPlayer), MediaPreviewScreen (full-screen viewer), PreviewFixtures,
                       Navigator + StatusActionService singletons (and the NavKeys)
 feature/auth          Login + in-app OAuth WebView
-feature/timeline      Home / Local / Federated with segmented pills
-feature/explore       Trends + search (also pushed for hashtag taps)
+feature/timeline      Home / Local / Federated with segmented pills, plus hashtag timelines
+feature/explore       Trends (with TrendSpark sparklines) + search (also pushed for hashtag taps)
 feature/notifications Notifications feed; NeonFirebaseMessagingService + NeonC2dmReceiver +
                       PushMessageHandler + FcmTokenProvider (push)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
-feature/profile       Profile, follow lists, edit profile
+feature/profile       Profile, follow lists, bookmarks, edit profile
 feature/settings      Theme mode + logout
 ```
 
