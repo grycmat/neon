@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
+import com.gigapingu.neon.core.designsystem.theme.NeonDims
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.LocalShellPadding
@@ -132,16 +133,22 @@ fun TimelineScreen(
                     .align(Alignment.TopCenter)
                     .padding(top = pillsHeight + 8.dp),
             ) {
-                GlassButton(
-                    label = "↑ $newTootsCount new toots",
-                    tinted = true,
-                    onClick = {
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(0)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(NeonDims.RadiusButton))
+                        .background(palette.surfaceSolid.copy(alpha = .92f)),
+                ) {
+                    GlassButton(
+                        label = "↑ $newTootsCount new toots",
+                        tinted = true,
+                        onClick = {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(0)
+                            }
+                            viewModel.clearNewToots(kind)
                         }
-                        viewModel.clearNewToots(kind)
-                    }
-                )
+                    )
+                }
             }
         }
     }
