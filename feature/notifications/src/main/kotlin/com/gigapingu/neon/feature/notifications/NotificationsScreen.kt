@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,6 +83,7 @@ fun NotificationsScreen(
                     bottom = 90.dp + shellPadding.calculateBottomPadding(),
                 ),
                 key = { it.id },
+                contentType = { it.status != null },
             ) { notification ->
                 PaneSelection(
                     selected = selectedStatusId != null &&
@@ -115,9 +117,10 @@ private fun NotificationRow(item: MastoNotification, onDismiss: () -> Unit) {
         else -> Triple(Icons.Rounded.Bolt, palette.textDim, "did something")
     }
 
-    val preview = item.status
-        ?.let { htmlToPlainText(it.content).replace('\n', ' ').trim() }
-        .orEmpty()
+    val statusContent = item.status?.content
+    val preview = remember(statusContent) {
+        statusContent?.let { htmlToPlainText(it).replace('\n', ' ').trim() }.orEmpty()
+    }
 
     GlassCard(
         modifier = Modifier.padding(vertical = 5.dp),

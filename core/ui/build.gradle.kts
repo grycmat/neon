@@ -16,6 +16,10 @@ android {
     }
 }
 
+composeCompiler {
+    stabilityConfigurationFile = rootProject.layout.projectDirectory.file("compose_stability_config.conf")
+}
+
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
