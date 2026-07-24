@@ -3,6 +3,7 @@ package com.gigapingu.neon.core.designsystem.component
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.isUnspecified
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.HtmlSegmentType
 import com.gigapingu.neon.core.designsystem.util.parseStatusHtml
+import androidx.compose.runtime.getValue
 
 /**
  * Renders Mastodon HTML content as rich text with tappable mentions,
@@ -35,7 +37,21 @@ fun HtmlText(
     onLinkClick: ((url: String) -> Unit)? = null,
 ) {
     val palette = NeonTheme.palette
-    val text: AnnotatedString = remember(html, palette, onMentionClick, onHashtagClick, onLinkClick) {
+    // Callbacks are typically fresh lambda instances every recomposition (they
+    // close over caller state like `status`), which would otherwise defeat this
+    // remember on every caller recomposition. rememberUpdatedState lets the
+    // built spans always invoke the latest callback while keying the expensive
+    // parse/AnnotatedString build only on whether a handler is present at all.
+    val currentOnMentionClick by rememberUpdatedState(onMentionClick)
+    val currentOnHashtagClick by rememberUpdatedState(onHashtagClick)
+    val currentOnLinkClick by rememberUpdatedState(onLinkClick)
+    val text: AnnotatedString = remember(
+        html,
+        palette,
+        onMentionClick != null,
+        onHashtagClick != null,
+        onLinkClick != null,
+    ) {
         val segments = parseStatusHtml(html)
         buildAnnotatedString {
             val accentStyle = SpanStyle(color = palette.cyan, fontWeight = FontWeight.Bold)
@@ -49,18 +65,20 @@ fun HtmlText(
                     HtmlSegmentType.Text -> append(segment.text)
 
                     HtmlSegmentType.Mention ->
-                        clickableSpan(segment.text, accentStyle, onMentionClick?.let { handler ->
-                            { handler(segment.href ?: segment.text) }
+                        clickableSpan(segment.text, accentStyle, onMentionClick?.let {
+                            { currentOnMentionClick?.invoke(segment.href ?: segment.text) }
                         })
 
                     HtmlSegmentType.Hashtag ->
-                        clickableSpan(segment.text, accentStyle, onHashtagClick?.let { handler ->
-                            { handler(segment.text.removePrefix("#")) }
+                        clickableSpan(segment.text, accentStyle, onHashtagClick?.let {
+                            { currentOnHashtagClick?.invoke(segment.text.removePrefix("#")) }
                         })
 
                     HtmlSegmentType.Link ->
                         clickableSpan(segment.text, linkStyle, segment.href?.let { href ->
-                            onLinkClick?.let { handler -> { handler(href) } }
+                            onLinkClick?.let {
+                                { currentOnLinkClick?.invoke(href) }
+                            }
                         })
                 }
             }

@@ -39,6 +39,10 @@ android {
     }
 }
 
+composeCompiler {
+    stabilityConfigurationFile = rootProject.layout.projectDirectory.file("compose_stability_config.conf")
+}
+
 configurations.configureEach {
     val tink = "com.google.crypto.tink:tink-android:1.20.0"
     resolutionStrategy {

@@ -52,6 +52,7 @@ fun <T : Any> AsyncList(
     emptyLabel: String = "Nothing here yet",
     contentPadding: PaddingValues = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 90.dp),
     key: ((T) -> Any)? = null,
+    contentType: ((T) -> Any?)? = null,
     header: (@Composable () -> Unit)? = null,
     loadingContent: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
@@ -126,7 +127,11 @@ fun <T : Any> AsyncList(
                             }
                         }
                     } else {
-                        items(count = items.size, key = key?.let { k -> { index: Int -> k(items[index]) } }) { index ->
+                        items(
+                            count = items.size,
+                            key = key?.let { k -> { index: Int -> k(items[index]) } },
+                            contentType = { index -> contentType?.invoke(items[index]) },
+                        ) { index ->
                             // New/patched rows glide into place instead of popping.
                             Box(Modifier.animateItem()) {
                                 itemContent(items[index])
