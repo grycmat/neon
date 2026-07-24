@@ -22,6 +22,7 @@ class SettingsRepository @Inject constructor(
 ) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
+    private val twoPaneEnabledKey = booleanPreferencesKey("two_pane_enabled")
 
     val themeMode: Flow<ThemeMode> = context.settingsStore.data.map { prefs ->
         when (prefs[themeModeKey]) {
@@ -33,6 +34,11 @@ class SettingsRepository @Inject constructor(
 
     val notificationsEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
         prefs[notificationsEnabledKey] ?: true
+    }
+
+    /** Big-screen list-detail/two-pane layout, on by default; off falls back to phone-style single-pane. */
+    val twoPaneEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
+        prefs[twoPaneEnabledKey] ?: true
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -48,6 +54,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.settingsStore.edit { prefs ->
             prefs[notificationsEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setTwoPaneEnabled(enabled: Boolean) {
+        context.settingsStore.edit { prefs ->
+            prefs[twoPaneEnabledKey] = enabled
         }
     }
 }

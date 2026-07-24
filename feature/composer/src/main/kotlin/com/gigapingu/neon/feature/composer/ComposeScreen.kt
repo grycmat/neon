@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Image
@@ -47,9 +48,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -90,7 +95,13 @@ fun ComposeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var textField by remember { mutableStateOf(TextFieldValue("")) }
+    val bodyFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
+    LaunchedEffect(Unit) {
+        bodyFocusRequester.requestFocus()
+        keyboardController?.show()
+    }
     LaunchedEffect(Unit) {
         viewModel.start(
             replyToId = replyToId,
@@ -155,6 +166,7 @@ fun ComposeScreen(
                                 fontWeight = FontWeight.SemiBold,
                             ),
                             cursorBrush = SolidColor(palette.cyan),
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                             modifier = Modifier.fillMaxWidth(),
                             decorationBox = { inner ->
                                 if (uiState.cwText.isEmpty()) {
@@ -178,9 +190,11 @@ fun ComposeScreen(
                     },
                     textStyle = type.bodyLarge.copy(color = palette.text, fontSize = 16.sp),
                     cursorBrush = SolidColor(palette.cyan),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 140.dp),
+                        .heightIn(min = 140.dp)
+                        .focusRequester(bodyFocusRequester),
                     decorationBox = { inner ->
                         if (textField.text.isEmpty()) {
                             Text(

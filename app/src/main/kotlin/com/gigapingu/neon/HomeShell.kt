@@ -3,8 +3,8 @@ package com.gigapingu.neon
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ViewSidebar
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Home
@@ -80,6 +81,7 @@ import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.ShellRailWidth
 import com.gigapingu.neon.core.ui.hingePaneWidth
 import com.gigapingu.neon.core.ui.isBigScreen
+import com.gigapingu.neon.core.ui.isWideWindow
 import com.gigapingu.neon.feature.explore.ExploreScreen
 import com.gigapingu.neon.feature.notifications.NotificationsScreen
 import com.gigapingu.neon.feature.notifications.NotificationsViewModel
@@ -117,6 +119,8 @@ fun HomeShell(viewModel: ShellViewModel) {
         }
     }
     val big = isBigScreen()
+    val wideWindow = isWideWindow()
+    val twoPaneEnabled by viewModel.twoPaneEnabled.collectAsStateWithLifecycle()
     var showClearConfirm by remember { mutableStateOf(false) }
 
     // Detail-pane selection per list-detail tab (big screens only).
@@ -202,6 +206,9 @@ fun HomeShell(viewModel: ShellViewModel) {
                 TopAppBar(
                     page = pagerState.currentPage,
                     onSettingsClick = { Navigator.openSettings() },
+                    showPanelToggle = wideWindow,
+                    twoPaneEnabled = twoPaneEnabled,
+                    onTogglePanels = { viewModel.setTwoPaneEnabled(!twoPaneEnabled) },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .onSizeChanged { topBarHeightPx = it.height },
@@ -215,6 +222,9 @@ fun HomeShell(viewModel: ShellViewModel) {
                 page = pagerState.currentPage,
                 onSettingsClick = { Navigator.openSettings() },
                 onClearClick = { showClearConfirm = true },
+                showPanelToggle = wideWindow,
+                twoPaneEnabled = twoPaneEnabled,
+                onTogglePanels = { viewModel.setTwoPaneEnabled(!twoPaneEnabled) },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { topBarHeightPx = it.height },
@@ -454,6 +464,9 @@ private fun TopAppBar(
     page: Int,
     onSettingsClick: () -> Unit,
     onClearClick: (() -> Unit)? = null,
+    showPanelToggle: Boolean = false,
+    twoPaneEnabled: Boolean = true,
+    onTogglePanels: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val palette = NeonTheme.palette
@@ -475,11 +488,11 @@ private fun TopAppBar(
             AnimatedContent(
                 targetState = page,
                 transitionSpec = {
-                    // Title rolls in the swipe direction.
+                    // Title slides in the swipe direction.
                     val dir = if (targetState > initialState) 1 else -1
-                    (slideInVertically(NeonMotion.quick()) { dir * it / 2 } +
+                    (slideInHorizontally(NeonMotion.quick()) { dir * it / 2 } +
                         fadeIn(NeonMotion.quick())) togetherWith
-                        (slideOutVertically(NeonMotion.quick()) { -dir * it / 2 } +
+                        (slideOutHorizontally(NeonMotion.quick()) { -dir * it / 2 } +
                             fadeOut(NeonMotion.quick()))
                 },
                 label = "topBarTitle",
@@ -515,6 +528,19 @@ private fun TopAppBar(
                     icon = Icons.Rounded.Delete,
                     onClick = onClearClick,
                     contentDescription = "Clear all notifications",
+                )
+                Spacer(Modifier.width(8.dp))
+            }
+            if (showPanelToggle) {
+                GlassIconButton(
+                    icon = Icons.Outlined.ViewSidebar,
+                    onClick = onTogglePanels,
+                    tinted = twoPaneEnabled,
+                    contentDescription = if (twoPaneEnabled) {
+                        "Switch to single-panel layout"
+                    } else {
+                        "Switch to two-panel layout"
+                    },
                 )
                 Spacer(Modifier.width(8.dp))
             }
@@ -589,6 +615,18 @@ private fun TabBar(position: Float, onChanged: (Int) -> Unit, modifier: Modifier
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(name = "Top app bar (wide, panel toggle)", showBackground = true, heightDp = 200)
+@Composable
+private fun TopAppBarPanelTogglePreview() {
+    PreviewHarness {
+        Column {
+            TopAppBar(page = 0, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = true)
+            Spacer(Modifier.height(12.dp))
+            TopAppBar(page = 0, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = false)
         }
     }
 }
