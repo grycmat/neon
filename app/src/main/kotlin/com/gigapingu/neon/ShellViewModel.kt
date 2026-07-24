@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ShellViewModel @Inject constructor(
     private val auth: AuthRepository,
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
     private val timelines: TimelineRepository,
     private val pushRepository: PushRepository,
     private val fcmTokenProvider: FcmTokenProvider,
@@ -43,6 +43,13 @@ class ShellViewModel @Inject constructor(
 
     val notificationsEnabled: StateFlow<Boolean> = settings.notificationsEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    val twoPaneEnabled: StateFlow<Boolean> = settings.twoPaneEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    fun setTwoPaneEnabled(enabled: Boolean) {
+        viewModelScope.launch { settings.setTwoPaneEnabled(enabled) }
+    }
 
     private val _selectedTab = MutableStateFlow<Int?>(null)
     val selectedTab: StateFlow<Int?> = _selectedTab.asStateFlow()

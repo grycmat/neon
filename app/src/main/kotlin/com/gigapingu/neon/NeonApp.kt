@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,6 +41,7 @@ import com.gigapingu.neon.core.ui.HomeKey
 import com.gigapingu.neon.core.ui.MediaPreviewKey
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.ProfileKey
+import com.gigapingu.neon.core.ui.LocalTwoPaneEnabled
 import com.gigapingu.neon.core.ui.SettingsKey
 import com.gigapingu.neon.core.ui.ThreadKey
 import com.gigapingu.neon.core.ui.media.MediaPreviewScreen
@@ -117,6 +119,7 @@ fun NeonApp(viewModel: ShellViewModel, modifier: Modifier = Modifier) {
 @Composable
 private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(HomeKey)
+    val twoPaneEnabled by viewModel.twoPaneEnabled.collectAsStateWithLifecycle()
 
     DisposableEffect(backStack) {
         Navigator.backStack = backStack
@@ -135,56 +138,58 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
         }
     }
 
-    NavDisplay(
-        backStack = backStack,
-        modifier = modifier.fillMaxSize(),
-        onBack = { count -> repeat(count) { backStack.removeLastOrNull() } },
-        transitionSpec = {
-            slideInHorizontally(tween(NAV_TRANSITION_MS)) { it } togetherWith
-                slideOutHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 }
-        },
-        popTransitionSpec = { popSlide() },
-        predictivePopTransitionSpec = { popSlide() },
-        entryDecorators = listOf(
-            rememberSceneSetupNavEntryDecorator(),
-            rememberSavedStateNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator(),
-        ),
-        entryProvider = entryProvider {
-            entry<HomeKey> { HomeShell(viewModel = viewModel) }
-            entry<ThreadKey> { key -> ThreadScreen(statusId = key.statusId) }
-            entry<ProfileKey> { key -> ProfileScreen(accountId = key.accountId) }
-            entry<HashtagKey> { key -> ExploreScreen(initialQuery = key.query) }
-            entry<ComposeKey>(
-                metadata = NavDisplay.transitionSpec { composerEnter() } +
-                    NavDisplay.popTransitionSpec { composerExit() } +
-                    NavDisplay.predictivePopTransitionSpec { composerExit() },
-            ) { key ->
-                ComposeScreen(
-                    replyToId = key.replyToId,
-                    quotingId = key.quotingId,
-                    editStatusId = key.editStatusId,
-                    redraftText = key.redraftText,
-                    redraftSpoilerText = key.redraftSpoilerText,
-                    redraftVisibility = key.redraftVisibility,
-                )
-            }
-            entry<FollowListKey> { key ->
-                FollowListScreen(
-                    accountId = key.accountId,
-                    handle = key.handle,
-                    following = key.following,
-                )
-            }
-            entry<EditProfileKey> { EditProfileScreen() }
-            entry<SettingsKey> { SettingsScreen() }
-            entry<BookmarksKey> { BookmarksScreen() }
-            entry<HashtagTimelineKey> { key ->
-                HashtagTimelineScreen(hashtag = key.hashtag)
-            }
-            entry<MediaPreviewKey> { key ->
-                MediaPreviewScreen(url = key.url, previewUrl = key.previewUrl, type = key.type)
-            }
-        },
-    )
+    CompositionLocalProvider(LocalTwoPaneEnabled provides twoPaneEnabled) {
+        NavDisplay(
+            backStack = backStack,
+            modifier = modifier.fillMaxSize(),
+            onBack = { count -> repeat(count) { backStack.removeLastOrNull() } },
+            transitionSpec = {
+                slideInHorizontally(tween(NAV_TRANSITION_MS)) { it } togetherWith
+                    slideOutHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 }
+            },
+            popTransitionSpec = { popSlide() },
+            predictivePopTransitionSpec = { popSlide() },
+            entryDecorators = listOf(
+                rememberSceneSetupNavEntryDecorator(),
+                rememberSavedStateNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator(),
+            ),
+            entryProvider = entryProvider {
+                entry<HomeKey> { HomeShell(viewModel = viewModel) }
+                entry<ThreadKey> { key -> ThreadScreen(statusId = key.statusId) }
+                entry<ProfileKey> { key -> ProfileScreen(accountId = key.accountId) }
+                entry<HashtagKey> { key -> ExploreScreen(initialQuery = key.query) }
+                entry<ComposeKey>(
+                    metadata = NavDisplay.transitionSpec { composerEnter() } +
+                        NavDisplay.popTransitionSpec { composerExit() } +
+                        NavDisplay.predictivePopTransitionSpec { composerExit() },
+                ) { key ->
+                    ComposeScreen(
+                        replyToId = key.replyToId,
+                        quotingId = key.quotingId,
+                        editStatusId = key.editStatusId,
+                        redraftText = key.redraftText,
+                        redraftSpoilerText = key.redraftSpoilerText,
+                        redraftVisibility = key.redraftVisibility,
+                    )
+                }
+                entry<FollowListKey> { key ->
+                    FollowListScreen(
+                        accountId = key.accountId,
+                        handle = key.handle,
+                        following = key.following,
+                    )
+                }
+                entry<EditProfileKey> { EditProfileScreen() }
+                entry<SettingsKey> { SettingsScreen() }
+                entry<BookmarksKey> { BookmarksScreen() }
+                entry<HashtagTimelineKey> { key ->
+                    HashtagTimelineScreen(hashtag = key.hashtag)
+                }
+                entry<MediaPreviewKey> { key ->
+                    MediaPreviewScreen(url = key.url, previewUrl = key.previewUrl, type = key.type)
+                }
+            },
+        )
+    }
 }

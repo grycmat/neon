@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,8 +28,21 @@ const val BigScreenMinWidthDp = 640
 /** Width of HomeShell's left nav rail on big screens. */
 val ShellRailWidth = 76.dp
 
+/**
+ * User's two-pane preference (settable via the top app bar toggle on wide
+ * windows), bound from [SettingsRepository.twoPaneEnabled][com.gigapingu.neon.core.data.SettingsRepository]
+ * at the app root. Defaults to true so previews and any composition that
+ * doesn't provide it keep the existing two-pane behavior.
+ */
+val LocalTwoPaneEnabled = compositionLocalOf { true }
+
+/** Raw window-width check, independent of the user's two-pane preference. */
 @Composable
-fun isBigScreen(): Boolean = LocalConfiguration.current.screenWidthDp >= BigScreenMinWidthDp
+fun isWideWindow(): Boolean = LocalConfiguration.current.screenWidthDp >= BigScreenMinWidthDp
+
+/** Whether to render the two-pane/big-screen layout: a wide window *and* the user hasn't opted into single-pane. */
+@Composable
+fun isBigScreen(): Boolean = isWideWindow() && LocalTwoPaneEnabled.current
 
 /**
  * Left-pane width for a two-pane layout (3:2 ratio). [inShell] subtracts the nav rail
