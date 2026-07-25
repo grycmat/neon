@@ -10,6 +10,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
@@ -86,50 +87,57 @@ private fun composerExit(): ContentTransform =
             transformOrigin = ComposerFabOrigin,
         ) + fadeOut(tween(NAV_TRANSITION_MS / 2, delayMillis = NAV_TRANSITION_MS / 2)))
 
-/** Routes between login and the main shell based on auth state (Flutter's _AuthGate). */
+/**
+ * Routes between login and the main shell based on auth state (Flutter's
+ * _AuthGate). Hosts the single, app-wide [NeonBackground] — every screen
+ * beneath (auth gate, login, and the whole authenticated nav stack) renders
+ * on top of it rather than each drawing its own.
+ */
 @Composable
 fun NeonApp(viewModel: ShellViewModel, modifier: Modifier = Modifier) {
     val authStatus by viewModel.authStatus.collectAsStateWithLifecycle()
-    Crossfade(targetState = authStatus, label = "authGate") { status ->
-        when (status) {
-            AuthStatus.Unknown -> NeonBackground(modifier = modifier.fillMaxSize()) {
-                val restoreError by viewModel.restoreError.collectAsStateWithLifecycle()
-                if (restoreError != null) {
-                    androidx.compose.foundation.layout.Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
-                    ) {
-                        androidx.compose.material3.Text(
-                            text = restoreError ?: "Could not restore account details.",
-                            style = NeonTheme.type.bodyMedium,
-                            color = NeonTheme.palette.textDim,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        )
-                        com.gigapingu.neon.core.designsystem.component.GlassButton(
-                            label = "Retry",
-                            onClick = viewModel::performRestore,
+    NeonBackground(modifier = modifier.fillMaxSize()) {
+        Crossfade(targetState = authStatus, label = "authGate") { status ->
+            when (status) {
+                AuthStatus.Unknown -> Box(Modifier.fillMaxSize()) {
+                    val restoreError by viewModel.restoreError.collectAsStateWithLifecycle()
+                    if (restoreError != null) {
+                        androidx.compose.foundation.layout.Column(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
+                        ) {
+                            androidx.compose.material3.Text(
+                                text = restoreError ?: "Could not restore account details.",
+                                style = NeonTheme.type.bodyMedium,
+                                color = NeonTheme.palette.textDim,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                            com.gigapingu.neon.core.designsystem.component.GlassButton(
+                                label = "Retry",
+                                onClick = viewModel::performRestore,
+                            )
+                        }
+                    } else {
+                        CircularProgressIndicator(
+                            color = NeonTheme.palette.cyan,
+                            modifier = Modifier.align(Alignment.Center),
                         )
                     }
-                } else {
-                    CircularProgressIndicator(
-                        color = NeonTheme.palette.cyan,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
                 }
+
+                AuthStatus.Unauthenticated -> LoginScreen()
+
+                AuthStatus.Authenticated -> AuthenticatedApp(viewModel = viewModel)
             }
-
-            AuthStatus.Unauthenticated -> LoginScreen()
-
-            AuthStatus.Authenticated -> AuthenticatedApp(viewModel = viewModel, modifier = modifier)
         }
     }
 }
 
 @Composable
-private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Modifier) {
+private fun AuthenticatedApp(viewModel: ShellViewModel) {
     val backStack = rememberNavBackStack(HomeKey)
     val twoPaneEnabled by viewModel.twoPaneEnabled.collectAsStateWithLifecycle()
 
@@ -153,7 +161,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel, modifier: Modifier = Mod
     CompositionLocalProvider(LocalTwoPaneEnabled provides twoPaneEnabled) {
         NavDisplay(
             backStack = backStack,
-            modifier = modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             onBack = { count -> repeat(count) { backStack.removeLastOrNull() } },
             transitionSpec = {
                 slideInHorizontally(tween(NAV_TRANSITION_MS)) { it } togetherWith

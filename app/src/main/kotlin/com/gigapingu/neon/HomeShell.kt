@@ -65,12 +65,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.designsystem.theme.NeonAccents
@@ -97,6 +97,8 @@ private val TabIcons: List<ImageVector> = listOf(
     Icons.Rounded.Search,
     Icons.Outlined.PersonOutline,
 )
+
+private val TabLabels: List<String> = listOf("Home", "Notifications", "Explore", "Profile")
 
 /**
  * Root shell. Phones: glass bottom tab bar (timelines / explore /
@@ -299,24 +301,22 @@ private fun ShellListDetail(detailId: String?, list: @Composable () -> Unit) {
             if (detailId != null) {
                 ThreadScreen(statusId = detailId, embedded = true)
             } else {
-                NeonBackground {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(
-                            Icons.Outlined.Forum,
-                            contentDescription = null,
-                            tint = palette.textMute,
-                            modifier = Modifier.size(34.dp),
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            "Tap a toot to read the thread here",
-                            style = NeonTheme.type.bodyMedium,
-                            color = palette.textMute,
-                        )
-                    }
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        Icons.Outlined.Forum,
+                        contentDescription = null,
+                        tint = palette.textMute,
+                        modifier = Modifier.size(34.dp),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Tap a toot to read the thread here",
+                        style = NeonTheme.type.bodyMedium,
+                        color = palette.textMute,
+                    )
                 }
             }
         }
@@ -369,12 +369,13 @@ private fun ShellRail(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
+                            role = Role.Button,
                         ) { onChanged(i) },
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         icon,
-                        contentDescription = null,
+                        contentDescription = TabLabels[i],
                         tint = lerp(palette.textMute, palette.cyan, focus),
                         modifier = Modifier.size(23.dp),
                     )
@@ -396,6 +397,7 @@ private fun ShellRail(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
+                        role = Role.Button,
                         onClick = onCompose,
                     ),
                 contentAlignment = Alignment.Center,
@@ -446,6 +448,7 @@ private fun ComposeFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                role = Role.Button,
                 onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
@@ -603,12 +606,13 @@ private fun TabBar(position: Float, onChanged: (Int) -> Unit, modifier: Modifier
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
+                                role = Role.Button,
                             ) { onChanged(i) },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             icon,
-                            contentDescription = null,
+                            contentDescription = TabLabels[i],
                             tint = lerp(palette.textMute, palette.cyan, focus),
                             modifier = Modifier.size(23.dp),
                         )

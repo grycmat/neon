@@ -28,7 +28,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 
 /**
@@ -49,59 +48,57 @@ fun OAuthWebViewScreen(
 
     BackHandler(onBack = onDismiss)
 
-    NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(
-                modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlassIconButton(
-                    icon = Icons.Rounded.Close,
-                    onClick = onDismiss,
-                    contentDescription = "Cancel login",
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    authorizeUrl.toUri().host.orEmpty(),
-                    style = NeonTheme.type.headlineMedium,
-                    color = palette.text,
-                )
-            }
-            Box(Modifier.fillMaxSize()) {
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { context ->
-                        WebView(context).apply {
-                            settings.javaScriptEnabled = true
-                            webViewClient = object : WebViewClient() {
-                                override fun shouldOverrideUrlLoading(
-                                    view: WebView?,
-                                    request: WebResourceRequest?,
-                                ): Boolean {
-                                    val url = request?.url?.toString() ?: return false
-                                    if (url.startsWith(redirectUri) && !handled) {
-                                        handled = true
-                                        val code = url.toUri().getQueryParameter("code")
-                                        if (code != null) onCode(code) else onDismiss()
-                                        return true
-                                    }
-                                    return false
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        Row(
+            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassIconButton(
+                icon = Icons.Rounded.Close,
+                onClick = onDismiss,
+                contentDescription = "Cancel login",
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                authorizeUrl.toUri().host.orEmpty(),
+                style = NeonTheme.type.headlineMedium,
+                color = palette.text,
+            )
+        }
+        Box(Modifier.fillMaxSize()) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    WebView(context).apply {
+                        settings.javaScriptEnabled = true
+                        webViewClient = object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(
+                                view: WebView?,
+                                request: WebResourceRequest?,
+                            ): Boolean {
+                                val url = request?.url?.toString() ?: return false
+                                if (url.startsWith(redirectUri) && !handled) {
+                                    handled = true
+                                    val code = url.toUri().getQueryParameter("code")
+                                    if (code != null) onCode(code) else onDismiss()
+                                    return true
                                 }
-
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    loading = false
-                                }
+                                return false
                             }
-                            loadUrl(authorizeUrl)
+
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                loading = false
+                            }
                         }
-                    },
+                        loadUrl(authorizeUrl)
+                    }
+                },
+            )
+            if (loading) {
+                CircularProgressIndicator(
+                    color = palette.cyan,
+                    modifier = Modifier.align(Alignment.Center),
                 )
-                if (loading) {
-                    CircularProgressIndicator(
-                        color = palette.cyan,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
             }
         }
     }

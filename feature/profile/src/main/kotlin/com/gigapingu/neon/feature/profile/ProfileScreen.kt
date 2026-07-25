@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,6 @@ import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.GradientButton
 import com.gigapingu.neon.core.designsystem.component.HtmlText
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
@@ -75,79 +75,77 @@ fun ProfileScreen(
 
     LaunchedEffect(accountId) { viewModel.start(accountId) }
 
-    NeonBackground {
-        val modifier = if (isRoot) Modifier.fillMaxSize() else Modifier.fillMaxSize().statusBarsPadding()
-        val listState = AsyncState(
-            phase = if (uiState.loadingStatuses) AsyncPhase.Loading else AsyncPhase.Ready,
-            data = if (uiState.account == null) null else uiState.statuses,
-            hasMore = uiState.hasMore,
-        )
-        if (isBigScreen()) {
-            // Identity column left of the hinge, toots column right (design 06).
-            Row(modifier) {
-                Column(
-                    Modifier
-                        .width(hingePaneWidth(inShell = isRoot))
-                        .fillMaxHeight()
-                        .verticalScroll(rememberScrollState())
-                        .padding(
-                            start = 16.dp,
-                            top = 4.dp + shellPadding.calculateTopPadding(),
-                            end = 16.dp,
-                            bottom = 30.dp + shellPadding.calculateBottomPadding(),
-                        ),
-                ) {
-                    if (!isRoot) {
-                        TopBar()
-                    }
-                    if (uiState.account != null) {
-                        ProfileHeader(
-                            uiState = uiState,
-                            onToggleFollow = viewModel::toggleFollow,
-                            onToggleMute = viewModel::toggleMute,
-                            onToggleBlock = viewModel::toggleBlock,
-                        )
-                    } else {
-                        Box(
-                            Modifier.fillMaxWidth().padding(40.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator(color = palette.cyan)
-                        }
-                    }
+    val modifier = if (isRoot) Modifier.fillMaxSize() else Modifier.fillMaxSize().statusBarsPadding()
+    val listState = AsyncState(
+        phase = if (uiState.loadingStatuses) AsyncPhase.Loading else AsyncPhase.Ready,
+        data = if (uiState.account == null) null else uiState.statuses,
+        hasMore = uiState.hasMore,
+    )
+    if (isBigScreen()) {
+        // Identity column left of the hinge, toots column right (design 06).
+        Row(modifier) {
+            Column(
+                Modifier
+                    .width(hingePaneWidth(inShell = isRoot))
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        start = 16.dp,
+                        top = 4.dp + shellPadding.calculateTopPadding(),
+                        end = 16.dp,
+                        bottom = 30.dp + shellPadding.calculateBottomPadding(),
+                    ),
+            ) {
+                if (!isRoot) {
+                    TopBar()
                 }
-                Box(
-                    Modifier
-                        .width(1.dp)
-                        .fillMaxHeight()
-                        .background(palette.divider),
-                )
-                Box(Modifier.weight(1f).fillMaxHeight()) {
-                    AsyncList(
-                        state = listState,
-                        onRefresh = viewModel::load,
-                        onLoadMore = viewModel::loadMore,
-                        emptyLabel = "No toots yet",
-                        contentPadding = PaddingValues(
-                            start = 16.dp,
-                            top = 4.dp + shellPadding.calculateTopPadding(),
-                            end = 16.dp,
-                            bottom = 90.dp + shellPadding.calculateBottomPadding(),
-                        ),
-                        key = { it.id },
-                        header = {
-                            NeonLabel(
-                                "Toots",
-                                modifier = Modifier.padding(start = 6.dp, top = 12.dp, end = 6.dp, bottom = 8.dp),
-                            )
-                        },
-                    ) { status ->
-                        StatusCard(status = status)
+                if (uiState.account != null) {
+                    ProfileHeader(
+                        uiState = uiState,
+                        onToggleFollow = viewModel::toggleFollow,
+                        onToggleMute = viewModel::toggleMute,
+                        onToggleBlock = viewModel::toggleBlock,
+                    )
+                } else {
+                    Box(
+                        Modifier.fillMaxWidth().padding(40.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = palette.cyan)
                     }
                 }
             }
-            return@NeonBackground
+            Box(
+                Modifier
+                    .width(1.dp)
+                    .fillMaxHeight()
+                    .background(palette.divider),
+            )
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                AsyncList(
+                    state = listState,
+                    onRefresh = viewModel::load,
+                    onLoadMore = viewModel::loadMore,
+                    emptyLabel = "No toots yet",
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        top = 4.dp + shellPadding.calculateTopPadding(),
+                        end = 16.dp,
+                        bottom = 90.dp + shellPadding.calculateBottomPadding(),
+                    ),
+                    key = { it.id },
+                    header = {
+                        NeonLabel(
+                            "Toots",
+                            modifier = Modifier.padding(start = 6.dp, top = 12.dp, end = 6.dp, bottom = 8.dp),
+                        )
+                    },
+                ) { status ->
+                    StatusCard(status = status)
+                }
+            }
         }
+    } else {
         Column(modifier) {
             AsyncList(
                 state = listState,
@@ -330,7 +328,7 @@ private fun Stat(value: String, label: String, onClick: (() -> Unit)? = null) {
     val type = NeonTheme.type
     Column(
         modifier = if (onClick != null) {
-            Modifier.clickable(interactionSource = null, indication = null, onClick = onClick)
+            Modifier.clickable(interactionSource = null, indication = null, role = Role.Button, onClick = onClick)
         } else {
             Modifier
         },

@@ -31,9 +31,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassField
 import com.gigapingu.neon.core.designsystem.component.GradientButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
+import com.gigapingu.neon.core.ui.PreviewHarness
 
 /**
  * Login: instance URL entry + gradient hero, mirroring the design's start
@@ -74,84 +74,82 @@ private fun LoginContent(
     val type = NeonTheme.type
     var instance by rememberSaveable { mutableStateOf("") }
 
-    NeonBackground {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(start = 30.dp, top = 26.dp, end = 30.dp, bottom = 34.dp),
-        ) {
-            NeonLabel("Neon · Fediverse")
-            Spacer(Modifier.weight(1f))
-            Text(
-                "A timeline that\nfeels like ",
-                style = type.displayLarge.copy(fontSize = 42.sp),
-                color = palette.text,
-            )
-            Text(
-                "yours.",
-                style = type.displayLarge.merge(
-                    TextStyle(brush = palette.gradient, fontSize = 42.sp),
+    Column(
+        Modifier
+            .fillMaxSize()
+            .safeDrawingPadding()
+            .padding(start = 30.dp, top = 26.dp, end = 30.dp, bottom = 34.dp),
+    ) {
+        NeonLabel("Neon · Fediverse")
+        Spacer(Modifier.weight(1f))
+        Text(
+            "A timeline that\nfeels like ",
+            style = type.displayLarge.copy(fontSize = 42.sp),
+            color = palette.text,
+        )
+        Text(
+            "yours.",
+            style = type.displayLarge.merge(
+                TextStyle(brush = palette.gradient, fontSize = 42.sp),
+            ),
+        )
+        Spacer(Modifier.height(20.dp))
+        Text(
+            "Sign in with any Mastodon instance. Your data stays on " +
+                "your server — Neon is just a nicer window into it.",
+            style = type.bodyLarge,
+            color = palette.textDim,
+        )
+        Spacer(Modifier.weight(1f))
+        GlassField(label = "Instance") {
+            BasicTextField(
+                value = instance,
+                onValueChange = { instance = it },
+                singleLine = true,
+                textStyle = type.bodyLarge.copy(
+                    color = palette.text,
+                    fontWeight = FontWeight.SemiBold,
                 ),
-            )
-            Spacer(Modifier.height(20.dp))
-            Text(
-                "Sign in with any Mastodon instance. Your data stays on " +
-                    "your server — Neon is just a nicer window into it.",
-                style = type.bodyLarge,
-                color = palette.textDim,
-            )
-            Spacer(Modifier.weight(1f))
-            GlassField(label = "Instance") {
-                BasicTextField(
-                    value = instance,
-                    onValueChange = { instance = it },
-                    singleLine = true,
-                    textStyle = type.bodyLarge.copy(
-                        color = palette.text,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    cursorBrush = SolidColor(palette.cyan),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.Go,
-                        autoCorrectEnabled = false,
-                    ),
-                    keyboardActions = KeyboardActions(onGo = { onConnect(instance) }),
-                    modifier = Modifier.fillMaxWidth(),
-                    decorationBox = { innerTextField ->
-                        if (instance.isEmpty()) {
-                            Text(
-                                instanceHint,
-                                style = type.bodyLarge,
-                                color = palette.textMute,
-                            )
-                        }
-                        innerTextField()
-                    },
-                )
-            }
-            error?.let { message ->
-                Log.d("Login error", message)
-                Spacer(Modifier.height(12.dp))
-                Text(message, style = type.bodySmall, color = palette.pink)
-            }
-            Spacer(Modifier.height(16.dp))
-            GradientButton(
-                label = "Connect",
-                trailingArrow = true,
-                busy = busy,
-                onClick = { onConnect(instance) },
+                cursorBrush = SolidColor(palette.cyan),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Uri,
+                    imeAction = ImeAction.Go,
+                    autoCorrectEnabled = false,
+                ),
+                keyboardActions = KeyboardActions(onGo = { onConnect(instance) }),
                 modifier = Modifier.fillMaxWidth(),
+                decorationBox = { innerTextField ->
+                    if (instance.isEmpty()) {
+                        Text(
+                            instanceHint,
+                            style = type.bodyLarge,
+                            color = palette.textMute,
+                        )
+                    }
+                    innerTextField()
+                },
             )
         }
+        error?.let { message ->
+            Log.d("Login error", message)
+            Spacer(Modifier.height(12.dp))
+            Text(message, style = type.bodySmall, color = palette.pink)
+        }
+        Spacer(Modifier.height(16.dp))
+        GradientButton(
+            label = "Connect",
+            trailingArrow = true,
+            busy = busy,
+            onClick = { onConnect(instance) },
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
 @Preview(name = "Login", showBackground = true, heightDp = 760)
 @Composable
 private fun LoginPreview() {
-    NeonTheme(darkTheme = true) {
+    PreviewHarness {
         LoginContent(
             instanceHint = "mastodon.social",
             busy = false,
@@ -164,7 +162,7 @@ private fun LoginPreview() {
 @Preview(name = "Login — error", showBackground = true, heightDp = 760)
 @Composable
 private fun LoginErrorPreview() {
-    NeonTheme(darkTheme = true) {
+    PreviewHarness {
         LoginContent(
             instanceHint = "mastodon.social",
             busy = false,

@@ -66,7 +66,6 @@ import com.gigapingu.neon.core.designsystem.component.GlassField
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.GradientButton
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
 import com.gigapingu.neon.core.model.Status
@@ -125,7 +124,7 @@ fun ComposeScreen(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = MAX_MEDIA),
     ) { uris -> viewModel.pickMedia(uris) }
 
-    NeonBackground {
+    Box(Modifier.fillMaxSize()) {
         // Everything between the header row and the toolbar is shared between
         // the phone full-screen sheet and the big-screen centered dialog.
         val body: @Composable (Modifier) -> Unit = { bodyModifier ->

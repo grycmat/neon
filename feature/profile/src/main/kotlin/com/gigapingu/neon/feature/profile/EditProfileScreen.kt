@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -40,7 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,10 +52,12 @@ import com.gigapingu.neon.core.designsystem.component.GlassField
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.GradientButton
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
+import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
+import com.gigapingu.neon.core.model.AccountField
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.PreviewHarness
 
 /**
  * Edit the logged user's profile: display name, bio, avatar/header, lock
@@ -66,7 +71,12 @@ fun EditProfileScreen(viewModel: EditProfileViewModel = hiltViewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val account = viewModel.me
 
-    LaunchedEffect(Unit) { viewModel.start(htmlToPlainText(account?.note.orEmpty())) }
+    LaunchedEffect(Unit) {
+        viewModel.start(
+            plainBio = htmlToPlainText(account?.note.orEmpty()),
+            initialFields = account?.fields.orEmpty().map { it.copy(value = htmlToPlainText(it.value)) },
+        )
+    }
     LaunchedEffect(Unit) { viewModel.errors.collect { snackbarHostState.showSnackbar(it) } }
     LaunchedEffect(uiState.done) { if (uiState.done) Navigator.back() }
 
@@ -77,7 +87,7 @@ fun EditProfileScreen(viewModel: EditProfileViewModel = hiltViewModel()) {
         ActivityResultContracts.PickVisualMedia(),
     ) { viewModel.onHeaderPicked(it) }
 
-    NeonBackground {
+    Box(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .fillMaxSize()
@@ -112,7 +122,7 @@ fun EditProfileScreen(viewModel: EditProfileViewModel = hiltViewModel()) {
                                 .clip(CircleShape)
                                 .background(palette.gradient)
                                 .border(2.dp, palette.bg, CircleShape)
-                                .clickable {
+                                .clickable(role = Role.Button) {
                                     avatarPicker.launch(
                                         PickVisualMediaRequest(
                                             ActivityResultContracts.PickVisualMedia.ImageOnly,
@@ -183,6 +193,15 @@ fun EditProfileScreen(viewModel: EditProfileViewModel = hiltViewModel()) {
                         },
                     )
                 }
+                Spacer(Modifier.height(22.dp))
+                NeonLabel("Profile fields", modifier = Modifier.padding(start = 2.dp, bottom = 10.dp))
+                ProfileFieldsEditor(
+                    fields = uiState.fields,
+                    onNameChange = viewModel::onFieldNameChange,
+                    onValueChange = viewModel::onFieldValueChange,
+                    onRemove = viewModel::removeField,
+                    onAdd = viewModel::addField,
+                )
                 Spacer(Modifier.height(12.dp))
                 val shape = RoundedCornerShape(16.dp)
                 Row(
@@ -217,5 +236,80 @@ fun EditProfileScreen(viewModel: EditProfileViewModel = hiltViewModel()) {
             }
         }
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+/** Up to [MAX_ACCOUNT_FIELDS] name/value pairs shown on the profile (pronouns, website, …). */
+@Composable
+private fun ProfileFieldsEditor(
+    fields: List<AccountField>,
+    onNameChange: (Int, String) -> Unit,
+    onValueChange: (Int, String) -> Unit,
+    onRemove: (Int) -> Unit,
+    onAdd: () -> Unit,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    Column {
+        fields.forEachIndexed { index, field ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    GlassField(label = "Label") {
+                        BasicTextField(
+                            value = field.name,
+                            onValueChange = { onNameChange(index, it) },
+                            singleLine = true,
+                            textStyle = type.bodyMedium.copy(color = palette.text, fontWeight = FontWeight.SemiBold),
+                            cursorBrush = SolidColor(palette.cyan),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    GlassField(label = "Content") {
+                        BasicTextField(
+                            value = field.value,
+                            onValueChange = { onValueChange(index, it) },
+                            singleLine = true,
+                            textStyle = type.bodyMedium.copy(color = palette.text),
+                            cursorBrush = SolidColor(palette.cyan),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                GlassIconButton(
+                    icon = Icons.Rounded.Close,
+                    onClick = { onRemove(index) },
+                    contentDescription = "Remove field",
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+        if (fields.size < MAX_ACCOUNT_FIELDS) {
+            GlassButton(
+                label = "+ Add field",
+                onClick = onAdd,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Preview(name = "Profile fields editor", showBackground = true, heightDp = 320)
+@Composable
+private fun ProfileFieldsEditorPreview() {
+    PreviewHarness {
+        Column(Modifier.padding(16.dp)) {
+            ProfileFieldsEditor(
+                fields = listOf(
+                    AccountField(name = "Pronouns", value = "they/them"),
+                    AccountField(name = "Website", value = "example.com"),
+                ),
+                onNameChange = { _, _ -> },
+                onValueChange = { _, _ -> },
+                onRemove = {},
+                onAdd = {},
+            )
+        }
     }
 }

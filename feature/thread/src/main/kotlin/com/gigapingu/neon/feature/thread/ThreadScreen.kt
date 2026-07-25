@@ -42,7 +42,6 @@ import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.GradientButton
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.fullTime
@@ -79,12 +78,10 @@ fun ThreadScreen(
 
     LaunchedEffect(statusId) { viewModel.start(statusId) }
 
-    NeonBackground {
-        when {
-            embedded -> EmbeddedThread(uiState = uiState, onRefresh = viewModel::refresh)
-            isBigScreen() -> TwoPaneThread(uiState = uiState, onRefresh = viewModel::refresh)
-            else -> PhoneThread(uiState = uiState, onRefresh = viewModel::refresh)
-        }
+    when {
+        embedded -> EmbeddedThread(uiState = uiState, onRefresh = viewModel::refresh)
+        isBigScreen() -> TwoPaneThread(uiState = uiState, onRefresh = viewModel::refresh)
+        else -> PhoneThread(uiState = uiState, onRefresh = viewModel::refresh)
     }
 }
 

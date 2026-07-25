@@ -55,7 +55,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
@@ -105,72 +104,70 @@ fun ExploreScreen(
     // toots right. Null pane width = phone single column.
     val paneWidth = if (isBigScreen()) hingePaneWidth(inShell = !isPushed) else null
 
-    NeonBackground {
-        Box(Modifier.fillMaxSize()) {
-            when {
-                uiState.searching -> Box(
-                    Modifier.fillMaxSize().padding(top = headerHeight),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(color = palette.cyan)
-                }
-                uiState.results != null -> if (paneWidth != null) {
-                    SearchResultsBig(
-                        uiState,
-                        onTagClick = viewModel::searchTag,
-                        topPadding = headerHeight,
-                        paneWidth = paneWidth,
-                    )
-                } else {
-                    SearchResultsList(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
-                }
-                else -> if (paneWidth != null) {
-                    TrendsBig(
-                        uiState,
-                        onTagClick = viewModel::searchTag,
-                        topPadding = headerHeight,
-                        paneWidth = paneWidth,
-                    )
-                } else {
-                    Trends(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
-                }
-            }
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .background(palette.surfaceSolid.copy(alpha = 0.80f))
-                    .onSizeChanged { headerHeightPx = it.height }
-                    .run {
-                        if (isPushed) statusBarsPadding() else padding(top = shellPadding.calculateTopPadding())
-                    },
+    Box(Modifier.fillMaxSize()) {
+        when {
+            uiState.searching -> Box(
+                Modifier.fillMaxSize().padding(top = headerHeight),
+                contentAlignment = Alignment.Center,
             ) {
-                if (isPushed) {
-                    Row(
-                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        GlassIconButton(
-                            icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                            onClick = Navigator::back,
-                            contentDescription = "Back",
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Text("Explore", style = type.headlineMedium, color = palette.text)
-                    }
-                }
-                SearchField(
-                    query = uiState.query,
-                    onQueryChange = viewModel::onQueryChange,
-                    onSearch = viewModel::search,
-                    onClear = viewModel::clearSearch,
-                )
+                CircularProgressIndicator(color = palette.cyan)
             }
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter),
+            uiState.results != null -> if (paneWidth != null) {
+                SearchResultsBig(
+                    uiState,
+                    onTagClick = viewModel::searchTag,
+                    topPadding = headerHeight,
+                    paneWidth = paneWidth,
+                )
+            } else {
+                SearchResultsList(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
+            }
+            else -> if (paneWidth != null) {
+                TrendsBig(
+                    uiState,
+                    onTagClick = viewModel::searchTag,
+                    topPadding = headerHeight,
+                    paneWidth = paneWidth,
+                )
+            } else {
+                Trends(uiState, onTagClick = viewModel::searchTag, topPadding = headerHeight)
+            }
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .background(palette.surfaceSolid.copy(alpha = 0.80f))
+                .onSizeChanged { headerHeightPx = it.height }
+                .run {
+                    if (isPushed) statusBarsPadding() else padding(top = shellPadding.calculateTopPadding())
+                },
+        ) {
+            if (isPushed) {
+                Row(
+                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GlassIconButton(
+                        icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                        onClick = Navigator::back,
+                        contentDescription = "Back",
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text("Explore", style = type.headlineMedium, color = palette.text)
+                }
+            }
+            SearchField(
+                query = uiState.query,
+                onQueryChange = viewModel::onQueryChange,
+                onSearch = viewModel::search,
+                onClear = viewModel::clearSearch,
             )
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 

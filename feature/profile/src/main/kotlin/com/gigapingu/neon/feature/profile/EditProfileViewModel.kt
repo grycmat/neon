@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AuthRepository
+import com.gigapingu.neon.core.model.AccountField
 import com.gigapingu.neon.core.network.FilePart
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -21,10 +22,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+const val MAX_ACCOUNT_FIELDS = 4
+
 data class EditProfileUiState(
     val displayName: String = "",
     val bio: String = "",
     val locked: Boolean = false,
+    val fields: List<AccountField> = emptyList(),
     val avatarName: String? = null,
     val headerName: String? = null,
     val saving: Boolean = false,
@@ -50,18 +54,34 @@ class EditProfileViewModel @Inject constructor(
     private var headerUri: Uri? = null
     private var initialized = false
 
-    fun start(plainBio: String) {
+    fun start(plainBio: String, initialFields: List<AccountField> = emptyList()) {
         if (initialized) return
         initialized = true
         val account = me ?: return
         _uiState.update {
-            it.copy(displayName = account.displayName, bio = plainBio, locked = account.locked)
+            it.copy(displayName = account.displayName, bio = plainBio, locked = account.locked, fields = initialFields)
         }
     }
 
     fun onDisplayNameChange(value: String) = _uiState.update { it.copy(displayName = value) }
     fun onBioChange(value: String) = _uiState.update { it.copy(bio = value) }
     fun onLockedChange(value: Boolean) = _uiState.update { it.copy(locked = value) }
+
+    fun onFieldNameChange(index: Int, value: String) = _uiState.update { state ->
+        state.copy(fields = state.fields.mapIndexed { i, f -> if (i == index) f.copy(name = value) else f })
+    }
+
+    fun onFieldValueChange(index: Int, value: String) = _uiState.update { state ->
+        state.copy(fields = state.fields.mapIndexed { i, f -> if (i == index) f.copy(value = value) else f })
+    }
+
+    fun addField() = _uiState.update { state ->
+        if (state.fields.size >= MAX_ACCOUNT_FIELDS) state else state.copy(fields = state.fields + AccountField())
+    }
+
+    fun removeField(index: Int) = _uiState.update { state ->
+        state.copy(fields = state.fields.filterIndexed { i, _ -> i != index })
+    }
 
     fun onAvatarPicked(uri: Uri?) {
         avatarUri = uri ?: return
@@ -80,10 +100,14 @@ class EditProfileViewModel @Inject constructor(
             try {
                 val avatar = avatarUri?.let { readPart("avatar", it) }
                 val header = headerUri?.let { readPart("header", it) }
+                // Pad to MAX_ACCOUNT_FIELDS with blanks so a removed field is cleared
+                // server-side too — Mastodon replaces the whole fields_attributes set.
+                val paddedFields = state.fields + List(MAX_ACCOUNT_FIELDS - state.fields.size) { AccountField() }
                 val updated = accounts.updateCredentials(
                     displayName = state.displayName,
                     note = state.bio,
                     locked = state.locked,
+                    fields = paddedFields,
                     avatar = avatar,
                     header = header,
                 )

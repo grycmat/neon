@@ -68,9 +68,19 @@ class AccountRepository @Inject constructor(
     suspend fun getFollowing(id: String, maxId: String? = null): List<Account> =
         accountList("/api/v1/accounts/$id/following", maxId)
 
-    private suspend fun accountList(path: String, maxId: String?): List<Account> {
+    /**
+     * favourited_by/reblogged_by only support Link-header pagination (favourite
+     * and reblog IDs aren't exposed), so we fetch a single page at the API max.
+     */
+    suspend fun getFavouritedBy(statusId: String, limit: Int = 80): List<Account> =
+        accountList("/api/v1/statuses/$statusId/favourited_by", maxId = null, limit = limit)
+
+    suspend fun getRebloggedBy(statusId: String, limit: Int = 80): List<Account> =
+        accountList("/api/v1/statuses/$statusId/reblogged_by", maxId = null, limit = limit)
+
+    private suspend fun accountList(path: String, maxId: String?, limit: Int = 40): List<Account> {
         val query = buildMap {
-            put("limit", 40)
+            put("limit", limit)
             maxId?.let { put("max_id", it) }
         }
         return json.decodeFromString(ListSerializer(Account.serializer()), api.get(path, query))

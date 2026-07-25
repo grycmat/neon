@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -112,7 +113,7 @@ fun GradientButton(
             )
             .clip(shape)
             .background(palette.gradient)
-            .clickable(enabled = enabled) { onClick?.invoke() }
+            .clickable(enabled = enabled, role = Role.Button) { onClick?.invoke() }
             .padding(horizontal = 24.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -161,7 +162,7 @@ fun GlassButton(
             .clip(shape)
             .background(if (tinted) palette.cyan.copy(alpha = .08f) else palette.surface)
             .border(1.dp, if (tinted) palette.cyan.copy(alpha = .3f) else palette.borderStrong, shape)
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .clickable(enabled = onClick != null, role = Role.Button) { onClick?.invoke() }
             .padding(horizontal = 24.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -192,6 +193,7 @@ fun GlassIconButton(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 enabled = onClick != null,
+                role = Role.Button,
             ) { onClick?.invoke() },
         contentAlignment = Alignment.Center,
     ) {

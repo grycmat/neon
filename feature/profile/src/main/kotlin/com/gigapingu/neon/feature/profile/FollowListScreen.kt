@@ -25,7 +25,6 @@ import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AsyncPhase
 import com.gigapingu.neon.core.data.AsyncState
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.Account
 import com.gigapingu.neon.core.ui.AccountRow
@@ -106,63 +105,61 @@ fun FollowListScreen(
 
     LaunchedEffect(accountId, following) { viewModel.start(accountId, following) }
 
-    NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlassIconButton(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                    onClick = Navigator::back,
-                    contentDescription = "Back",
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassIconButton(
+                icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                onClick = Navigator::back,
+                contentDescription = "Back",
+            )
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    if (following) "Following" else "Followers",
+                    style = type.headlineMedium,
+                    color = palette.text,
                 )
-                Spacer(Modifier.width(10.dp))
-                Column {
-                    Text(
-                        if (following) "Following" else "Followers",
-                        style = type.headlineMedium,
-                        color = palette.text,
-                    )
-                    Text(handle, style = type.bodySmall, color = palette.textDim)
-                }
+                Text(handle, style = type.bodySmall, color = palette.textDim)
             }
-            if (isBigScreen()) {
-                // Two-column directory (design 12): rows are chunked pairs so
-                // AsyncList keeps its pull-to-refresh + infinite scroll.
-                val pairedState = AsyncState(
-                    phase = state.phase,
-                    data = state.data?.chunked(2),
-                    error = state.error,
-                    hasMore = state.hasMore,
-                )
-                AsyncList(
-                    state = pairedState,
-                    onRefresh = viewModel::refresh,
-                    onLoadMore = viewModel::loadMore,
-                    emptyLabel = "Nobody here yet",
-                    key = { it.first().id },
-                ) { pair ->
-                    Row {
-                        Box(Modifier.weight(1f)) {
-                            AccountRow(account = pair[0])
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Box(Modifier.weight(1f)) {
-                            pair.getOrNull(1)?.let { AccountRow(account = it) }
-                        }
+        }
+        if (isBigScreen()) {
+            // Two-column directory (design 12): rows are chunked pairs so
+            // AsyncList keeps its pull-to-refresh + infinite scroll.
+            val pairedState = AsyncState(
+                phase = state.phase,
+                data = state.data?.chunked(2),
+                error = state.error,
+                hasMore = state.hasMore,
+            )
+            AsyncList(
+                state = pairedState,
+                onRefresh = viewModel::refresh,
+                onLoadMore = viewModel::loadMore,
+                emptyLabel = "Nobody here yet",
+                key = { it.first().id },
+            ) { pair ->
+                Row {
+                    Box(Modifier.weight(1f)) {
+                        AccountRow(account = pair[0])
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Box(Modifier.weight(1f)) {
+                        pair.getOrNull(1)?.let { AccountRow(account = it) }
                     }
                 }
-            } else {
-                AsyncList(
-                    state = state,
-                    onRefresh = viewModel::refresh,
-                    onLoadMore = viewModel::loadMore,
-                    emptyLabel = "Nobody here yet",
-                    key = { it.id },
-                ) { account ->
-                    AccountRow(account = account)
-                }
+            }
+        } else {
+            AsyncList(
+                state = state,
+                onRefresh = viewModel::refresh,
+                onLoadMore = viewModel::loadMore,
+                emptyLabel = "Nobody here yet",
+                key = { it.id },
+            ) { account ->
+                AccountRow(account = account)
             }
         }
     }

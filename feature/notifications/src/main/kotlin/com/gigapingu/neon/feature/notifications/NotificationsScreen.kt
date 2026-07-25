@@ -41,7 +41,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
 import com.gigapingu.neon.core.designsystem.util.relativeTime
@@ -69,31 +68,29 @@ fun NotificationsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
 
-    NeonBackground {
-        Column(Modifier.fillMaxSize()) {
-            AsyncList(
-                state = state,
-                onRefresh = viewModel::refresh,
-                onLoadMore = viewModel::loadMore,
-                emptyLabel = "All quiet — for now.",
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    top = 8.dp + shellPadding.calculateTopPadding(),
-                    end = 16.dp,
-                    bottom = 90.dp + shellPadding.calculateBottomPadding(),
-                ),
-                key = { it.id },
-                contentType = { it.status != null },
-            ) { notification ->
-                PaneSelection(
-                    selected = selectedStatusId != null &&
-                        notification.status?.display?.id == selectedStatusId,
-                ) {
-                    NotificationRow(
-                        item = notification,
-                        onDismiss = { viewModel.dismiss(notification.id) }
-                    )
-                }
+    Column(Modifier.fillMaxSize()) {
+        AsyncList(
+            state = state,
+            onRefresh = viewModel::refresh,
+            onLoadMore = viewModel::loadMore,
+            emptyLabel = "All quiet — for now.",
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = 8.dp + shellPadding.calculateTopPadding(),
+                end = 16.dp,
+                bottom = 90.dp + shellPadding.calculateBottomPadding(),
+            ),
+            key = { it.id },
+            contentType = { it.status != null },
+        ) { notification ->
+            PaneSelection(
+                selected = selectedStatusId != null &&
+                    notification.status?.display?.id == selectedStatusId,
+            ) {
+                NotificationRow(
+                    item = notification,
+                    onDismiss = { viewModel.dismiss(notification.id) }
+                )
             }
         }
     }

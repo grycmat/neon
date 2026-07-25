@@ -31,6 +31,24 @@ Full codebase audit and step-by-step plan to a shippable release.
 
 ---
 
+## Gap analysis vs. the official Mastodon Android app
+
+Compared against `mastodon/mastodon-android` (the official client) on GitHub —
+its fragment/API-request package layout was audited directly. Neon covers the
+core toot lifecycle (read/write/boost/fave/vote/bookmark/moderate) and beats
+the official app on push notifications and big-screen support, but is missing
+several features that are table-stakes in every mainstream Mastodon client
+(official app, Ivory, Ice Cubes, Elk). These are broken out as **Milestone 5**
+below, ahead of Release Prep.
+
+Not counted as gaps (deliberately out of scope / already tracked): in-app
+account signup & onboarding carousel (Neon only logs into existing accounts,
+per `NeonConfig`), read markers (sync-position bookkeeping, invisible to the
+user), donation/tipping screens, and anything already in the Post-MVP Backlog
+below (streaming, multi-account, etc.).
+
+---
+
 ## Milestone 1 — Bug-fix & Stability
 > **Estimate: 1–2 days**
 > Goal: make what exists work correctly end-to-end.
@@ -139,25 +157,124 @@ Full codebase audit and step-by-step plan to a shippable release.
     `Navigator.handleNotificationClick`.
   - Requires `google-services.json` + `secrets.properties` (`RELAY_BASE_URL`); see README.
 
-- [ ] **Accessibility pass**
-  - Add meaningful `contentDescription` to all icon-only buttons
-    (`GlassIconButton`, `ComposeFab`, `StatusActions` buttons).
-  - Add `semantics { role = Role.Button }` where appropriate.
-  - Verify focus traversal order in `ComposeScreen` and `ProfileScreen`.
+- [x] **Accessibility pass**
+  - Added meaningful `contentDescription` to all icon-only buttons
+    (`GlassIconButton`, `ComposeFab`, `StatusActions` buttons, `HomeShell` tab
+    rail/bar icons, the `EditProfileScreen` avatar badge).
+  - Added `role = Role.Button` to every clickable in `Glass.kt`
+    (`GlassButton`/`GlassIconButton`/`GradientButton` — covers ~20 call
+    sites app-wide), plus `HomeShell`'s FAB/tabs and `ProfileScreen`'s `Stat`.
+  - `StatusActions.ActionItem` now exposes one merged `clearAndSetSemantics`
+    node per action ("Reply, 12", "Boost"/"Undo boost", "Favourite, 3",
+    "Bookmark"/"Remove bookmark", "Share") instead of an unlabeled icon.
+  - Verified focus traversal order in `ComposeScreen` and `ProfileScreen`:
+    both are plain top-to-bottom `Column`/`Row` layouts with no z-index or
+    out-of-order overlays (the `SnackbarHost` in `ComposeScreen` is composed
+    last and sits visually last, so no `traversalIndex` override was needed).
 
 - [x] **Error retry button**
   - `AsyncList` already shows error text. Add a "Retry" `GlassButton` below it that calls
     the `onRefresh` callback.
 
-- [ ] **Account fields in Edit Profile**
-  - `AccountField` model and `fields_attributes` API wiring already exist in
-    `AccountRepository.updateCredentials()`.
-  - Complete the `EditProfileScreen` UI: dynamic list of name/value `TextField` pairs,
-    add/remove field buttons, capped at 4.
+- [x] **Account fields in Edit Profile**
+  - `EditProfileViewModel` now tracks `fields: List<AccountField>` in its
+    UI state, seeded from `Account.fields` (HTML values run through
+    `htmlToPlainText` like the bio) via `EditProfileScreen`'s `start()` call.
+  - Added `onFieldNameChange`/`onFieldValueChange`/`addField`/`removeField`,
+    capped at `MAX_ACCOUNT_FIELDS = 4`.
+  - New `ProfileFieldsEditor` composable in `EditProfileScreen.kt`: a
+    Label/Content `GlassField` pair per row with a remove (×) `GlassIconButton`,
+    plus a "+ Add field" `GlassButton` shown while under the cap.
+  - `save()` pads the list to exactly 4 slots (blank name/value for unused
+    ones) before calling `updateCredentials`, since Mastodon's
+    `fields_attributes` replaces the whole set — otherwise a removed field
+    would survive server-side.
 
 ---
 
-## Milestone 5 — Release Prep
+## Milestone 5 — Feature Parity Gaps (vs. official app)
+> **Estimate: 5–8 days**
+> Goal: close the gaps that make Neon feel thinner than every other mainstream
+> Mastodon client, found by diffing against `mastodon/mastodon-android`'s
+> fragment/API layout.
+
+- [ ] **Custom emoji rendering**
+  - `Instance` / `Status` / `Account` payloads carry a `emojis` array
+    (`shortcode`, `url`, `static_url`). Currently rendered as literal
+    `:shortcode:` text in `HtmlText`.
+  - Parse `:shortcode:` runs in status bodies, display names, and bios into
+    inline `Coil`-loaded images (`InlineTextContent` / `AsyncImage` in an
+    `AnnotatedString`). Highest-visibility gap — shows up on almost every
+    screen for instances with custom emoji.
+
+- [ ] **Lists**
+  - Add `ListRepository` (`GET/POST/PUT/DELETE /api/v1/lists`,
+    `GET/POST/DELETE /api/v1/lists/:id/accounts` for membership).
+  - `ManageListsScreen` (create/rename/delete, replace-existing color/icon
+    Mastodon doesn't support so keep it plain), `ListTimelineScreen` (reuses
+    the `TimelineRepository`-style pattern against
+    `GET /api/v1/timelines/list/:id`), and an "Add/remove from list" action
+    reachable from `ProfileScreen`'s overflow menu.
+  - Entry point: a "Lists" row in Settings or a new segmented pill in
+    `TimelineScreen` alongside Home/Local/Federated.
+
+- [ ] **Keyword filters**
+  - Add `FilterRepository` (`GET/POST/PUT/DELETE /api/v2/filters`, with
+    nested `keywords`/`statuses` sub-resources).
+  - `FiltersScreen` (list existing filters, create/edit with phrase, context
+    checkboxes — home/notifications/public/thread/account — whole-word toggle,
+    optional expiry).
+  - Apply client-side: `StatusListPatch`/timeline rendering should check
+    `Status.filtered` (populated server-side per `GET` request once filters
+    exist) and collapse/hide matching statuses the same way CW does.
+
+- [ ] **Follow hashtag + manage followed hashtags**
+  - Add `POST/POST /api/v1/tags/:tag/follow|unfollow` to (new or existing)
+    a small `TagRepository`; `GET /api/v1/followed_tags` for the list screen.
+  - Add a follow/unfollow toggle to `HashtagTimelineScreen`'s top bar.
+  - `ManageFollowedHashtagsScreen` reachable from Settings, reusing
+    `AsyncList`.
+
+- [ ] **Featured hashtags on profile**
+  - `GET /api/v1/accounts/:id/featured_tags` — render as a chip row under the
+    bio in `ProfileScreen` (own profile: manage via
+    `POST/DELETE /api/v1/featured_tags`), tapping a chip opens
+    `HashtagTimelineScreen`.
+
+- [ ] **Pinned posts on profile**
+  - `GET /api/v1/accounts/:id/statuses?pinned=true` — prepend to
+    `ProfileScreen`'s status list with a small "📌 Pinned" label on the card,
+    matching every other Mastodon client's profile header.
+  - Own-profile pin/unpin action: `POST /api/v1/statuses/:id/pin|unpin`,
+    surfaced in the status context menu.
+
+- [ ] **Status edit history**
+  - `GET /api/v1/statuses/:id/history` — when a status shows the "edited"
+    timestamp (`Status.editedAt`, already decoded), make it tappable into a
+    simple diff-less list of prior versions (text + media per revision).
+
+- [ ] **Notification requests (filtered notifications)**
+  - Mastodon 4.3+: `GET /api/v1/notifications/requests`,
+    `POST /api/v1/notifications/requests/:id/accept|dismiss`. Notifications
+    from accounts you don't follow can be held back into a request queue
+    instead of the main feed.
+  - Add a "Requests" entry point at the top of `NotificationsScreen` when the
+    count is non-zero; reuse `AsyncList` for the request list.
+
+- [ ] **Granular settings**
+  - Default post visibility + default language for new toots
+    (`Settings*Fragment` in the official app / `source` prefs on
+    `update_credentials`) — read/write via `AccountRepository.updateCredentials`.
+  - Per-type notification toggles (favourites/boosts/follows/mentions/polls)
+    — Mastodon exposes these both server-side (push subscription `data[alerts]`
+    flags, already partially wired in `PushRepository`) and should be surfaced
+    as switches in `SettingsScreen`.
+  - Link to the connected instance's about/rules page
+    (`GET /api/v1/instance` → `rules`) — small "Server info" row in Settings.
+
+---
+
+## Milestone 6 — Release Prep
 > **Estimate: 1–2 days**
 > Goal: app can be published to the Play Store.
 
@@ -195,8 +312,11 @@ These are desirable but intentionally deferred past the initial release:
 | **Image alt-text viewer** | Show `MediaAttachment.description` on long-press |
 | **Profile media tab** | `onlyMedia=true` param exists in `AccountRepository` but no UI tab |
 | **Local search history** | Persist recent searches in DataStore / Room |
-| **Custom emoji** | Mastodon `:shortcode:` inline images in bios + toots |
 | **Haptic feedback** | On favourite / boost animations |
-| **Toot language picker** | `language` param on `POST /api/v1/statuses` |
+| **Toot language picker** | Per-toot `language` param on `POST /api/v1/statuses` (default-language setting is in Milestone 5; a per-toot override picker is lower priority) |
 | **Animated GIF support** | Coil supports it; needs explicit `ImageLoader` config |
 | **Follow request management** | Accept / reject from Notifications screen |
+| **Quote posts** | Newer Mastodon (4.4+) quote-post feature (`StatusQuotesFragment` in the official app) — depends on server-side adoption, not yet universal |
+| **Announcements** | Instance-wide banner (`GET /api/v1/announcements`, with reactions) shown in the official app's Home fragment |
+| **Read markers** | `GET/POST /api/v1/markers` — sync last-read position across devices; invisible/QoL, not a user-facing gap |
+| **Server info / rules screen (detail view)** | Beyond the Settings link in Milestone 5 — full about page with extended description, contact account, rules list with numbering |

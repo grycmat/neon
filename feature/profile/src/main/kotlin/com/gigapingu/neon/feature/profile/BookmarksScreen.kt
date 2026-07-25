@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.Navigator
@@ -31,31 +30,29 @@ fun BookmarksScreen(viewModel: BookmarksViewModel = hiltViewModel()) {
     val type = NeonTheme.type
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlassIconButton(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                    onClick = Navigator::back,
-                    contentDescription = "Back",
-                )
-                Spacer(Modifier.width(10.dp))
-                Text("Bookmarks", style = type.headlineMedium, color = palette.text)
-            }
-            AsyncList(
-                state = state,
-                onRefresh = viewModel::refresh,
-                onLoadMore = viewModel::loadMore,
-                emptyLabel = "No bookmarks yet.",
-                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 90.dp),
-                key = { it.id },
-                modifier = Modifier.weight(1f),
-            ) { status ->
-                StatusCard(status = status)
-            }
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassIconButton(
+                icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                onClick = Navigator::back,
+                contentDescription = "Back",
+            )
+            Spacer(Modifier.width(10.dp))
+            Text("Bookmarks", style = type.headlineMedium, color = palette.text)
+        }
+        AsyncList(
+            state = state,
+            onRefresh = viewModel::refresh,
+            onLoadMore = viewModel::loadMore,
+            emptyLabel = "No bookmarks yet.",
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 90.dp),
+            key = { it.id },
+            modifier = Modifier.weight(1f),
+        ) { status ->
+            StatusCard(status = status)
         }
     }
 }

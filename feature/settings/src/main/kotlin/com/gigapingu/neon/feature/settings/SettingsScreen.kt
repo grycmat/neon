@@ -57,7 +57,6 @@ import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.designsystem.component.GlassButton
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.Navigator
@@ -117,107 +116,105 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 
     val isToggled = prefNotificationsEnabled && hasPermission
 
-    NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlassIconButton(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                    onClick = Navigator::back,
-                    contentDescription = "Back",
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassIconButton(
+                icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                onClick = Navigator::back,
+                contentDescription = "Back",
+            )
+            Spacer(Modifier.width(10.dp))
+            Text("Settings", style = type.headlineMedium, color = palette.text)
+        }
+        Column(
+            Modifier
+                // Cap + centre on big screens; no-op at phone widths.
+                .align(Alignment.CenterHorizontally)
+                .widthIn(max = 560.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 30.dp),
+        ) {
+            NeonLabel("Appearance", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ThemeOption(
+                    mode = ThemeMode.Dark,
+                    label = "Neon dark",
+                    icon = Icons.Rounded.DarkMode,
+                    current = mode,
+                    onSelect = viewModel::setThemeMode,
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.width(10.dp))
-                Text("Settings", style = type.headlineMedium, color = palette.text)
+                ThemeOption(
+                    mode = ThemeMode.Light,
+                    label = "Light",
+                    icon = Icons.Rounded.LightMode,
+                    current = mode,
+                    onSelect = viewModel::setThemeMode,
+                    modifier = Modifier.weight(1f),
+                )
+                ThemeOption(
+                    mode = ThemeMode.System,
+                    label = "System",
+                    icon = Icons.Rounded.Smartphone,
+                    current = mode,
+                    onSelect = viewModel::setThemeMode,
+                    modifier = Modifier.weight(1f),
+                )
             }
-            Column(
-                Modifier
-                    // Cap + centre on big screens; no-op at phone widths.
-                    .align(Alignment.CenterHorizontally)
-                    .widthIn(max = 560.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 30.dp),
-            ) {
-                NeonLabel("Appearance", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ThemeOption(
-                        mode = ThemeMode.Dark,
-                        label = "Neon dark",
-                        icon = Icons.Rounded.DarkMode,
-                        current = mode,
-                        onSelect = viewModel::setThemeMode,
-                        modifier = Modifier.weight(1f),
-                    )
-                    ThemeOption(
-                        mode = ThemeMode.Light,
-                        label = "Light",
-                        icon = Icons.Rounded.LightMode,
-                        current = mode,
-                        onSelect = viewModel::setThemeMode,
-                        modifier = Modifier.weight(1f),
-                    )
-                    ThemeOption(
-                        mode = ThemeMode.System,
-                        label = "System",
-                        icon = Icons.Rounded.Smartphone,
-                        current = mode,
-                        onSelect = viewModel::setThemeMode,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Spacer(Modifier.height(28.dp))
-                NeonLabel("Notifications", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Push notifications", style = type.titleSmall, color = palette.text)
-                            Text("Receive notifications on your device", style = type.bodySmall, color = palette.textDim)
-                        }
-                        Switch(
-                            checked = isToggled,
-                            onCheckedChange = { checked ->
-                                if (checked) {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
-                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        viewModel.setNotificationsEnabled(true)
-                                    }
+            Spacer(Modifier.height(28.dp))
+            NeonLabel("Notifications", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Push notifications", style = type.titleSmall, color = palette.text)
+                        Text("Receive notifications on your device", style = type.bodySmall, color = palette.textDim)
+                    }
+                    Switch(
+                        checked = isToggled,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 } else {
-                                    viewModel.setNotificationsEnabled(false)
+                                    viewModel.setNotificationsEnabled(true)
                                 }
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = palette.cyan.copy(alpha = .35f),
-                                checkedThumbColor = palette.cyan,
-                            ),
-                        )
-                    }
+                            } else {
+                                viewModel.setNotificationsEnabled(false)
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = palette.cyan.copy(alpha = .35f),
+                            checkedThumbColor = palette.cyan,
+                        ),
+                    )
                 }
-                Spacer(Modifier.height(28.dp))
-                NeonLabel("Account", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                    Column {
-                        Text(me?.fullHandle.orEmpty(), style = type.titleSmall, color = palette.text)
-                        Text(viewModel.instance.orEmpty(), style = type.bodySmall, color = palette.textDim)
-                    }
-                }
-                Spacer(Modifier.height(14.dp))
-                GlassButton(
-                    label = "Bookmarks",
-                    onClick = Navigator::openBookmarks,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(14.dp))
-                GlassButton(
-                    label = "Log out",
-                    onClick = viewModel::logout,
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
+            Spacer(Modifier.height(28.dp))
+            NeonLabel("Account", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                Column {
+                    Text(me?.fullHandle.orEmpty(), style = type.titleSmall, color = palette.text)
+                    Text(viewModel.instance.orEmpty(), style = type.bodySmall, color = palette.textDim)
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
+                label = "Bookmarks",
+                onClick = Navigator::openBookmarks,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
+                label = "Log out",
+                onClick = viewModel::logout,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

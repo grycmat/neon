@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.Navigator
@@ -38,21 +37,19 @@ fun HashtagTimelineScreen(
         viewModel.start(hashtag)
     }
 
-    NeonBackground {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            HashtagTopBar(hashtag = hashtag)
-            AsyncList(
-                state = state,
-                onRefresh = viewModel::refresh,
-                onLoadMore = viewModel::loadMore,
-                emptyLabel = "No toots matching #$hashtag yet!",
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 24.dp),
-                key = { it.id },
-                loadingContent = { StatusListSkeleton() },
-            ) { status ->
-                StatusCard(status = status)
-            }
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        HashtagTopBar(hashtag = hashtag)
+        AsyncList(
+            state = state,
+            onRefresh = viewModel::refresh,
+            onLoadMore = viewModel::loadMore,
+            emptyLabel = "No toots matching #$hashtag yet!",
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 24.dp),
+            key = { it.id },
+            loadingContent = { StatusListSkeleton() },
+        ) { status ->
+            StatusCard(status = status)
         }
     }
 }

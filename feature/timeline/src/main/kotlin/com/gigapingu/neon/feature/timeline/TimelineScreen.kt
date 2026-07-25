@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.TimelineKind
-import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonDims
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncList
@@ -84,71 +83,69 @@ fun TimelineScreen(
             }
     }
 
-    NeonBackground {
-        Box(Modifier.fillMaxSize()) {
-            AsyncList(
-                state = state,
-                onRefresh = viewModel::refresh,
-                onLoadMore = viewModel::loadMore,
-                emptyLabel = "No toots yet — follow some people!",
-                modifier = Modifier.fillMaxSize(),
-                listState = listState,
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    top = pillsHeight,
-                    end = 16.dp,
-                    bottom = 90.dp + shellPadding.calculateBottomPadding(),
-                ),
-                key = { it.id },
-                loadingContent = { StatusListSkeleton() },
-            ) { status ->
-                PaneSelection(selected = status.display.id == selectedStatusId) {
-                    StatusCard(status = status)
-                }
+    Box(Modifier.fillMaxSize()) {
+        AsyncList(
+            state = state,
+            onRefresh = viewModel::refresh,
+            onLoadMore = viewModel::loadMore,
+            emptyLabel = "No toots yet — follow some people!",
+            modifier = Modifier.fillMaxSize(),
+            listState = listState,
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = pillsHeight,
+                end = 16.dp,
+                bottom = 90.dp + shellPadding.calculateBottomPadding(),
+            ),
+            key = { it.id },
+            loadingContent = { StatusListSkeleton() },
+        ) { status ->
+            PaneSelection(selected = status.display.id == selectedStatusId) {
+                StatusCard(status = status)
             }
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .background(palette.surfaceSolid.copy(alpha = .80f))
-                    .onSizeChanged { pillsHeightPx = it.height }
-                    .padding(top = shellPadding.calculateTopPadding())
-                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TimelineKind.entries.forEach { entry ->
-                    SegmentPill(
-                        label = entry.label,
-                        active = entry == kind,
-                        onClick = { viewModel.switchTo(entry) },
-                    )
-                }
+        }
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .background(palette.surfaceSolid.copy(alpha = .80f))
+                .onSizeChanged { pillsHeightPx = it.height }
+                .padding(top = shellPadding.calculateTopPadding())
+                .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TimelineKind.entries.forEach { entry ->
+                SegmentPill(
+                    label = entry.label,
+                    active = entry == kind,
+                    onClick = { viewModel.switchTo(entry) },
+                )
             }
+        }
 
-            AnimatedVisibility(
-                visible = newTootsCount > 0,
-                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        AnimatedVisibility(
+            visible = newTootsCount > 0,
+            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = pillsHeight + 8.dp),
+        ) {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = pillsHeight + 8.dp),
+                    .clip(RoundedCornerShape(NeonDims.RadiusButton))
+                    .background(palette.surfaceSolid.copy(alpha = .92f)),
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(NeonDims.RadiusButton))
-                        .background(palette.surfaceSolid.copy(alpha = .92f)),
-                ) {
-                    GlassButton(
-                        label = "↑ $newTootsCount new toots",
-                        tinted = true,
-                        onClick = {
-                            coroutineScope.launch {
-                                listState.animateScrollToItem(0)
-                            }
-                            viewModel.clearNewToots(kind)
+                GlassButton(
+                    label = "↑ $newTootsCount new toots",
+                    tinted = true,
+                    onClick = {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
                         }
-                    )
-                }
+                        viewModel.clearNewToots(kind)
+                    }
+                )
             }
         }
     }

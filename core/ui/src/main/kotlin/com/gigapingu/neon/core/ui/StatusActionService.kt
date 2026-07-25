@@ -85,6 +85,12 @@ object StatusActionService {
 
     fun toggleBookmark(status: Status) = guarded { statuses?.bookmark(status) }
 
+    suspend fun getFavouritedBy(statusId: String): Result<List<Account>> =
+        runCatching { accounts?.getFavouritedBy(statusId) ?: emptyList() }
+
+    suspend fun getRebloggedBy(statusId: String): Result<List<Account>> =
+        runCatching { accounts?.getRebloggedBy(statusId) ?: emptyList() }
+
     fun vote(poll: Poll, choices: List<Int>) = guarded { statuses?.vote(poll, choices) }
 
     fun share(status: Status) {
