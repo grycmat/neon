@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gigapingu.neon.core.designsystem.component.EmojiText
 import com.gigapingu.neon.core.designsystem.component.HtmlText
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
@@ -49,8 +50,9 @@ fun QuoteCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             NeonAvatar(account = status.account, size = 22.dp)
             Spacer(Modifier.width(8.dp))
-            Text(
+            EmojiText(
                 status.account.displayNameOrUsername,
+                emojis = status.account.emojis,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = type.bodySmall.copy(fontWeight = FontWeight.ExtraBold),
@@ -78,6 +80,7 @@ fun QuoteCard(
             status.content,
             maxLines = 5,
             style = type.bodyMedium.copy(fontSize = 13.5.sp),
+            emojis = status.emojis,
         )
         if (status.mediaAttachments.isNotEmpty()) {
             MediaGrid(attachments = status.mediaAttachments, sensitive = status.sensitive)

@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -66,6 +67,7 @@ fun NotificationsScreen(
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val requestsCount by viewModel.requestsCount.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
 
     Column(Modifier.fillMaxSize()) {
@@ -82,6 +84,14 @@ fun NotificationsScreen(
             ),
             key = { it.id },
             contentType = { it.status != null },
+            header = {
+                if (requestsCount > 0) {
+                    NotificationRequestsBanner(
+                        count = requestsCount,
+                        onClick = Navigator::openNotificationRequests,
+                    )
+                }
+            },
         ) { notification ->
             PaneSelection(
                 selected = selectedStatusId != null &&
@@ -92,6 +102,28 @@ fun NotificationsScreen(
                     onDismiss = { viewModel.dismiss(notification.id) }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun NotificationRequestsBanner(count: Int, onClick: () -> Unit) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    GlassCard(
+        modifier = Modifier.padding(bottom = 8.dp),
+        contentPadding = PaddingValues(14.dp),
+        onClick = onClick,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.PersonAddAlt, contentDescription = null, tint = palette.purple, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "Filtered notifications from $count ${if (count == 1) "person" else "people"}",
+                style = type.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = palette.text,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }

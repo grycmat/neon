@@ -6,7 +6,6 @@ import com.gigapingu.neon.core.data.AsyncPhase
 import com.gigapingu.neon.core.data.AsyncState
 import com.gigapingu.neon.core.data.CacheStore
 import com.gigapingu.neon.core.data.StatusRepository
-import com.gigapingu.neon.core.data.TagRepository
 import com.gigapingu.neon.core.data.patchPollList
 import com.gigapingu.neon.core.data.patchStatusList
 import com.gigapingu.neon.core.model.Poll
@@ -22,28 +21,23 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
 @HiltViewModel
-class HashtagTimelineViewModel @Inject constructor(
+class ListTimelineViewModel @Inject constructor(
     private val api: ApiClient,
     private val cache: CacheStore,
     private val json: Json,
     private val statusRepo: StatusRepository,
-    private val tags: TagRepository,
 ) : ViewModel(), StatusRepository.StatusListener {
 
     private companion object {
         const val PAGE_SIZE = 20
     }
 
-    private var hashtag: String? = null
-    private val cacheKey: String get() = "hashtag:${hashtag.orEmpty()}"
-    private val path: String get() = "/api/v1/timelines/tag/${hashtag.orEmpty()}"
+    private var listId: String? = null
+    private val cacheKey: String get() = "list:${listId.orEmpty()}"
+    private val path: String get() = "/api/v1/timelines/list/${listId.orEmpty()}"
 
     private val _state = MutableStateFlow<AsyncState<List<Status>>>(AsyncState.idle())
     val state: StateFlow<AsyncState<List<Status>>> = _state.asStateFlow()
-
-    /** null while the follow state hasn't loaded yet. */
-    private val _following = MutableStateFlow<Boolean?>(null)
-    val following: StateFlow<Boolean?> = _following.asStateFlow()
 
     init {
         statusRepo.addListener(this)
@@ -54,23 +48,10 @@ class HashtagTimelineViewModel @Inject constructor(
         super.onCleared()
     }
 
-    fun start(hashtag: String) {
-        if (this.hashtag == hashtag) return
-        this.hashtag = hashtag
+    fun start(listId: String) {
+        if (this.listId == listId) return
+        this.listId = listId
         load()
-        viewModelScope.launch {
-            runCatching { tags.getTag(hashtag) }.onSuccess { _following.value = it.following }
-        }
-    }
-
-    fun toggleFollow() {
-        val tag = hashtag ?: return
-        val current = _following.value ?: return
-        viewModelScope.launch {
-            runCatching {
-                if (current) tags.unfollowTag(tag) else tags.followTag(tag)
-            }.onSuccess { _following.value = it.following }
-        }
     }
 
     private fun load() {
@@ -98,7 +79,7 @@ class HashtagTimelineViewModel @Inject constructor(
                 _state.value = if (_state.value.hasData) {
                     _state.value.withPhase(AsyncPhase.Ready)
                 } else {
-                    AsyncState.error(e.message ?: "Could not load timeline")
+                    AsyncState.error(e.message ?: "Could not load list timeline")
                 }
             }
         }

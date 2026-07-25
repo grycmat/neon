@@ -1,6 +1,7 @@
 package com.gigapingu.neon.core.data
 
 import com.gigapingu.neon.core.model.MastoNotification
+import com.gigapingu.neon.core.model.NotificationRequest
 import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.network.ApiClient
 import javax.inject.Inject
@@ -121,6 +122,26 @@ class NotificationRepository @Inject constructor(
             MastoNotification.serializer(),
             api.get("/api/v1/notifications/$id")
         )
+    }
+
+    /** Notifications held back from accounts you don't follow (Mastodon 4.3+). */
+    suspend fun getRequests(maxId: String? = null, limit: Int = 40): List<NotificationRequest> {
+        val query = buildMap {
+            put("limit", limit)
+            maxId?.let { put("max_id", it) }
+        }
+        return json.decodeFromString(
+            ListSerializer(NotificationRequest.serializer()),
+            api.get("/api/v1/notifications/requests", query),
+        )
+    }
+
+    suspend fun acceptRequest(id: String) {
+        api.post("/api/v1/notifications/requests/$id/accept")
+    }
+
+    suspend fun dismissRequest(id: String) {
+        api.post("/api/v1/notifications/requests/$id/dismiss")
     }
 }
 

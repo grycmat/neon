@@ -2,21 +2,30 @@ package com.gigapingu.neon.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.SettingsRepository
 import com.gigapingu.neon.core.data.ThemeMode
+import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
 import com.gigapingu.neon.core.model.Account
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/** Default toot visibility levels, in the order shown in the picker. */
+val PostVisibilityOptions = listOf("public", "unlisted", "private")
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val auth: AuthRepository,
+    private val accounts: AccountRepository,
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
@@ -25,8 +34,14 @@ class SettingsViewModel @Inject constructor(
     val notificationsEnabled: StateFlow<Boolean> = settings.notificationsEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
+    val notificationAlertPrefs: StateFlow<NotificationAlertPrefs> = settings.notificationAlertPrefs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotificationAlertPrefs())
+
     val me: StateFlow<Account?> = auth.me
     val instance: String? get() = auth.instance
+
+    private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val errors: SharedFlow<String> = _errors.asSharedFlow()
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settings.setThemeMode(mode) }
@@ -34,6 +49,32 @@ class SettingsViewModel @Inject constructor(
 
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch { settings.setNotificationsEnabled(enabled) }
+    }
+
+    fun setNotificationAlertPrefs(prefs: NotificationAlertPrefs) {
+        viewModelScope.launch { settings.setNotificationAlertPrefs(prefs) }
+    }
+
+    fun setDefaultPrivacy(visibility: String) {
+        viewModelScope.launch {
+            try {
+                val updated = accounts.updateCredentials(defaultPrivacy = visibility)
+                auth.updateMe(updated)
+            } catch (e: Exception) {
+                _errors.tryEmit(e.message ?: "Could not update default visibility")
+            }
+        }
+    }
+
+    fun setDefaultLanguage(languageCode: String) {
+        viewModelScope.launch {
+            try {
+                val updated = accounts.updateCredentials(defaultLanguage = languageCode)
+                auth.updateMe(updated)
+            } catch (e: Exception) {
+                _errors.tryEmit(e.message ?: "Could not update default language")
+            }
+        }
     }
 
     fun logout() {

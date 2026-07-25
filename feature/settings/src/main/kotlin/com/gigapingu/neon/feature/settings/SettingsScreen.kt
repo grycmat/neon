@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
@@ -39,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -70,6 +74,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val mode by viewModel.themeMode.collectAsStateWithLifecycle()
     val me by viewModel.me.collectAsStateWithLifecycle()
     val prefNotificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
+    val alertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     var hasPermission by remember {
@@ -195,6 +200,85 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     )
                 }
             }
+            if (isToggled) {
+                Spacer(Modifier.height(10.dp))
+                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                    Column {
+                        NotificationAlertToggle("Mentions", alertPrefs.mention) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(mention = it))
+                        }
+                        NotificationAlertToggle("Favourites", alertPrefs.favourite) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(favourite = it))
+                        }
+                        NotificationAlertToggle("Boosts", alertPrefs.reblog) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(reblog = it))
+                        }
+                        NotificationAlertToggle("New followers", alertPrefs.follow) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(follow = it))
+                        }
+                        NotificationAlertToggle("Follow requests", alertPrefs.followRequest) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(followRequest = it))
+                        }
+                        NotificationAlertToggle("Polls", alertPrefs.poll) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(poll = it))
+                        }
+                        NotificationAlertToggle("New posts", alertPrefs.status, isLast = true) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(status = it))
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(28.dp))
+            NeonLabel("Composing", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                Column {
+                    Text("Default visibility", style = type.bodySmall, color = palette.textDim)
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PostVisibilityOptions.forEach { visibility ->
+                            VisibilityChip(
+                                visibility = visibility,
+                                selected = (me?.source?.privacy ?: "public") == visibility,
+                                onSelect = { viewModel.setDefaultPrivacy(visibility) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    Text("Default language (ISO code)", style = type.bodySmall, color = palette.textDim)
+                    Spacer(Modifier.height(8.dp))
+                    var language by remember(me?.source?.language) {
+                        mutableStateOf(me?.source?.language.orEmpty())
+                    }
+                    BasicTextField(
+                        value = language,
+                        onValueChange = { language = it },
+                        textStyle = type.bodyMedium.copy(color = palette.text),
+                        cursorBrush = SolidColor(palette.cyan),
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(palette.surface, RoundedCornerShape(8.dp))
+                            .border(1.dp, palette.border, RoundedCornerShape(8.dp))
+                            .padding(10.dp),
+                        decorationBox = { inner ->
+                            if (language.isEmpty()) {
+                                Text("e.g. en", style = type.bodyMedium, color = palette.textMute)
+                            }
+                            inner()
+                        },
+                        keyboardActions = KeyboardActions(
+                            onDone = { viewModel.setDefaultLanguage(language) },
+                        ),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    GlassButton(
+                        label = "Save language",
+                        onClick = { viewModel.setDefaultLanguage(language) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             Spacer(Modifier.height(28.dp))
             NeonLabel("Account", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
             GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
@@ -205,8 +289,42 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
             Spacer(Modifier.height(14.dp))
             GlassButton(
+                label = "Server info",
+                onClick = {
+                    val instance = viewModel.instance
+                    if (instance != null) {
+                        context.startActivity(
+                            android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse("https://$instance/about"),
+                            )
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
                 label = "Bookmarks",
                 onClick = Navigator::openBookmarks,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
+                label = "Lists",
+                onClick = Navigator::openManageLists,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
+                label = "Followed hashtags",
+                onClick = Navigator::openManageFollowedHashtags,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
+                label = "Filters",
+                onClick = Navigator::openFilters,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(14.dp))
@@ -216,6 +334,60 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@Composable
+private fun NotificationAlertToggle(
+    label: String,
+    checked: Boolean,
+    isLast: Boolean = false,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = if (isLast) 0.dp else 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = type.bodyMedium, color = palette.text, modifier = Modifier.weight(1f))
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = palette.cyan.copy(alpha = .35f),
+                checkedThumbColor = palette.cyan,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun VisibilityChip(
+    visibility: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    val shape = RoundedCornerShape(10.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(if (selected) palette.cyan.copy(alpha = .1f) else palette.surface, shape)
+            .border(1.dp, if (selected) palette.cyan.copy(alpha = .4f) else palette.border, shape)
+            .clickable { onSelect() }
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            visibility.replaceFirstChar { it.uppercase() },
+            style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
+            color = if (selected) palette.cyan else palette.textDim,
+        )
     }
 }
 

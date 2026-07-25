@@ -19,7 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Report
 import androidx.compose.material.icons.rounded.VolumeMute
@@ -43,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gigapingu.neon.core.designsystem.component.EmojiText
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.HtmlText
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
@@ -62,6 +65,7 @@ fun StatusCard(
     modifier: Modifier = Modifier,
     showActions: Boolean = true,
     navigateOnTap: Boolean = true,
+    pinned: Boolean = false,
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
@@ -69,6 +73,7 @@ fun StatusCard(
     var showContextMenu by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
     var reportComment by remember { mutableStateOf("") }
+    var showEditHistory by remember { mutableStateOf(false) }
 
     GlassCard(
         modifier = modifier
@@ -82,6 +87,25 @@ fun StatusCard(
         onLongClick = { showContextMenu = true },
     ) {
         Column {
+            if (pinned) {
+                Row(
+                    modifier = Modifier.padding(bottom = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.PushPin,
+                        contentDescription = "Pinned",
+                        tint = palette.textDim,
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        "Pinned",
+                        style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = palette.textDim,
+                    )
+                }
+            }
             if (status.isBoost) {
                 Row(
                     modifier = Modifier.padding(bottom = 9.dp),
@@ -94,8 +118,9 @@ fun StatusCard(
                         modifier = Modifier.size(14.dp),
                     )
                     Spacer(Modifier.width(7.dp))
-                    Text(
+                    EmojiText(
                         "${status.account.displayNameOrUsername} boosted",
+                        emojis = status.account.emojis,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
@@ -123,8 +148,9 @@ fun StatusCard(
                                 indication = null,
                             ) { Navigator.openProfile(display.account.id) },
                     ) {
-                        Text(
+                        EmojiText(
                             display.account.displayNameOrUsername,
+                            emojis = display.account.emojis,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             style = type.titleSmall,
@@ -146,8 +172,19 @@ fun StatusCard(
                             style = type.bodySmall,
                             color = palette.textMute,
                         )
+                        if (display.editedAt != null) {
+                            Text(
+                                " · edited",
+                                style = type.bodySmall,
+                                color = palette.textMute,
+                                modifier = Modifier.clickable(
+                                    interactionSource = null,
+                                    indication = null,
+                                ) { showEditHistory = true },
+                            )
+                        }
                     }
-                    val hasCw = display.spoilerText.isNotEmpty()
+                    val hasWarning = display.spoilerText.isNotEmpty() || display.filtered.isNotEmpty()
                     var revealed by rememberSaveable(display.id) { androidx.compose.runtime.mutableStateOf(false) }
 
                     Spacer(Modifier.height(7.dp))
@@ -156,7 +193,7 @@ fun StatusCard(
                         revealed = revealed,
                         onToggleReveal = { revealed = !revealed }
                     )
-                    if (!hasCw || revealed) {
+                    if (!hasWarning || revealed) {
                         display.card?.let { card ->
                             LinkPreviewCard(card = card)
                         }
@@ -174,6 +211,9 @@ fun StatusCard(
                 }
             }
         }
+    }
+    if (showEditHistory) {
+        EditHistorySheet(statusId = display.id, onDismiss = { showEditHistory = false })
     }
     if (showContextMenu) {
         StatusContextMenuSheet(
@@ -253,10 +293,12 @@ fun StatusBody(
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     val hasCw = status.spoilerText.isNotEmpty()
+    val filterTitle = status.filtered.firstOrNull()?.filter?.title
+    val hasWarning = hasCw || filterTitle != null
     val style = textStyle ?: type.bodyMedium
 
     Column(modifier = modifier) {
-        if (hasCw) {
+        if (hasWarning) {
             val shape = RoundedCornerShape(12.dp)
             Row(
                 modifier = Modifier
@@ -272,14 +314,14 @@ fun StatusBody(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    Icons.Rounded.WarningAmber,
-                    contentDescription = "Content warning",
+                    if (hasCw) Icons.Rounded.WarningAmber else Icons.Rounded.FilterAlt,
+                    contentDescription = if (hasCw) "Content warning" else "Filtered",
                     tint = palette.purple,
                     modifier = Modifier.size(15.dp),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    status.spoilerText,
+                    if (hasCw) status.spoilerText else "Filtered: ${filterTitle}".takeUnless { filterTitle.isNullOrBlank() } ?: "Filtered post",
                     style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
                     color = palette.text,
                     modifier = Modifier.weight(1f),
@@ -291,10 +333,11 @@ fun StatusBody(
                 )
             }
         }
-        if (!hasCw || revealed) {
+        if (!hasWarning || revealed) {
             HtmlText(
                 html = status.content,
                 style = style,
+                emojis = status.emojis,
                 onHashtagClick = { tag -> Navigator.openHashtag(tag) },
                 onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
             )
@@ -352,6 +395,20 @@ fun StatusContextMenuSheet(
                     onClick = {
                         onDismiss()
                         StatusActionService.redraftStatus(status)
+                    }
+                )
+                SheetOption(
+                    icon = Icons.Rounded.PushPin,
+                    color = palette.purple,
+                    title = if (status.pinned) "Unpin from profile" else "Pin to profile",
+                    subtitle = if (status.pinned) {
+                        "Remove from the top of your profile"
+                    } else {
+                        "Show at the top of your profile"
+                    },
+                    onClick = {
+                        onDismiss()
+                        StatusActionService.togglePin(status)
                     }
                 )
             } else {

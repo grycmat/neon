@@ -22,12 +22,13 @@ class PushRepository @Inject constructor(
     private val json: Json,
 ) {
     @Volatile
-    private var lastRegisteredToken: String? = null
+    private var lastRegistrationKey: String? = null
 
-    /** POST /api/v1/push/subscription. No-op if not authenticated or token unchanged. */
-    suspend fun register(fcmToken: String) {
+    /** POST /api/v1/push/subscription. No-op if not authenticated or unchanged since the last call. */
+    suspend fun register(fcmToken: String, alerts: NotificationAlertPrefs = NotificationAlertPrefs()) {
         if (!api.isConfigured) return
-        if (fcmToken == lastRegisteredToken) return
+        val registrationKey = "$fcmToken:$alerts"
+        if (registrationKey == lastRegistrationKey) return
 
         val keys = keyManager.getOrCreateKeys()
         val endpoint = NeonConfig.RELAY_BASE_URL.trimEnd('/') +
@@ -37,18 +38,42 @@ class PushRepository @Inject constructor(
                 endpoint = endpoint,
                 keys = PushKeysBody(p256dh = keys.p256dhBase64, auth = keys.authBase64),
             ),
+            data = PushDataBody(alerts = alerts.toAlertsBody()),
         )
         api.post("/api/v1/push/subscription", json.encodeToString(RegisterPushRequest.serializer(), request))
-        lastRegisteredToken = fcmToken
+        lastRegistrationKey = registrationKey
     }
 
     /** DELETE /api/v1/push/subscription. Best-effort (a missing subscription is fine). */
     suspend fun unregister() {
-        lastRegisteredToken = null
+        lastRegistrationKey = null
         if (!api.isConfigured) return
         runCatching { api.delete("/api/v1/push/subscription") }
     }
 }
+
+/** Per-notification-type push alert toggles (Settings > Notifications). */
+data class NotificationAlertPrefs(
+    val mention: Boolean = true,
+    val favourite: Boolean = true,
+    val reblog: Boolean = true,
+    val follow: Boolean = true,
+    val followRequest: Boolean = true,
+    val poll: Boolean = true,
+    val status: Boolean = true,
+    val update: Boolean = true,
+)
+
+private fun NotificationAlertPrefs.toAlertsBody() = PushAlertsBody(
+    mention = mention,
+    favourite = favourite,
+    reblog = reblog,
+    follow = follow,
+    follow_request = followRequest,
+    poll = poll,
+    status = status,
+    update = update,
+)
 
 // Mastodon accepts these as nested JSON, mapping to the bracketed form params
 // (subscription[keys][p256dh], data[alerts][mention], ...). See docs.joinmastodon.org/methods/push/.

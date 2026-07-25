@@ -39,9 +39,14 @@ import com.gigapingu.neon.core.ui.EditProfileKey
 import com.gigapingu.neon.core.ui.FollowListKey
 import com.gigapingu.neon.core.ui.HashtagKey
 import com.gigapingu.neon.core.ui.HashtagTimelineKey
+import com.gigapingu.neon.core.ui.FiltersKey
 import com.gigapingu.neon.core.ui.HomeKey
+import com.gigapingu.neon.core.ui.ListTimelineKey
+import com.gigapingu.neon.core.ui.ManageFollowedHashtagsKey
+import com.gigapingu.neon.core.ui.ManageListsKey
 import com.gigapingu.neon.core.ui.MediaPreviewKey
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.NotificationRequestsKey
 import com.gigapingu.neon.core.ui.ProfileKey
 import com.gigapingu.neon.core.ui.LocalTwoPaneEnabled
 import com.gigapingu.neon.core.ui.SettingsKey
@@ -54,9 +59,14 @@ import com.gigapingu.neon.feature.profile.BookmarksScreen
 import com.gigapingu.neon.feature.profile.EditProfileScreen
 import com.gigapingu.neon.feature.profile.FollowListScreen
 import com.gigapingu.neon.feature.profile.ProfileScreen
+import com.gigapingu.neon.feature.settings.FiltersScreen
+import com.gigapingu.neon.feature.settings.ManageFollowedHashtagsScreen
+import com.gigapingu.neon.feature.settings.ManageListsScreen
 import com.gigapingu.neon.feature.settings.SettingsScreen
+import com.gigapingu.neon.feature.notifications.NotificationRequestsScreen
 import com.gigapingu.neon.feature.thread.ThreadScreen
 import com.gigapingu.neon.feature.timeline.HashtagTimelineScreen
+import com.gigapingu.neon.feature.timeline.ListTimelineScreen
 
 // NavDisplay.DEFAULT_TRANSITION_DURATION_MILLISECOND (internal in alpha05).
 private const val NAV_TRANSITION_MS = 400
@@ -202,6 +212,11 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                 }
                 entry<EditProfileKey> { EditProfileScreen() }
                 entry<SettingsKey> { SettingsScreen() }
+                entry<ManageFollowedHashtagsKey> { ManageFollowedHashtagsScreen() }
+                entry<ManageListsKey> { ManageListsScreen() }
+                entry<ListTimelineKey> { key -> ListTimelineScreen(listId = key.listId, title = key.title) }
+                entry<FiltersKey> { FiltersScreen() }
+                entry<NotificationRequestsKey> { NotificationRequestsScreen() }
                 entry<BookmarksKey> { BookmarksScreen() }
                 entry<HashtagTimelineKey> { key ->
                     HashtagTimelineScreen(hashtag = key.hashtag)

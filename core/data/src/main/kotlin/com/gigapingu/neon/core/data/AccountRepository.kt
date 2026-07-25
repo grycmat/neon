@@ -36,12 +36,14 @@ class AccountRepository @Inject constructor(
         maxId: String? = null,
         excludeReplies: Boolean = true,
         onlyMedia: Boolean = false,
+        pinned: Boolean = false,
         limit: Int = 20,
     ): List<Status> {
         val query = buildMap {
             put("limit", limit)
             put("exclude_replies", excludeReplies)
             if (onlyMedia) put("only_media", true)
+            if (pinned) put("pinned", true)
             maxId?.let { put("max_id", it) }
         }
         return json.decodeFromString(
@@ -95,6 +97,8 @@ class AccountRepository @Inject constructor(
         fields: List<AccountField>? = null,
         avatar: FilePart? = null,
         header: FilePart? = null,
+        defaultPrivacy: String? = null,
+        defaultLanguage: String? = null,
     ): Account {
         val fieldMap = buildMap {
             displayName?.let { put("display_name", it) }
@@ -105,6 +109,8 @@ class AccountRepository @Inject constructor(
                 put("fields_attributes[$i][name]", field.name)
                 put("fields_attributes[$i][value]", field.value)
             }
+            defaultPrivacy?.let { put("source[privacy]", it) }
+            defaultLanguage?.let { put("source[language]", it) }
         }
         val account = json.decodeFromString(
             Account.serializer(),

@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.StatusRepository
+import com.gigapingu.neon.core.data.TagRepository
 import com.gigapingu.neon.core.data.patchPollList
 import com.gigapingu.neon.core.data.patchStatusList
 import com.gigapingu.neon.core.model.Account
+import com.gigapingu.neon.core.model.FeaturedTag
 import com.gigapingu.neon.core.model.Poll
 import com.gigapingu.neon.core.model.Relationship
 import com.gigapingu.neon.core.model.Status
@@ -26,6 +28,8 @@ data class ProfileUiState(
     val account: Account? = null,
     val relationship: Relationship? = null,
     val statuses: List<Status> = emptyList(),
+    val pinnedStatuses: List<Status> = emptyList(),
+    val featuredTags: List<FeaturedTag> = emptyList(),
     val loadingStatuses: Boolean = true,
     val hasMore: Boolean = true,
     val followBusy: Boolean = false,
@@ -37,6 +41,7 @@ class ProfileViewModel @Inject constructor(
     private val accounts: AccountRepository,
     private val auth: AuthRepository,
     private val statusRepository: StatusRepository,
+    private val tags: TagRepository,
 ) : ViewModel(), StatusRepository.StatusListener {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -65,15 +70,36 @@ class ProfileViewModel @Inject constructor(
     }
 
     override fun onStatusUpdated(status: Status) {
-        _uiState.update { it.copy(statuses = patchStatusList(it.statuses, status)) }
+        _uiState.update {
+            val pinned = if (status.pinned) {
+                if (it.pinnedStatuses.any { p -> p.id == status.id }) {
+                    patchStatusList(it.pinnedStatuses, status)
+                } else {
+                    it.pinnedStatuses + status
+                }
+            } else {
+                it.pinnedStatuses.filterNot { p -> p.id == status.id }
+            }
+            it.copy(statuses = patchStatusList(it.statuses, status), pinnedStatuses = pinned)
+        }
     }
 
     override fun onPollUpdated(poll: Poll) {
-        _uiState.update { it.copy(statuses = patchPollList(it.statuses, poll)) }
+        _uiState.update {
+            it.copy(
+                statuses = patchPollList(it.statuses, poll),
+                pinnedStatuses = patchPollList(it.pinnedStatuses, poll),
+            )
+        }
     }
 
     override fun onStatusDeleted(id: String) {
-        _uiState.update { it.copy(statuses = it.statuses.filterNot { s -> s.id == id || s.reblog?.id == id }) }
+        _uiState.update {
+            it.copy(
+                statuses = it.statuses.filterNot { s -> s.id == id || s.reblog?.id == id },
+                pinnedStatuses = it.pinnedStatuses.filterNot { s -> s.id == id || s.reblog?.id == id },
+            )
+        }
     }
 
     fun start(accountId: String) {
@@ -96,6 +122,10 @@ class ProfileViewModel @Inject constructor(
                 runCatching { accounts.getRelationship(id) }
                     .onSuccess { rel -> _uiState.update { it.copy(relationship = rel) } }
             }
+            runCatching { accounts.getStatuses(id, pinned = true) }
+                .onSuccess { pinned -> _uiState.update { it.copy(pinnedStatuses = pinned) } }
+            runCatching { tags.getFeaturedTags(id) }
+                .onSuccess { featured -> _uiState.update { it.copy(featuredTags = featured) } }
             runCatching { accounts.getStatuses(id) }
                 .onSuccess { statuses ->
                     _uiState.update {
@@ -159,6 +189,30 @@ class ProfileViewModel @Inject constructor(
                 _uiState.update { it.copy(relationship = updated) }
             } catch (e: Exception) {
                 _errors.tryEmit(e.message ?: "Could not update block state")
+            }
+        }
+    }
+
+    fun addFeaturedTag(name: String) {
+        val cleaned = name.removePrefix("#").trim()
+        if (cleaned.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val featured = tags.featureTag(cleaned)
+                _uiState.update { it.copy(featuredTags = it.featuredTags + featured) }
+            } catch (e: Exception) {
+                _errors.tryEmit(e.message ?: "Could not feature that hashtag")
+            }
+        }
+    }
+
+    fun removeFeaturedTag(tag: FeaturedTag) {
+        viewModelScope.launch {
+            try {
+                tags.unfeatureTag(tag.id)
+                _uiState.update { it.copy(featuredTags = it.featuredTags.filterNot { t -> t.id == tag.id }) }
+            } catch (e: Exception) {
+                _errors.tryEmit(e.message ?: "Could not remove that hashtag")
             }
         }
     }

@@ -198,7 +198,7 @@ below (streaming, multi-account, etc.).
 > Mastodon client, found by diffing against `mastodon/mastodon-android`'s
 > fragment/API layout.
 
-- [ ] **Custom emoji rendering**
+- [x] **Custom emoji rendering**
   - `Instance` / `Status` / `Account` payloads carry a `emojis` array
     (`shortcode`, `url`, `static_url`). Currently rendered as literal
     `:shortcode:` text in `HtmlText`.
@@ -207,7 +207,7 @@ below (streaming, multi-account, etc.).
     `AnnotatedString`). Highest-visibility gap — shows up on almost every
     screen for instances with custom emoji.
 
-- [ ] **Lists**
+- [x] **Lists**
   - Add `ListRepository` (`GET/POST/PUT/DELETE /api/v1/lists`,
     `GET/POST/DELETE /api/v1/lists/:id/accounts` for membership).
   - `ManageListsScreen` (create/rename/delete, replace-existing color/icon
@@ -218,7 +218,7 @@ below (streaming, multi-account, etc.).
   - Entry point: a "Lists" row in Settings or a new segmented pill in
     `TimelineScreen` alongside Home/Local/Federated.
 
-- [ ] **Keyword filters**
+- [x] **Keyword filters**
   - Add `FilterRepository` (`GET/POST/PUT/DELETE /api/v2/filters`, with
     nested `keywords`/`statuses` sub-resources).
   - `FiltersScreen` (list existing filters, create/edit with phrase, context
@@ -228,32 +228,32 @@ below (streaming, multi-account, etc.).
     `Status.filtered` (populated server-side per `GET` request once filters
     exist) and collapse/hide matching statuses the same way CW does.
 
-- [ ] **Follow hashtag + manage followed hashtags**
+- [x] **Follow hashtag + manage followed hashtags**
   - Add `POST/POST /api/v1/tags/:tag/follow|unfollow` to (new or existing)
     a small `TagRepository`; `GET /api/v1/followed_tags` for the list screen.
   - Add a follow/unfollow toggle to `HashtagTimelineScreen`'s top bar.
   - `ManageFollowedHashtagsScreen` reachable from Settings, reusing
     `AsyncList`.
 
-- [ ] **Featured hashtags on profile**
+- [x] **Featured hashtags on profile**
   - `GET /api/v1/accounts/:id/featured_tags` — render as a chip row under the
     bio in `ProfileScreen` (own profile: manage via
     `POST/DELETE /api/v1/featured_tags`), tapping a chip opens
     `HashtagTimelineScreen`.
 
-- [ ] **Pinned posts on profile**
+- [x] **Pinned posts on profile**
   - `GET /api/v1/accounts/:id/statuses?pinned=true` — prepend to
     `ProfileScreen`'s status list with a small "📌 Pinned" label on the card,
     matching every other Mastodon client's profile header.
   - Own-profile pin/unpin action: `POST /api/v1/statuses/:id/pin|unpin`,
     surfaced in the status context menu.
 
-- [ ] **Status edit history**
+- [x] **Status edit history**
   - `GET /api/v1/statuses/:id/history` — when a status shows the "edited"
     timestamp (`Status.editedAt`, already decoded), make it tappable into a
     simple diff-less list of prior versions (text + media per revision).
 
-- [ ] **Notification requests (filtered notifications)**
+- [x] **Notification requests (filtered notifications)**
   - Mastodon 4.3+: `GET /api/v1/notifications/requests`,
     `POST /api/v1/notifications/requests/:id/accept|dismiss`. Notifications
     from accounts you don't follow can be held back into a request queue
@@ -261,7 +261,7 @@ below (streaming, multi-account, etc.).
   - Add a "Requests" entry point at the top of `NotificationsScreen` when the
     count is non-zero; reuse `AsyncList` for the request list.
 
-- [ ] **Granular settings**
+- [x] **Granular settings**
   - Default post visibility + default language for new toots
     (`Settings*Fragment` in the official app / `source` prefs on
     `update_credentials`) — read/write via `AccountRepository.updateCredentials`.

@@ -7,7 +7,9 @@ import com.gigapingu.neon.core.data.NotificationRepository
 import com.gigapingu.neon.core.model.MastoNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -17,8 +19,19 @@ class NotificationsViewModel @Inject constructor(
 
     val state: StateFlow<AsyncState<List<MastoNotification>>> = notifications.state
 
+    private val _requestsCount = MutableStateFlow(0)
+    val requestsCount: StateFlow<Int> = _requestsCount.asStateFlow()
+
     init {
         viewModelScope.launch { notifications.load() }
+        refreshRequestsCount()
+    }
+
+    fun refreshRequestsCount() {
+        viewModelScope.launch {
+            runCatching { notifications.getRequests() }
+                .onSuccess { _requestsCount.value = it.sumOf { r -> r.notificationsCount } }
+        }
     }
 
     fun refresh() {

@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
             val authStatus by viewModel.authStatus.collectAsStateWithLifecycle()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
+            val notificationAlertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
 
             var hasNotificationPermission by androidx.compose.runtime.remember {
                 androidx.compose.runtime.mutableStateOf(
@@ -86,7 +87,7 @@ class MainActivity : ComponentActivity() {
 
             splash.setKeepOnScreenCondition { authStatus == AuthStatus.Unknown }
 
-            LaunchedEffect(authStatus, notificationsEnabled, hasNotificationPermission) {
+            LaunchedEffect(authStatus, notificationsEnabled, hasNotificationPermission, notificationAlertPrefs) {
                 viewModel.syncPushRegistration(hasNotificationPermission)
             }
 

@@ -4,11 +4,13 @@ import com.gigapingu.neon.core.model.Poll
 import com.gigapingu.neon.core.model.PollDraft
 import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.model.StatusContext
+import com.gigapingu.neon.core.model.StatusEdit
 import com.gigapingu.neon.core.model.StatusSource
 import com.gigapingu.neon.core.network.ApiClient
 import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -57,6 +59,11 @@ class StatusRepository @Inject constructor(
     suspend fun getContext(id: String): StatusContext =
         json.decodeFromString(StatusContext.serializer(), api.get("/api/v1/statuses/$id/context"))
 
+    suspend fun getHistory(id: String): List<StatusEdit> = json.decodeFromString(
+        ListSerializer(StatusEdit.serializer()),
+        api.get("/api/v1/statuses/$id/history"),
+    )
+
     suspend fun favourite(status: Status): Status =
         toggle(status, if (status.favourited) "unfavourite" else "favourite")
 
@@ -65,6 +72,9 @@ class StatusRepository @Inject constructor(
 
     suspend fun bookmark(status: Status): Status =
         toggle(status, if (status.bookmarked) "unbookmark" else "bookmark")
+
+    suspend fun pin(status: Status): Status =
+        toggle(status, if (status.pinned) "unpin" else "pin")
 
     private suspend fun toggle(status: Status, action: String): Status {
         var updated = json.decodeFromString(

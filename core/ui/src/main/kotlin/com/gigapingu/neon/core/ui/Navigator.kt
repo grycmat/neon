@@ -44,10 +44,25 @@ data object EditProfileKey : NavKey
 data object SettingsKey : NavKey
 
 @Serializable
+data object ManageFollowedHashtagsKey : NavKey
+
+@Serializable
 data class MediaPreviewKey(val url: String, val previewUrl: String? = null, val type: String? = null) : NavKey
 
 @Serializable
 data class HashtagTimelineKey(val hashtag: String) : NavKey
+
+@Serializable
+data object ManageListsKey : NavKey
+
+@Serializable
+data class ListTimelineKey(val listId: String, val title: String) : NavKey
+
+@Serializable
+data object FiltersKey : NavKey
+
+@Serializable
+data object NotificationRequestsKey : NavKey
 
 /**
  * Global navigation. NeonApp sets [backStack] while the authenticated shell is
@@ -137,6 +152,26 @@ object Navigator {
 
     fun openSettings() {
         backStack?.add(SettingsKey)
+    }
+
+    fun openManageFollowedHashtags() {
+        backStack?.add(ManageFollowedHashtagsKey)
+    }
+
+    fun openManageLists() {
+        backStack?.add(ManageListsKey)
+    }
+
+    fun openListTimeline(listId: String, title: String) {
+        backStack?.add(ListTimelineKey(listId, title))
+    }
+
+    fun openFilters() {
+        backStack?.add(FiltersKey)
+    }
+
+    fun openNotificationRequests() {
+        backStack?.add(NotificationRequestsKey)
     }
 
     /** [previewUrl] is the already-cached thumbnail shown while [url] loads. */

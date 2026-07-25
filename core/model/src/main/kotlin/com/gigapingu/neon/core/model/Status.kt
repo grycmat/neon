@@ -37,6 +37,7 @@ data class Status(
     val favourited: Boolean = false,
     val reblogged: Boolean = false,
     val bookmarked: Boolean = false,
+    val pinned: Boolean = false,
     val sensitive: Boolean = false,
     @SerialName("in_reply_to_id") val inReplyToId: String? = null,
     @SerialName("in_reply_to_account_id") val inReplyToAccountId: String? = null,
@@ -54,6 +55,11 @@ data class Status(
     val mentions: List<StatusMention> = emptyList(),
     val tags: List<StatusTag> = emptyList(),
     val card: PreviewCard? = null,
+    val emojis: List<Emoji> = emptyList(),
+    @SerialName("edited_at")
+    @Serializable(with = LenientInstantSerializer::class)
+    val editedAt: Instant? = null,
+    val filtered: List<FilterResult> = emptyList(),
 ) {
     /** The status to render (unwraps boosts). */
     val display: Status get() = reblog ?: this
@@ -88,6 +94,21 @@ data class PreviewCard(
 data class StatusContext(
     val ancestors: List<Status> = emptyList(),
     val descendants: List<Status> = emptyList(),
+)
+
+/** One prior revision from GET /api/v1/statuses/:id/history, oldest first. */
+@Serializable
+data class StatusEdit(
+    /** HTML. */
+    val content: String = "",
+    @SerialName("spoiler_text") val spoilerText: String = "",
+    val sensitive: Boolean = false,
+    @SerialName("created_at")
+    @Serializable(with = LenientInstantSerializer::class)
+    val createdAt: Instant? = null,
+    val account: Account,
+    @SerialName("media_attachments") val mediaAttachments: List<MediaAttachment> = emptyList(),
+    val emojis: List<Emoji> = emptyList(),
 )
 
 /**

@@ -80,6 +80,10 @@ class ApiClient @Inject constructor(private val client: OkHttpClient) {
     suspend fun delete(path: String): String =
         execute(Request.Builder().url(buildUrl(path)).delete())
 
+    /** DELETE with a JSON body (some endpoints, e.g. list membership removal, require one). */
+    suspend fun delete(path: String, body: String): String =
+        execute(Request.Builder().url(buildUrl(path)).delete(body.toRequestBody(JSON_MEDIA_TYPE)))
+
     /** Multipart request — media upload (POST) and profile edits (PATCH). */
     suspend fun multipart(
         method: String,

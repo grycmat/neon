@@ -10,6 +10,7 @@ import com.gigapingu.neon.core.data.StatusRepository
 import com.gigapingu.neon.core.model.Account
 import com.gigapingu.neon.core.model.Poll
 import com.gigapingu.neon.core.model.Status
+import com.gigapingu.neon.core.model.StatusEdit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -85,8 +86,13 @@ object StatusActionService {
 
     fun toggleBookmark(status: Status) = guarded { statuses?.bookmark(status) }
 
+    fun togglePin(status: Status) = guarded { statuses?.pin(status) }
+
     suspend fun getFavouritedBy(statusId: String): Result<List<Account>> =
         runCatching { accounts?.getFavouritedBy(statusId) ?: emptyList() }
+
+    suspend fun getHistory(statusId: String): Result<List<StatusEdit>> =
+        runCatching { statuses?.getHistory(statusId) ?: emptyList() }
 
     suspend fun getRebloggedBy(statusId: String): Result<List<Account>> =
         runCatching { accounts?.getRebloggedBy(statusId) ?: emptyList() }

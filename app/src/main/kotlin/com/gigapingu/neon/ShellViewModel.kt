@@ -9,6 +9,7 @@ import com.gigapingu.neon.core.data.SettingsRepository
 import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.data.TimelineRepository
+import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
 import com.gigapingu.neon.core.data.push.PushRepository
 import com.gigapingu.neon.core.model.Account
 import com.gigapingu.neon.feature.notifications.FcmTokenProvider
@@ -43,6 +44,9 @@ class ShellViewModel @Inject constructor(
 
     val notificationsEnabled: StateFlow<Boolean> = settings.notificationsEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    val notificationAlertPrefs: StateFlow<NotificationAlertPrefs> = settings.notificationAlertPrefs
+        .stateIn(viewModelScope, SharingStarted.Eagerly, NotificationAlertPrefs())
 
     val twoPaneEnabled: StateFlow<Boolean> = settings.twoPaneEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
@@ -99,7 +103,7 @@ class ShellViewModel @Inject constructor(
                 if (notificationsEnabled.value && hasNotificationPermission) {
                     val token = fcmTokenProvider.getToken()
                     if (token != null) {
-                        pushRepository.register(token)
+                        pushRepository.register(token, notificationAlertPrefs.value)
                         Log.i(NEON_PUSH_TAG, "Registered push subscription with instance")
                     } else {
                         Log.w(NEON_PUSH_TAG, "No FCM token available — skipping push registration")

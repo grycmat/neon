@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gigapingu.neon.core.designsystem.component.EmojiText
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.GradientButton
@@ -52,6 +53,7 @@ import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.hingePaneWidth
 import com.gigapingu.neon.core.ui.isBigScreen
+import com.gigapingu.neon.core.ui.status.EditHistorySheet
 import com.gigapingu.neon.core.ui.status.LinkPreviewCard
 import com.gigapingu.neon.core.ui.status.MediaGrid
 import com.gigapingu.neon.core.ui.status.PollView
@@ -330,6 +332,7 @@ private fun ReplyBar(status: Status) {
 private fun FocusedStatus(status: Status) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
+    var showEditHistory by rememberSaveable(status.id) { androidx.compose.runtime.mutableStateOf(false) }
     GlassCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -348,12 +351,12 @@ private fun FocusedStatus(status: Status) {
                 NeonAvatar(account = status.account, size = 46.dp, ring = true)
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(status.account.displayNameOrUsername, style = type.titleMedium, color = palette.text)
+                    EmojiText(status.account.displayNameOrUsername, emojis = status.account.emojis, style = type.titleMedium, color = palette.text)
                     Text(status.account.fullHandle, style = type.bodySmall, color = palette.textDim)
                 }
             }
             Spacer(Modifier.height(14.dp))
-            val hasCw = status.spoilerText.isNotEmpty()
+            val hasWarning = status.spoilerText.isNotEmpty() || status.filtered.isNotEmpty()
             var revealed by rememberSaveable(status.id) { androidx.compose.runtime.mutableStateOf(false) }
 
             StatusBody(
@@ -362,7 +365,7 @@ private fun FocusedStatus(status: Status) {
                 revealed = revealed,
                 onToggleReveal = { revealed = !revealed }
             )
-            if (!hasCw || revealed) {
+            if (!hasWarning || revealed) {
                 status.card?.let { card ->
                     LinkPreviewCard(card = card)
                 }
@@ -375,9 +378,25 @@ private fun FocusedStatus(status: Status) {
                 status.poll?.let { PollView(poll = it) }
             }
             Spacer(Modifier.height(12.dp))
-            Text(fullTime(status.createdAt), style = type.bodySmall, color = palette.textMute)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(fullTime(status.createdAt), style = type.bodySmall, color = palette.textMute)
+                if (status.editedAt != null) {
+                    Text(
+                        " · edited",
+                        style = type.bodySmall,
+                        color = palette.textMute,
+                        modifier = Modifier.clickable(
+                            interactionSource = null,
+                            indication = null,
+                        ) { showEditHistory = true },
+                    )
+                }
+            }
             StatusActions(status = status)
         }
+    }
+    if (showEditHistory) {
+        EditHistorySheet(statusId = status.id, onDismiss = { showEditHistory = false })
     }
 }
 

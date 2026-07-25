@@ -24,6 +24,7 @@ data class TrendTag(
     val name: String = "",
     val url: String = "",
     val history: List<JsonElement> = emptyList(),
+    val following: Boolean = false,
 ) {
     val uses: Int get() = history.sumOf { it.intField("uses") }
     val accounts: Int get() = history.sumOf { it.intField("accounts") }

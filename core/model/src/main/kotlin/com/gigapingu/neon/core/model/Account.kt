@@ -25,10 +25,20 @@ data class Account(
     @Serializable(with = LenientInstantSerializer::class)
     val createdAt: Instant? = null,
     val fields: List<AccountField> = emptyList(),
+    val emojis: List<Emoji> = emptyList(),
+    /** Only present on the authenticated user's own account (verify_credentials / update_credentials). */
+    val source: AccountSource? = null,
 ) {
     val displayNameOrUsername: String get() = displayName.ifEmpty { username }
     val fullHandle: String get() = "@$acct"
 }
+
+/** Self-only preferences embedded in Account.source. */
+@Serializable
+data class AccountSource(
+    val privacy: String = "public",
+    val language: String? = null,
+)
 
 @Serializable
 data class AccountField(

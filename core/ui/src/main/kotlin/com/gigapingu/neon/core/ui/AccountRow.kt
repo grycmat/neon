@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.gigapingu.neon.core.designsystem.component.EmojiText
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
@@ -40,8 +41,9 @@ fun AccountRow(
             NeonAvatar(account = account, size = 42.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(
+                EmojiText(
                     account.displayNameOrUsername,
+                    emojis = account.emojis,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = type.titleSmall,
