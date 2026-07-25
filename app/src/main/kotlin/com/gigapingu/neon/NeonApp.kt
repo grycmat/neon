@@ -71,9 +71,15 @@ import com.gigapingu.neon.feature.timeline.ListTimelineScreen
 // NavDisplay.DEFAULT_TRANSITION_DURATION_MILLISECOND (internal in alpha05).
 private const val NAV_TRANSITION_MS = 400
 
+// Fades layered onto the slides mask the transparent-background flash that
+// shows through while a new screen's glass surfaces are still compositing in.
+private fun pushSlide(): ContentTransform =
+    (slideInHorizontally(tween(NAV_TRANSITION_MS)) { it } + fadeIn(tween(NAV_TRANSITION_MS))) togetherWith
+        (slideOutHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 } + fadeOut(tween(NAV_TRANSITION_MS)))
+
 private fun popSlide(): ContentTransform =
-    slideInHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 } togetherWith
-        slideOutHorizontally(tween(NAV_TRANSITION_MS)) { it }
+    (slideInHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 } + fadeIn(tween(NAV_TRANSITION_MS))) togetherWith
+        (slideOutHorizontally(tween(NAV_TRANSITION_MS)) { it } + fadeOut(tween(NAV_TRANSITION_MS)))
 
 // Composer opens by expanding out of the compose FAB's bottom-end corner,
 // and collapses back into it on pop. The near-1f fades keep the screen
@@ -173,10 +179,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
             backStack = backStack,
             modifier = Modifier.fillMaxSize(),
             onBack = { count -> repeat(count) { backStack.removeLastOrNull() } },
-            transitionSpec = {
-                slideInHorizontally(tween(NAV_TRANSITION_MS)) { it } togetherWith
-                    slideOutHorizontally(tween(NAV_TRANSITION_MS)) { -it / 4 }
-            },
+            transitionSpec = { pushSlide() },
             popTransitionSpec = { popSlide() },
             predictivePopTransitionSpec = { popSlide() },
             entryDecorators = listOf(
