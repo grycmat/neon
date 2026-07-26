@@ -180,10 +180,10 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
   (`android:enableOnBackInvokedCallback="true"` is set in the app manifest so
   the gesture drives the pop animation). One per-entry exception: `ComposeKey`
   overrides via `NavDisplay.transitionSpec`/`popTransitionSpec`/
-  `predictivePopTransitionSpec` metadata to expand out of the compose FAB's
-  bottom-end corner (scale + fade from a fixed `TransformOrigin`, not a true
-  shared-element transition) and collapse back into it on pop. Don't add
-  further per-entry transition metadata or shared-element/hero animations.
+  `predictivePopTransitionSpec` metadata to slide up from the bottom of the
+  screen on push and slide back down on pop, instead of the horizontal slide.
+  Don't add further per-entry transition metadata or shared-element/hero
+  animations.
 - `NeonApp` first gates on `ShellViewModel.authStatus` (Unknown / Unauthenticated
   / Authenticated) before mounting the real nav graph.
 - Navigation and status actions are **plain singleton `object`s in `core/ui`**,

@@ -126,7 +126,10 @@ fun ComposeScreen(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = MAX_MEDIA),
     ) { uris -> viewModel.pickMedia(uris) }
 
-    Box(Modifier.fillMaxSize()) {
+    // Own opaque backdrop: the composer slides up as an isolated layer for the
+    // composerEnter/composerExit transform, so it can't rely on the app-wide
+    // NeonBackground bleeding through from behind during that animation.
+    Box(Modifier.fillMaxSize().background(palette.bg)) {
         // Everything between the header row and the toolbar is shared between
         // the phone full-screen sheet and the big-screen centered dialog.
         val body: @Composable (Modifier) -> Unit = { bodyModifier ->
