@@ -66,6 +66,8 @@ import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.PreviewHarness
 
+private const val FEEDBACK_HANDLE = "grycmat@101010.pl"
+
 /** Settings — theme mode + account/session. */
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
@@ -325,6 +327,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             GlassButton(
                 label = "Filters",
                 onClick = Navigator::openFilters,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
+                label = "Send feedback",
+                onClick = { Navigator.openCompose(directToHandle = FEEDBACK_HANDLE) },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(14.dp))
