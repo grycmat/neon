@@ -48,23 +48,24 @@ app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs 
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database          Room cache (list_cache / entity_cache tables)
-core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Conversation, Media, Search, Settings;
+core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Conversation, Media,
+                      Search, Settings, List, Filter, Tag (followed hashtags);
                       push/ (Web Push subscription + on-device decryption, see Push notifications)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCard, StatusActions, AccountRow, AsyncList,
-                      VideoPlayer (ExoPlayer), MediaPreviewScreen (full-screen viewer), PreviewFixtures,
+                      VideoPlayer (ExoPlayer), MediaPreviewScreen (full-screen viewer), EditHistorySheet, PreviewFixtures,
                       Navigator + StatusActionService singletons (and the NavKeys)
 feature/auth          Login + in-app OAuth WebView
-feature/timeline      Home / Local / Federated with segmented pills, plus hashtag timelines
+feature/timeline      Home / Local / Federated with segmented pills, plus hashtag and list timelines
 feature/explore       Trends (with TrendSpark sparklines) + search (also pushed for hashtag taps)
-feature/notifications Notifications feed; NeonFirebaseMessagingService + NeonC2dmReceiver +
-                      PushMessageHandler + FcmTokenProvider (push)
+feature/notifications Notifications feed + filtered-notification requests queue; NeonFirebaseMessagingService +
+                      NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (push)
 feature/messages      Direct messages: Conversation list + new-message composer (Mastodon has no
                       separate DM system — a Conversation just groups visibility="direct" statuses)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
-feature/profile       Profile, follow lists, bookmarks, edit profile
-feature/settings      Theme mode + logout
+feature/profile       Profile, follow lists, bookmarks, edit profile (incl. field editor), list membership
+feature/settings      Theme mode + logout, keyword filters, list management, followed-hashtag management
 ```
 
 `core/*` modules have no dependency on `feature/*` or `app`; `feature/*`

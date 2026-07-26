@@ -20,31 +20,39 @@ app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs 
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database         Room cache (list_cache / entity_cache)
-core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Media, Search, Settings;
+core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Conversation, Media,
+                      Search, Settings, List, Filter, Tag (followed hashtags);
                       push/ (Web Push subscription + on-device decryption)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCard, StatusActions, AccountRow, AsyncList,
-                      VideoPlayer (ExoPlayer), MediaPreviewScreen (interactive full-screen viewer), Navigator + StatusActionService singletons,
-                      BigScreen.kt (adaptive UI helpers, hinge width, row select indicator), and NavKeys
+                      VideoPlayer (ExoPlayer), MediaPreviewScreen (interactive full-screen viewer), EditHistorySheet,
+                      Navigator + StatusActionService singletons, BigScreen.kt (adaptive UI helpers, hinge width,
+                      row select indicator), and NavKeys
 feature/auth          Login + in-app OAuth WebView
-feature/timeline      Home / Local / Federated with segmented pills, Hashtag timeline
+feature/timeline      Home / Local / Federated with segmented pills, plus hashtag and list timelines
 feature/explore       Trends + search (also pushed for hashtag taps)
-feature/notifications Notifications feed, NeonFirebaseMessagingService + NeonC2dmReceiver +
-                      PushMessageHandler + FcmTokenProvider (FCM push)
+feature/notifications Notifications feed + filtered-notification requests queue, NeonFirebaseMessagingService +
+                      NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (FCM push)
+feature/messages      Direct messages: Conversation list + new-message composer (a Conversation just groups
+                      visibility="direct" statuses — Mastodon has no separate DM system)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
-feature/profile       Profile, follow lists, Bookmarks, edit profile
-feature/settings      Theme mode + logout
+feature/profile       Profile, follow lists, Bookmarks, edit profile (incl. field editor), list membership
+feature/settings      Theme mode + logout, keyword filters, list management, followed-hashtag management
 ```
 
 ## Features
 
-- **Timelines**: Home, Local, Federated timelines (with pull-to-refresh and "new toots" banner), plus hashtag-specific timelines.
+- **Timelines**: Home, Local, Federated timelines (with pull-to-refresh and "new toots" banner), plus hashtag and list timelines.
+- **Direct Messages**: Conversation list + recipient picker for starting a new direct message (visibility="direct" statuses, grouped as Mastodon Conversations).
 - **Bookmarks**: Dedicated Bookmarks tab/screen to save and view bookmarked statuses.
 - **Interactive Thread View**: Full discussion view with collapsible Content Warnings (CW) and sensitive media blur overlays.
-- **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts.
+- **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts, plus a favourited/boosted-by sheet and edit history viewer.
 - **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.
-- **Dynamic Shell & Navigation**: Translucent bottom tab bar (Home, Explore, Notifications, Profile), shared glassy TopAppBar, custom slide transitions, and predictive back support.
+- **Filters, Lists & Followed Hashtags**: Manage keyword filters, custom lists (with per-account membership from a profile), and followed hashtags from Settings; filtered-out notifications land in a review queue.
+- **Profile**: Edit profile, including a custom-fields editor, with an accessibility pass over profile screens.
+- **Dynamic Shell & Navigation**: Translucent bottom tab bar (Home, Explore, Notifications, Profile), shared glassy TopAppBar with feedback and settings actions, custom slide transitions, and predictive back support.
+- **Feedback**: Bug-report icon in the TopAppBar (and a "Send feedback" entry in Settings) opens the composer pre-addressed as a locked direct message to the developer's account.
 - **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).
 - **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Delivered via two manifest entry points — the modern `FirebaseMessagingService` and a legacy C2DM `BroadcastReceiver` mirroring the official Mastodon app — since some OEMs silently drop background `Service` wake-ups well before Doze/App-Standby checks apply (see `notification_report.md`). Taps deep-link to the relevant thread.
 
@@ -63,7 +71,7 @@ on pop, with the predictive back gesture driving the same slide. The composer
 down on pop. The predictive back gesture is enabled via `android:enableOnBackInvokedCallback="true"`
 in the manifest.
 
-Root shell tabs (Home, Explore, Notifications, Profile) are hosted within a `HorizontalPager` to support swipe navigation, keeping their states alive across page swiping via `beyondViewportPageCount = 3`. A shared, glassmorphic `TopAppBar` displays page context and triggers settings.
+Root shell tabs (Home, Explore, Notifications, Profile) are hosted within a `HorizontalPager` to support swipe navigation, keeping their states alive across page swiping via `beyondViewportPageCount = 3`. A shared, glassmorphic `TopAppBar` displays page context and triggers feedback (bug icon) and settings.
 
 ## Previews & Stateless Screens
 

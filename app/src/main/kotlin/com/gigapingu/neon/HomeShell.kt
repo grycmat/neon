@@ -34,6 +34,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Message
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.PersonOutline
@@ -92,6 +93,8 @@ import com.gigapingu.neon.feature.thread.ThreadScreen
 import com.gigapingu.neon.feature.timeline.TimelineScreen
 import kotlin.math.abs
 import kotlinx.coroutines.launch
+
+private const val FEEDBACK_HANDLE = "grycmat@101010.pl"
 
 private val TabIcons: List<ImageVector> = listOf(
     Icons.Rounded.Home,
@@ -226,6 +229,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                 pager()
                 TopAppBar(
                     page = pagerState.currentPage,
+                    onFeedbackClick = { Navigator.openCompose(directToHandle = FEEDBACK_HANDLE) },
                     onSettingsClick = { Navigator.openSettings() },
                     showPanelToggle = wideWindow,
                     twoPaneEnabled = twoPaneEnabled,
@@ -241,6 +245,7 @@ fun HomeShell(viewModel: ShellViewModel) {
             pager()
             TopAppBar(
                 page = pagerState.currentPage,
+                onFeedbackClick = { Navigator.openCompose(directToHandle = FEEDBACK_HANDLE) },
                 onSettingsClick = { Navigator.openSettings() },
                 onClearClick = { showClearConfirm = true },
                 showPanelToggle = wideWindow,
@@ -484,6 +489,7 @@ private fun ComposeFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun TopAppBar(
     page: Int,
+    onFeedbackClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onClearClick: (() -> Unit)? = null,
     showPanelToggle: Boolean = false,
@@ -568,6 +574,12 @@ private fun TopAppBar(
                 Spacer(Modifier.width(8.dp))
             }
             GlassIconButton(
+                icon = Icons.Outlined.BugReport,
+                onClick = onFeedbackClick,
+                contentDescription = "Send feedback",
+            )
+            Spacer(Modifier.width(8.dp))
+            GlassIconButton(
                 icon = Icons.Outlined.Settings,
                 onClick = onSettingsClick,
                 contentDescription = "Settings",
@@ -648,9 +660,9 @@ private fun TabBar(position: Float, onChanged: (Int) -> Unit, modifier: Modifier
 private fun TopAppBarPanelTogglePreview() {
     PreviewHarness {
         Column {
-            TopAppBar(page = 0, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = true)
+            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = true)
             Spacer(Modifier.height(12.dp))
-            TopAppBar(page = 0, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = false)
+            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = false)
         }
     }
 }
@@ -660,9 +672,9 @@ private fun TopAppBarPanelTogglePreview() {
 private fun TopAppBarPreview() {
     PreviewHarness {
         Column {
-            TopAppBar(page = 0, onSettingsClick = {})
+            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {})
             Spacer(Modifier.height(12.dp))
-            TopAppBar(page = 2, onSettingsClick = {})
+            TopAppBar(page = 2, onFeedbackClick = {}, onSettingsClick = {})
         }
     }
 }
