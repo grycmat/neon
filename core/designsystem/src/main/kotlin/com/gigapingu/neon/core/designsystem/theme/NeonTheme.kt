@@ -9,7 +9,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.Color
 
 val LocalNeonPalette = staticCompositionLocalOf { NeonPalette.Dark }
 val LocalNeonTypography = staticCompositionLocalOf { neonTypography() }
@@ -20,6 +19,8 @@ object NeonTheme {
         @Composable get() = LocalNeonPalette.current
     val type: NeonTypography
         @Composable get() = LocalNeonTypography.current
+    val isLight: Boolean
+        @Composable get() = LocalNeonPalette.current.isLight
 }
 
 @Composable
@@ -45,14 +46,21 @@ fun NeonTheme(
     }
 }
 
-/** Material color scheme derived from the palette, for M3 components (sheets, snackbars…). */
+/**
+ * Material color scheme derived from the palette, for M3 components (sheets,
+ * snackbars, menus…). Accent roles use the ink variants so M3 text/icons that
+ * pick them up stay legible on either substrate.
+ */
 private fun neonColorScheme(p: NeonPalette, dark: Boolean): ColorScheme {
     val base = if (dark) darkColorScheme() else lightColorScheme()
     return base.copy(
-        primary = p.purple,
-        secondary = p.cyan,
-        tertiary = p.pink,
-        error = p.pink,
+        primary = p.purpleInk,
+        onPrimary = p.onGradient,
+        secondary = p.cyanInk,
+        onSecondary = p.onGradient,
+        tertiary = p.pinkInk,
+        onTertiary = p.onGradient,
+        error = p.pinkInk,
         background = p.bg,
         onBackground = p.text,
         surface = p.bg,
@@ -65,6 +73,6 @@ private fun neonColorScheme(p: NeonPalette, dark: Boolean): ColorScheme {
         surfaceContainerHighest = p.surfaceSolid,
         outline = p.borderStrong,
         outlineVariant = p.divider,
-        scrim = Color.Black.copy(alpha = .6f),
+        scrim = p.scrim,
     )
 }

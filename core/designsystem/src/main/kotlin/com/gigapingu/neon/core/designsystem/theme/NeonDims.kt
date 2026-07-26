@@ -14,4 +14,12 @@ object NeonDims {
     val ButtonHeight: Dp = 56.dp
     val IconButton: Dp = 40.dp
     val MinTap: Dp = 44.dp
+
+    /** Card lift. Light mode leans on elevation for card/substrate separation. */
+    val ElevationCard: Dp = 6.dp
+    val ElevationSheet: Dp = 16.dp
+
+    /** Backdrop orb geometry (see NeonPalette.orbColors / orbOpacity). */
+    val OrbSize: Dp = 300.dp
+    val OrbBlur: Dp = 48.dp
 }
