@@ -87,6 +87,7 @@ fun ComposeScreen(
     redraftText: String? = null,
     redraftSpoilerText: String? = null,
     redraftVisibility: String? = null,
+    directToHandle: String? = null,
     viewModel: ComposeViewModel = hiltViewModel(),
 ) {
     val palette = NeonTheme.palette
@@ -109,6 +110,7 @@ fun ComposeScreen(
             redraftText = redraftText,
             redraftSpoilerText = redraftSpoilerText,
             redraftVisibility = redraftVisibility,
+            directToHandle = directToHandle,
         )
     }
     LaunchedEffect(Unit) { viewModel.errors.collect { snackbarHostState.showSnackbar(it) } }
@@ -145,7 +147,9 @@ fun ComposeScreen(
                     color = palette.text,
                     modifier = Modifier.weight(1f),
                 )
-                VisibilityPicker(value = uiState.visibility, onChanged = viewModel::setVisibility)
+                if (!uiState.lockedVisibility) {
+                    VisibilityPicker(value = uiState.visibility, onChanged = viewModel::setVisibility)
+                }
             }
 
             Column(

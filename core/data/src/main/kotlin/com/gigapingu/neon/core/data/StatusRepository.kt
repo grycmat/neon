@@ -31,6 +31,7 @@ class StatusRepository @Inject constructor(
     private val timelines: TimelineRepository,
     private val notifications: NotificationRepository,
     private val bookmarks: BookmarkRepository,
+    private val conversations: ConversationRepository,
 ) {
     /** Implemented by ViewModels that hold status lists (thread, profile). */
     interface StatusListener {
@@ -86,6 +87,7 @@ class StatusRepository @Inject constructor(
         timelines.applyStatusUpdate(updated)
         notifications.applyStatusUpdate(updated)
         bookmarks.applyStatusUpdate(updated)
+        conversations.applyStatusUpdate(updated)
         listeners.forEach { it.onStatusUpdated(updated) }
         return updated
     }
@@ -140,6 +142,9 @@ class StatusRepository @Inject constructor(
             api.post("/api/v1/statuses", body.toString()),
         )
         timelines.prependCreated(status)
+        if (status.visibility == "direct") {
+            conversations.onDirectStatusCreated()
+        }
         listeners.forEach { it.onStatusCreated(status) }
         return status
     }
@@ -183,6 +188,7 @@ class StatusRepository @Inject constructor(
         timelines.applyStatusUpdate(status)
         notifications.applyStatusUpdate(status)
         bookmarks.applyStatusUpdate(status)
+        conversations.applyStatusUpdate(status)
         listeners.forEach { it.onStatusUpdated(status) }
         return status
     }
@@ -192,6 +198,7 @@ class StatusRepository @Inject constructor(
         timelines.applyStatusDelete(id)
         notifications.applyStatusDelete(id)
         bookmarks.applyStatusDelete(id)
+        conversations.applyStatusDelete(id)
         listeners.forEach { it.onStatusDeleted(id) }
     }
 }

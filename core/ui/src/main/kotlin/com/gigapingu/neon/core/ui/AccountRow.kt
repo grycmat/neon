@@ -25,6 +25,7 @@ fun AccountRow(
     account: Account,
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit = { Navigator.openProfile(account.id) },
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
@@ -35,7 +36,7 @@ fun AccountRow(
             .fillMaxWidth()
             .padding(vertical = 5.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
-        onClick = { Navigator.openProfile(account.id) },
+        onClick = onClick,
     ) {
         Row {
             NeonAvatar(account = account, size = 42.dp)

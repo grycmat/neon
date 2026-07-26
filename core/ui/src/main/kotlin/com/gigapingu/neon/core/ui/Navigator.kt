@@ -29,10 +29,14 @@ data class ComposeKey(
     val redraftText: String? = null,
     val redraftSpoilerText: String? = null,
     val redraftVisibility: String? = null,
+    val directToHandle: String? = null,
 ) : NavKey
 
 @Serializable
 data object BookmarksKey : NavKey
+
+@Serializable
+data object NewMessageKey : NavKey
 
 @Serializable
 data class FollowListKey(val accountId: String, val handle: String, val following: Boolean) : NavKey
@@ -125,6 +129,7 @@ object Navigator {
         redraftText: String? = null,
         redraftSpoilerText: String? = null,
         redraftVisibility: String? = null,
+        directToHandle: String? = null,
     ) {
         backStack?.add(
             ComposeKey(
@@ -134,12 +139,17 @@ object Navigator {
                 redraftText = redraftText,
                 redraftSpoilerText = redraftSpoilerText,
                 redraftVisibility = redraftVisibility,
+                directToHandle = directToHandle,
             )
         )
     }
 
     fun openBookmarks() {
         backStack?.add(BookmarksKey)
+    }
+
+    fun openNewMessage() {
+        backStack?.add(NewMessageKey)
     }
 
     fun openFollowList(accountId: String, handle: String, following: Boolean) {

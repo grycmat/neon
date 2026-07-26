@@ -33,6 +33,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Message
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.PersonOutline
@@ -83,6 +84,7 @@ import com.gigapingu.neon.core.ui.hingePaneWidth
 import com.gigapingu.neon.core.ui.isBigScreen
 import com.gigapingu.neon.core.ui.isWideWindow
 import com.gigapingu.neon.feature.explore.ExploreScreen
+import com.gigapingu.neon.feature.messages.MessagesScreen
 import com.gigapingu.neon.feature.notifications.NotificationsScreen
 import com.gigapingu.neon.feature.notifications.NotificationsViewModel
 import com.gigapingu.neon.feature.profile.ProfileScreen
@@ -94,11 +96,12 @@ import kotlinx.coroutines.launch
 private val TabIcons: List<ImageVector> = listOf(
     Icons.Rounded.Home,
     Icons.Outlined.NotificationsNone,
+    Icons.AutoMirrored.Outlined.Message,
     Icons.Rounded.Search,
     Icons.Outlined.PersonOutline,
 )
 
-private val TabLabels: List<String> = listOf("Home", "Notifications", "Explore", "Profile")
+private val TabLabels: List<String> = listOf("Home", "Notifications", "Messages", "Explore", "Profile")
 
 /**
  * Root shell. Phones: glass bottom tab bar (timelines / explore /
@@ -111,7 +114,7 @@ private val TabLabels: List<String> = listOf("Home", "Notifications", "Explore",
 fun HomeShell(viewModel: ShellViewModel) {
     val me by viewModel.me.collectAsStateWithLifecycle()
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState(initialPage = 0) { 4 }
+    val pagerState = rememberPagerState(initialPage = 0) { 5 }
     val coroutineScope = rememberCoroutineScope()
 
     androidx.compose.runtime.LaunchedEffect(selectedTab) {
@@ -128,6 +131,7 @@ fun HomeShell(viewModel: ShellViewModel) {
     // Detail-pane selection per list-detail tab (big screens only).
     var homeThreadId by rememberSaveable { mutableStateOf<String?>(null) }
     var notifThreadId by rememberSaveable { mutableStateOf<String?>(null) }
+    var messagesThreadId by rememberSaveable { mutableStateOf<String?>(null) }
     if (big) {
         // Route thread opens from the visible list tab into its detail pane
         // instead of pushing; other tabs keep the full-screen push.
@@ -140,6 +144,10 @@ fun HomeShell(viewModel: ShellViewModel) {
                     }
                     1 -> {
                         notifThreadId = statusId
+                        true
+                    }
+                    2 -> {
+                        messagesThreadId = statusId
                         true
                     }
                     else -> false
@@ -182,7 +190,14 @@ fun HomeShell(viewModel: ShellViewModel) {
                     } else {
                         NotificationsScreen()
                     }
-                    2 -> ExploreScreen()
+                    2 -> if (big) {
+                        ShellListDetail(detailId = messagesThreadId) {
+                            MessagesScreen(selectedStatusId = messagesThreadId)
+                        }
+                    } else {
+                        MessagesScreen()
+                    }
+                    3 -> ExploreScreen()
                     else -> me?.let { ProfileScreen(accountId = it.id, isRoot = true) }
                 }
             }
@@ -195,13 +210,17 @@ fun HomeShell(viewModel: ShellViewModel) {
             pagerState.animateScrollToPage(page)
         }
     }
+    // On the Messages tab the FAB starts a new DM instead of a public toot.
+    val onComposeClick: () -> Unit = {
+        if (pagerState.currentPage == 2) Navigator.openNewMessage() else Navigator.openCompose()
+    }
 
     if (big) {
         Row(Modifier.fillMaxSize()) {
             ShellRail(
                 position = position,
                 onChanged = onTabChanged,
-                onCompose = { Navigator.openCompose() },
+                onCompose = onComposeClick,
             )
             Box(Modifier.weight(1f)) {
                 pager()
@@ -240,7 +259,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                     .onSizeChanged { bottomBarHeightPx = it.height },
             )
             ComposeFab(
-                onClick = { Navigator.openCompose() },
+                onClick = onComposeClick,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 20.dp, bottom = bottomBarHeight + 16.dp),
@@ -504,7 +523,8 @@ private fun TopAppBar(
                 val (title, icon) = when (p) {
                     0 -> Pair("Home", Icons.Rounded.Home)
                     1 -> Pair("Notifications", Icons.Outlined.NotificationsNone)
-                    2 -> Pair("Explore", Icons.Rounded.Search)
+                    2 -> Pair("Messages", Icons.AutoMirrored.Outlined.Message)
+                    3 -> Pair("Explore", Icons.Rounded.Search)
                     else -> Pair("Profile", Icons.Outlined.PersonOutline)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {

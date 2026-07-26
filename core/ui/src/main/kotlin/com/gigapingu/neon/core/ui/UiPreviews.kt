@@ -12,6 +12,7 @@ import com.gigapingu.neon.core.data.AsyncState
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.Account
+import com.gigapingu.neon.core.model.Conversation
 import com.gigapingu.neon.core.model.MediaAttachment
 import com.gigapingu.neon.core.model.Poll
 import com.gigapingu.neon.core.model.PollOption
@@ -130,6 +131,28 @@ object PreviewFixtures {
         ),
     )
 
+    private val directStatus = Status(
+        id = "200",
+        account = account2,
+        content = "<p>Hey — are you free to catch up later?</p>",
+        createdAt = Instant.now().minusSeconds(60 * 22),
+        visibility = "direct",
+    )
+
+    val conversations = listOf(
+        Conversation(id = "1", unread = true, accounts = listOf(account2), lastStatus = directStatus),
+        Conversation(
+            id = "2",
+            unread = false,
+            accounts = listOf(account),
+            lastStatus = directStatus.copy(
+                id = "201",
+                account = account,
+                content = "<p>Sounds good, talk soon!</p>",
+                createdAt = Instant.now().minusSeconds(3600 * 3),
+            ),
+        ),
+    )
 }
 
 // Navigator and StatusActionService no-op while uninitialized, so previews

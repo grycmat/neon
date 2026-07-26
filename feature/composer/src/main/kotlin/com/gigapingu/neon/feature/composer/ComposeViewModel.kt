@@ -53,6 +53,7 @@ data class ComposeUiState(
     val posting: Boolean = false,
     val done: Boolean = false,
     val editingStatusId: String? = null,
+    val lockedVisibility: Boolean = false,
 ) {
     val canPost: Boolean
         get() = !posting && !uploading && text.isNotBlank() && text.length <= MAX_CHARS
@@ -98,9 +99,22 @@ class ComposeViewModel @Inject constructor(
         redraftText: String? = null,
         redraftSpoilerText: String? = null,
         redraftVisibility: String? = null,
+        directToHandle: String? = null,
     ) {
         if (initialized) return
         initialized = true
+
+        if (directToHandle != null) {
+            _uiState.update {
+                it.copy(
+                    title = "New message",
+                    text = "@$directToHandle ",
+                    visibility = "direct",
+                    lockedVisibility = true,
+                )
+            }
+            return
+        }
 
         if (redraftText != null) {
             _uiState.update {

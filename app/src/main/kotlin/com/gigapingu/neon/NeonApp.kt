@@ -46,6 +46,7 @@ import com.gigapingu.neon.core.ui.ManageFollowedHashtagsKey
 import com.gigapingu.neon.core.ui.ManageListsKey
 import com.gigapingu.neon.core.ui.MediaPreviewKey
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.NewMessageKey
 import com.gigapingu.neon.core.ui.NotificationRequestsKey
 import com.gigapingu.neon.core.ui.ProfileKey
 import com.gigapingu.neon.core.ui.LocalTwoPaneEnabled
@@ -63,6 +64,7 @@ import com.gigapingu.neon.feature.settings.FiltersScreen
 import com.gigapingu.neon.feature.settings.ManageFollowedHashtagsScreen
 import com.gigapingu.neon.feature.settings.ManageListsScreen
 import com.gigapingu.neon.feature.settings.SettingsScreen
+import com.gigapingu.neon.feature.messages.NewMessageScreen
 import com.gigapingu.neon.feature.notifications.NotificationRequestsScreen
 import com.gigapingu.neon.feature.thread.ThreadScreen
 import com.gigapingu.neon.feature.timeline.HashtagTimelineScreen
@@ -204,6 +206,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                         redraftText = key.redraftText,
                         redraftSpoilerText = key.redraftSpoilerText,
                         redraftVisibility = key.redraftVisibility,
+                        directToHandle = key.directToHandle,
                     )
                 }
                 entry<FollowListKey> { key ->
@@ -221,6 +224,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                 entry<FiltersKey> { FiltersScreen() }
                 entry<NotificationRequestsKey> { NotificationRequestsScreen() }
                 entry<BookmarksKey> { BookmarksScreen() }
+                entry<NewMessageKey> { NewMessageScreen() }
                 entry<HashtagTimelineKey> { key ->
                     HashtagTimelineScreen(hashtag = key.hashtag)
                 }

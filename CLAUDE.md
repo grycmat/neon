@@ -48,7 +48,7 @@ app                   Auth gate, Navigation 3 wiring, HomeShell (swipeable tabs 
 core/model            API entities (Status, Account, Poll, Notification, …)
 core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database          Room cache (list_cache / entity_cache tables)
-core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Media, Search, Settings;
+core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Conversation, Media, Search, Settings;
                       push/ (Web Push subscription + on-device decryption, see Push notifications)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCard, StatusActions, AccountRow, AsyncList,
@@ -59,6 +59,8 @@ feature/timeline      Home / Local / Federated with segmented pills, plus hashta
 feature/explore       Trends (with TrendSpark sparklines) + search (also pushed for hashtag taps)
 feature/notifications Notifications feed; NeonFirebaseMessagingService + NeonC2dmReceiver +
                       PushMessageHandler + FcmTokenProvider (push)
+feature/messages      Direct messages: Conversation list + new-message composer (Mastodon has no
+                      separate DM system — a Conversation just groups visibility="direct" statuses)
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, bookmarks, edit profile
@@ -84,8 +86,12 @@ not the ViewModel.
 vote, create, delete). After every mutation it syncs the other list holders
 directly — no event bus:
 - it calls `TimelineRepository.applyStatusUpdate` / `applyPollUpdate` /
-  `prependCreated` and `NotificationRepository.applyStatusUpdate` (both are
-  injected singletons), and
+  `prependCreated`, `NotificationRepository.applyStatusUpdate`,
+  `BookmarkRepository.applyStatusUpdate`, and `ConversationRepository
+  .applyStatusUpdate` / `applyStatusDelete` (all injected singletons) — a new
+  `visibility="direct"` status instead calls
+  `ConversationRepository.onDirectStatusCreated()`, which just refetches since
+  the create endpoint returns a bare `Status`, not a `Conversation`, and
 - it notifies registered `StatusRepository.StatusListener`s — implemented by
   `ThreadViewModel` and `ProfileViewModel`, which `addListener(this)` in
   `init` and `removeListener(this)` in `onCleared()` (several can be alive at

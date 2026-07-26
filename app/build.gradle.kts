@@ -66,6 +66,7 @@ dependencies {
     implementation(projects.feature.timeline)
     implementation(projects.feature.explore)
     implementation(projects.feature.notifications)
+    implementation(projects.feature.messages)
     implementation(projects.feature.thread)
     implementation(projects.feature.composer)
     implementation(projects.feature.profile)
