@@ -65,7 +65,7 @@ feature/messages      Direct messages: Conversation list + new-message composer 
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, bookmarks, edit profile (incl. field editor), list membership
-feature/settings      Theme mode + logout, keyword filters, list management, followed-hashtag management
+feature/settings      Theme mode + Material You toggle + logout, keyword filters, list management, followed-hashtag management
 ```
 
 `core/*` modules have no dependency on `feature/*` or `app`; `feature/*`
@@ -234,6 +234,35 @@ vocabulary for **in-screen feedback only**: `quick()` tweens for short fades
 pressed states, `screen()` for larger in-screen reveals (poll bars, boost
 spin). Screen-to-screen transitions are the global slide/predictive-back specs
 on `NavDisplay` (see Navigation above), not part of `NeonMotion`.
+
+### Theming & Material You
+
+`NeonPalette` (`core/designsystem/.../theme/NeonPalette.kt`) is the single source of every color
+in the app: two static instances, `Dark`/`Light`, hand-tuned around the pink→purple→cyan brand
+trio (`NeonAccents`). `NeonTheme(darkTheme, dynamicColor, content)` provides the active instance
+via `LocalNeonPalette`; `neonColorScheme()` derives the M3 `ColorScheme` fed to `MaterialTheme`
+from whichever palette is active, so it never needs separate wiring.
+
+Material You (dynamic color, Android 12+) is opt-in and off by default:
+- `SettingsRepository.dynamicColorEnabled` → `ShellViewModel` (read, for `MainActivity`) and
+  `SettingsViewModel` (read/write, for the Settings screen) → `MainActivity` passes it into
+  `NeonTheme(dynamicColor = ...)`. The Settings screen exposes it as "Match wallpaper colors",
+  hidden below API 31.
+- When on, `NeonPalette.dynamic(context, isLight)` copies the static `Dark`/`Light` instance —
+  glass surfaces, text, borders stay untouched — and re-derives only the accent-driven fields
+  (`gradientColors`, `avatarGradients`, `orbColors`, ink/fill/glow colors, and the new
+  `accentPink`/`accentPurple`/`accentCyan` (+ `Dim`/`Soft`) fields) from
+  `dynamicDarkColorScheme`/`dynamicLightColorScheme`'s primary/tertiary roles: the "voltage" trio
+  (from the dark scheme, for gradients/avatars/orbs) and the "ink" trio (from the light scheme, for
+  hashtags/labels on light surfaces). There's no third wallpaper-derived hue, so the middle
+  "purple" gradient stop is a `lerp` midpoint between pink and cyan.
+- Everything that used to reach for `NeonAccents` directly outside `NeonPalette.kt` (the avatar
+  fallback gradient in `NeonAvatar.kt`, the CTA glow in `Glass.kt`'s `GradientButton`, both FAB
+  glows in `HomeShell.kt`) now reads `palette.accentPink`/`accentPurple` instead, so those follow
+  dynamic color too. `NeonAccents` itself is referenced only from `NeonPalette.kt` now.
+- Themed launcher icon (monochrome adaptive-icon layer, `app/src/main/res/mipmap-anydpi-v26/`) is
+  the other half of Material You and needs no Compose wiring — it's handled entirely by the OS.
+- Full design rationale and implementation notes: `material_you.md`.
 
 ### Compose previews & stateless screens
 

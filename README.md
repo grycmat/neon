@@ -38,7 +38,7 @@ feature/messages      Direct messages: Conversation list + new-message composer 
 feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, Bookmarks, edit profile (incl. field editor), list membership
-feature/settings      Theme mode + logout, keyword filters, list management, followed-hashtag management
+feature/settings      Theme mode + Material You toggle + logout, keyword filters, list management, followed-hashtag management
 ```
 
 ## Features
@@ -55,6 +55,7 @@ feature/settings      Theme mode + logout, keyword filters, list management, fol
 - **Feedback**: Bug-report icon in the TopAppBar (and a "Send feedback" entry in Settings) opens the composer pre-addressed as a locked direct message to the developer's account.
 - **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).
 - **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Delivered via two manifest entry points — the modern `FirebaseMessagingService` and a legacy C2DM `BroadcastReceiver` mirroring the official Mastodon app — since some OEMs silently drop background `Service` wake-ups well before Doze/App-Standby checks apply (see `notification_report.md`). Taps deep-link to the relevant thread.
+- **Material You**: Optional "Match wallpaper colors" toggle in Settings (Android 12+, off by default) re-derives the gradient, avatars, glow and accent ink from the device's wallpaper colors while keeping the glass surfaces and typography untouched; falls back to the static neon palette below API 31 or when off. Paired with a themed (monochrome) launcher icon. See `material_you.md` for the implementation.
 
 Architecture mirrors the Flutter app: singleton repositories hold
 `StateFlow<AsyncState<…>>` per list; after every mutation `StatusRepository`

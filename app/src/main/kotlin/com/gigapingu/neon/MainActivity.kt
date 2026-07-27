@@ -49,6 +49,7 @@ class MainActivity : ComponentActivity() {
             val viewModel: ShellViewModel = androidx.hilt.navigation.compose.hiltViewModel()
             val authStatus by viewModel.authStatus.collectAsStateWithLifecycle()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
             val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
             val notificationAlertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
 
@@ -96,7 +97,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.Light -> false
                 ThemeMode.System -> isSystemInDarkTheme()
             }
-            NeonTheme(darkTheme = darkTheme) {
+            NeonTheme(darkTheme = darkTheme, dynamicColor = dynamicColorEnabled) {
                 NeonApp(viewModel = viewModel, modifier = Modifier)
             }
         }

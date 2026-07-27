@@ -37,6 +37,9 @@ class SettingsViewModel @Inject constructor(
     val notificationAlertPrefs: StateFlow<NotificationAlertPrefs> = settings.notificationAlertPrefs
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotificationAlertPrefs())
 
+    val dynamicColorEnabled: StateFlow<Boolean> = settings.dynamicColorEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     val me: StateFlow<Account?> = auth.me
     val instance: String? get() = auth.instance
 
@@ -53,6 +56,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setNotificationAlertPrefs(prefs: NotificationAlertPrefs) {
         viewModelScope.launch { settings.setNotificationAlertPrefs(prefs) }
+    }
+
+    fun setDynamicColorEnabled(enabled: Boolean) {
+        viewModelScope.launch { settings.setDynamicColorEnabled(enabled) }
     }
 
     fun setDefaultPrivacy(visibility: String) {

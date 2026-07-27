@@ -24,6 +24,7 @@ class SettingsRepository @Inject constructor(
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
     private val twoPaneEnabledKey = booleanPreferencesKey("two_pane_enabled")
+    private val dynamicColorEnabledKey = booleanPreferencesKey("dynamic_color_enabled")
     private object AlertKeys {
         val mention = booleanPreferencesKey("alert_mention")
         val favourite = booleanPreferencesKey("alert_favourite")
@@ -52,6 +53,11 @@ class SettingsRepository @Inject constructor(
         prefs[twoPaneEnabledKey] ?: true
     }
 
+    /** Material You: derive the neon gradient/avatar/accent colors from the wallpaper (Android 12+). Off by default — the brand palette is the default identity. */
+    val dynamicColorEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
+        prefs[dynamicColorEnabledKey] ?: false
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         context.settingsStore.edit { prefs ->
             prefs[themeModeKey] = when (mode) {
@@ -71,6 +77,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setTwoPaneEnabled(enabled: Boolean) {
         context.settingsStore.edit { prefs ->
             prefs[twoPaneEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setDynamicColorEnabled(enabled: Boolean) {
+        context.settingsStore.edit { prefs ->
+            prefs[dynamicColorEnabledKey] = enabled
         }
     }
 

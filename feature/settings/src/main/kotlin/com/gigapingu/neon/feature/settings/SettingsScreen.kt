@@ -74,6 +74,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     val mode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
     val me by viewModel.me.collectAsStateWithLifecycle()
     val prefNotificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
     val alertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
@@ -170,6 +171,32 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     onSelect = viewModel::setThemeMode,
                     modifier = Modifier.weight(1f),
                 )
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Spacer(Modifier.height(10.dp))
+                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Match wallpaper colors", style = type.titleSmall, color = palette.text)
+                            Text(
+                                "Derive the gradient, avatars and accents from your wallpaper instead of Neon's brand colors",
+                                style = type.bodySmall,
+                                color = palette.textDim,
+                            )
+                        }
+                        Switch(
+                            checked = dynamicColorEnabled,
+                            onCheckedChange = viewModel::setDynamicColorEnabled,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = palette.cyan.copy(alpha = .35f),
+                                checkedThumbColor = palette.cyan,
+                            ),
+                        )
+                    }
+                }
             }
             Spacer(Modifier.height(28.dp))
             NeonLabel("Notifications", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))

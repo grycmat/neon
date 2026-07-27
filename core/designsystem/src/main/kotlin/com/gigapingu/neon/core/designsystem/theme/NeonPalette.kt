@@ -1,7 +1,12 @@
 package com.gigapingu.neon.core.designsystem.theme
 
+import android.content.Context
+import android.os.Build
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 
 /**
  * Every color in the app lives here. Two palettes: Neon Midnight (dark) and
@@ -65,6 +70,13 @@ data class NeonPalette(
     val pinkInk: Color,
     val purpleInk: Color,
     val cyanInk: Color,
+    // Accent-as-voltage (gradients, avatars, orbs). Static palettes hold the brand trio;
+    // Material You mode (`dynamic`) swaps these for wallpaper-derived hues.
+    val accentPink: Color,
+    val accentPurple: Color,
+    val accentCyan: Color,
+    val accentPinkDim: Color,
+    val accentCyanSoft: Color,
     // Accent state layers
     val tintFill: Color,
     val tintBorder: Color,
@@ -89,9 +101,9 @@ data class NeonPalette(
     val gradientSoft: Brush
         get() = Brush.linearGradient(
             if (isLight) {
-                listOf(NeonAccents.Pink.copy(alpha = .12f), NeonAccents.Purple.copy(alpha = .12f))
+                listOf(accentPink.copy(alpha = .12f), accentPurple.copy(alpha = .12f))
             } else {
-                listOf(NeonAccents.Pink.copy(alpha = .20f), NeonAccents.Purple.copy(alpha = .20f))
+                listOf(accentPink.copy(alpha = .20f), accentPurple.copy(alpha = .20f))
             },
         )
 
@@ -99,18 +111,18 @@ data class NeonPalette(
     val mediaMagenta: Brush
         get() = Brush.linearGradient(
             if (isLight) {
-                listOf(NeonAccents.Pink.copy(alpha = .16f), NeonAccents.Purple.copy(alpha = .14f))
+                listOf(accentPink.copy(alpha = .16f), accentPurple.copy(alpha = .14f))
             } else {
-                listOf(NeonAccents.Pink.copy(alpha = .28f), NeonAccents.Purple.copy(alpha = .24f))
+                listOf(accentPink.copy(alpha = .28f), accentPurple.copy(alpha = .24f))
             },
         )
 
     val mediaCyan: Brush
         get() = Brush.linearGradient(
             if (isLight) {
-                listOf(NeonAccents.CyanSoft.copy(alpha = .16f), NeonAccents.Purple.copy(alpha = .14f))
+                listOf(accentCyanSoft.copy(alpha = .16f), accentPurple.copy(alpha = .14f))
             } else {
-                listOf(NeonAccents.Cyan.copy(alpha = .26f), NeonAccents.Purple.copy(alpha = .24f))
+                listOf(accentCyan.copy(alpha = .26f), accentPurple.copy(alpha = .24f))
             },
         )
 
@@ -149,6 +161,11 @@ data class NeonPalette(
             pinkInk = NeonAccents.Pink,
             purpleInk = NeonAccents.Purple,
             cyanInk = NeonAccents.Cyan,
+            accentPink = NeonAccents.Pink,
+            accentPurple = NeonAccents.Purple,
+            accentCyan = NeonAccents.Cyan,
+            accentPinkDim = NeonAccents.PinkDim,
+            accentCyanSoft = NeonAccents.CyanSoft,
             tintFill = Color(0x1722E2FF),
             tintBorder = Color(0x4D22E2FF),
             pinkFill = Color(0x1AFF2E8B),
@@ -199,6 +216,11 @@ data class NeonPalette(
             pinkInk = NeonAccents.PinkInk,
             purpleInk = NeonAccents.PurpleInk,
             cyanInk = NeonAccents.CyanInk,
+            accentPink = NeonAccents.Pink,
+            accentPurple = NeonAccents.Purple,
+            accentCyan = NeonAccents.Cyan,
+            accentPinkDim = NeonAccents.PinkDim,
+            accentCyanSoft = NeonAccents.CyanSoft,
             tintFill = Color(0x1A0B8FAB),
             tintBorder = Color(0x570B8FAB),
             pinkFill = Color(0x17E0116F),
@@ -217,5 +239,79 @@ data class NeonPalette(
             ),
             gradientColors = listOf(NeonAccents.Pink, NeonAccents.Purple, NeonAccents.CyanSoft),
         )
+
+        /**
+         * Material You variant: keeps every substrate/glass/text value from the static [Dark]/[Light]
+         * palette untouched, and re-derives only the accent trio (gradients, avatars, orbs, ink) from
+         * the device's wallpaper colors. Falls back to the static palette below API 31 or if the
+         * dynamic color scheme can't be read.
+         *
+         * The "voltage" trio (full-saturation, for gradients/avatars/orbs) comes from
+         * [dynamicDarkColorScheme]'s primary/tertiary roles — Android tunes those for contrast on a
+         * dark surface, which is exactly the vividness the dark-mode brand accents want. The "ink"
+         * trio (deepened, for hashtags/labels on light surfaces) comes from the same roles in
+         * [dynamicLightColorScheme]. There's no third distinct hue in a stock Material You palette
+         * (secondary shares primary's hue at lower chroma), so the middle "purple" stop is the
+         * midpoint between pink and cyan rather than its own wallpaper-derived hue.
+         */
+        fun dynamic(context: Context, isLight: Boolean): NeonPalette {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return if (isLight) Light else Dark
+            val base = if (isLight) Light else Dark
+
+            val darkScheme = dynamicDarkColorScheme(context)
+            val lightScheme = dynamicLightColorScheme(context)
+            val voltage = AccentTrio(
+                pink = darkScheme.primary,
+                purple = lerp(darkScheme.primary, darkScheme.tertiary, .5f),
+                cyan = darkScheme.tertiary,
+            )
+            val ink = AccentTrio(
+                pink = lightScheme.primary,
+                purple = lerp(lightScheme.primary, lightScheme.tertiary, .5f),
+                cyan = lightScheme.tertiary,
+            )
+            // Dark-mode ink is just the raw voltage trio (already readable on a dark substrate);
+            // light-mode gradients/orbs lighten voltage toward white instead of using ink (deepened
+            // ink would look muddy stretched across a gradient or avatar).
+            val gradientVoltage = if (isLight) voltage.lightened(.15f) else voltage
+            val orbVoltage = if (isLight) voltage.lightened(.35f) else voltage
+            val pink = if (isLight) ink.pink else voltage.pink
+            val purple = if (isLight) ink.purple else voltage.purple
+            val cyan = if (isLight) ink.cyan else voltage.cyan
+
+            return base.copy(
+                pinkInk = pink,
+                purpleInk = purple,
+                cyanInk = cyan,
+                label = if (isLight) purple else voltage.cyan,
+                tintFill = cyan.copy(alpha = if (isLight) .10f else .09f),
+                tintBorder = cyan.copy(alpha = if (isLight) .34f else .30f),
+                pinkFill = pink.copy(alpha = if (isLight) .09f else .10f),
+                pinkBorder = pink.copy(alpha = if (isLight) .38f else .40f),
+                glow = voltage.purple.copy(alpha = if (isLight) .28f else .40f),
+                orbColors = listOf(orbVoltage.pink, orbVoltage.purple, orbVoltage.cyan),
+                avatarGradients = listOf(
+                    listOf(gradientVoltage.pink, gradientVoltage.purple),
+                    listOf(gradientVoltage.purple, gradientVoltage.cyan),
+                    listOf(gradientVoltage.pink, gradientVoltage.cyan),
+                    listOf(lerp(gradientVoltage.pink, Color.White, .15f), gradientVoltage.purple),
+                    listOf(gradientVoltage.cyan, gradientVoltage.purple),
+                ),
+                gradientColors = listOf(gradientVoltage.pink, gradientVoltage.purple, gradientVoltage.cyan),
+                accentPink = voltage.pink,
+                accentPurple = voltage.purple,
+                accentCyan = voltage.cyan,
+                accentPinkDim = lerp(voltage.pink, Color.White, .15f),
+                accentCyanSoft = lerp(voltage.cyan, Color.White, .1f),
+            )
+        }
     }
+}
+
+private data class AccentTrio(val pink: Color, val purple: Color, val cyan: Color) {
+    fun lightened(fraction: Float): AccentTrio = AccentTrio(
+        pink = lerp(pink, Color.White, fraction),
+        purple = lerp(purple, Color.White, fraction),
+        cyan = lerp(cyan, Color.White, fraction),
+    )
 }

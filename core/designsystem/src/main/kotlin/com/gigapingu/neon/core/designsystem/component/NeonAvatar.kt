@@ -16,7 +16,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.gigapingu.neon.core.designsystem.theme.NeonAccents
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.Account
 
@@ -38,8 +37,8 @@ fun NeonAvatar(
                     Modifier.shadow(
                         elevation = 6.dp,
                         shape = CircleShape,
-                        ambientColor = NeonAccents.Purple.copy(alpha = .35f),
-                        spotColor = NeonAccents.Purple.copy(alpha = .35f),
+                        ambientColor = palette.accentPurple.copy(alpha = .35f),
+                        spotColor = palette.accentPurple.copy(alpha = .35f),
                     )
                 } else {
                     Modifier
@@ -47,7 +46,7 @@ fun NeonAvatar(
             )
             .clip(CircleShape)
             .background(
-                Brush.linearGradient(listOf(NeonAccents.Pink, NeonAccents.Purple)),
+                Brush.linearGradient(listOf(palette.accentPink, palette.accentPurple)),
             )
             .border(
                 width = if (ring) 2.dp else 1.dp,

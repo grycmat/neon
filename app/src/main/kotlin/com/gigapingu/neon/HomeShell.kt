@@ -75,7 +75,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.ui.PreviewHarness
-import com.gigapingu.neon.core.designsystem.theme.NeonAccents
 import com.gigapingu.neon.core.designsystem.theme.NeonMotion
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.Navigator
@@ -413,8 +412,8 @@ private fun ShellRail(
                     .shadow(
                         elevation = 10.dp,
                         shape = fabShape,
-                        ambientColor = NeonAccents.Purple.copy(alpha = .45f),
-                        spotColor = NeonAccents.Purple.copy(alpha = .45f),
+                        ambientColor = palette.accentPurple.copy(alpha = .45f),
+                        spotColor = palette.accentPurple.copy(alpha = .45f),
                     )
                     .clip(fabShape)
                     .background(palette.gradient)
@@ -464,8 +463,8 @@ private fun ComposeFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .shadow(
                 elevation = 12.dp,
                 shape = RoundedCornerShape(20.dp),
-                ambientColor = NeonAccents.Purple.copy(alpha = .5f),
-                spotColor = NeonAccents.Purple.copy(alpha = .5f),
+                ambientColor = palette.accentPurple.copy(alpha = .5f),
+                spotColor = palette.accentPurple.copy(alpha = .5f),
             )
             .clip(RoundedCornerShape(20.dp))
             .background(palette.gradient)

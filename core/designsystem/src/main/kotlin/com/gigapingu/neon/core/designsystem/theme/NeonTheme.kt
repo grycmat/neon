@@ -1,5 +1,6 @@
 package com.gigapingu.neon.core.designsystem.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
@@ -8,7 +9,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalContext
 
 val LocalNeonPalette = staticCompositionLocalOf { NeonPalette.Dark }
 val LocalNeonTypography = staticCompositionLocalOf { neonTypography() }
@@ -26,9 +29,20 @@ object NeonTheme {
 @Composable
 fun NeonTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val palette = if (darkTheme) NeonPalette.Dark else NeonPalette.Light
+    val useDynamicColor = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val context = LocalContext.current
+    val palette = remember(darkTheme, useDynamicColor, context) {
+        if (useDynamicColor) {
+            NeonPalette.dynamic(context, isLight = !darkTheme)
+        } else if (darkTheme) {
+            NeonPalette.Dark
+        } else {
+            NeonPalette.Light
+        }
+    }
     val typography = neonTypography()
     CompositionLocalProvider(
         LocalNeonPalette provides palette,

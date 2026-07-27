@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gigapingu.neon.core.designsystem.theme.NeonAccents
 import com.gigapingu.neon.core.designsystem.theme.NeonDims
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 
@@ -108,8 +107,8 @@ fun GradientButton(
             .shadow(
                 elevation = 14.dp,
                 shape = shape,
-                ambientColor = NeonAccents.Purple.copy(alpha = .45f),
-                spotColor = NeonAccents.Purple.copy(alpha = .45f),
+                ambientColor = palette.accentPurple.copy(alpha = .45f),
+                spotColor = palette.accentPurple.copy(alpha = .45f),
             )
             .clip(shape)
             .background(palette.gradient)

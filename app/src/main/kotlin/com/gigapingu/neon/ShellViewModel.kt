@@ -55,6 +55,9 @@ class ShellViewModel @Inject constructor(
         viewModelScope.launch { settings.setTwoPaneEnabled(enabled) }
     }
 
+    val dynamicColorEnabled: StateFlow<Boolean> = settings.dynamicColorEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     private val _selectedTab = MutableStateFlow<Int?>(null)
     val selectedTab: StateFlow<Int?> = _selectedTab.asStateFlow()
 
