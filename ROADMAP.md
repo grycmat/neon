@@ -295,9 +295,15 @@ below (streaming, multi-account, etc.).
   - Hi-res icon (512×512), feature graphic (1024×500), 2-8 screenshots per form factor.
   - Short + full description, privacy policy URL.
 
-- [ ] **Privacy policy**
-  - The app handles OAuth tokens and profile data.
-  - Host a minimal privacy policy page and link it in the Play Store listing and Settings.
+- [x] **Privacy policy & Child Safety Standards compliance**
+  - `privacy_policy.md` (hosted at `https://gryc.dev/privacy-policy#neon`) covers data
+    handling and an explicit CSAE/CSAM policy + designated safety contact, satisfying
+    Google Play's Child Safety Standards self-certification. Link it in the Play Store
+    listing's privacy policy field too.
+  - Settings > Safety & Privacy links to it, plus a standalone "Report account" action
+    (`StatusActionService.reportAccount`, surfaced on `ProfileScreen`) alongside the
+    existing report-status/mute/block, and a "Blocked & muted accounts" management
+    screen (`BlockedAccountsScreen`) so users can review/undo either list.
 
 ---
 

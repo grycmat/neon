@@ -68,6 +68,9 @@ data object FiltersKey : NavKey
 @Serializable
 data object NotificationRequestsKey : NavKey
 
+@Serializable
+data object BlockedAccountsKey : NavKey
+
 /**
  * Global navigation. NeonApp sets [backStack] while the authenticated shell is
  * on screen; while it is null (previews, login) every call is a no-op.
@@ -182,6 +185,10 @@ object Navigator {
 
     fun openNotificationRequests() {
         backStack?.add(NotificationRequestsKey)
+    }
+
+    fun openBlockedAccounts() {
+        backStack?.add(BlockedAccountsKey)
     }
 
     /** [previewUrl] is the already-cached thumbnail shown while [url] loads. */

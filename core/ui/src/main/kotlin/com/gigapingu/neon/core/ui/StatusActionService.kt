@@ -80,6 +80,11 @@ object StatusActionService {
         app?.let { Toast.makeText(it, "Reported status", Toast.LENGTH_SHORT).show() }
     }
 
+    fun reportAccount(account: Account, comment: String? = null) = guarded {
+        accounts?.report(accountId = account.id, comment = comment)
+        app?.let { Toast.makeText(it, "Reported @${account.acct}", Toast.LENGTH_SHORT).show() }
+    }
+
     fun toggleFavourite(status: Status) = guarded { statuses?.favourite(status) }
 
     fun toggleBoost(status: Status) = guarded { statuses?.reblog(status) }

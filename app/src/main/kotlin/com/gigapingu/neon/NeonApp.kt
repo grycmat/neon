@@ -32,6 +32,7 @@ import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.designsystem.component.NeonBackground
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
+import com.gigapingu.neon.core.ui.BlockedAccountsKey
 import com.gigapingu.neon.core.ui.BookmarksKey
 import com.gigapingu.neon.core.ui.ComposeKey
 import com.gigapingu.neon.core.ui.EditProfileKey
@@ -59,6 +60,7 @@ import com.gigapingu.neon.feature.profile.BookmarksScreen
 import com.gigapingu.neon.feature.profile.EditProfileScreen
 import com.gigapingu.neon.feature.profile.FollowListScreen
 import com.gigapingu.neon.feature.profile.ProfileScreen
+import com.gigapingu.neon.feature.settings.BlockedAccountsScreen
 import com.gigapingu.neon.feature.settings.FiltersScreen
 import com.gigapingu.neon.feature.settings.ManageFollowedHashtagsScreen
 import com.gigapingu.neon.feature.settings.ManageListsScreen
@@ -212,6 +214,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                 entry<ListTimelineKey> { key -> ListTimelineScreen(listId = key.listId, title = key.title) }
                 entry<FiltersKey> { FiltersScreen() }
                 entry<NotificationRequestsKey> { NotificationRequestsScreen() }
+                entry<BlockedAccountsKey> { BlockedAccountsScreen() }
                 entry<BookmarksKey> { BookmarksScreen() }
                 entry<NewMessageKey> { NewMessageScreen() }
                 entry<HashtagTimelineKey> { key ->

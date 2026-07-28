@@ -67,6 +67,7 @@ import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.PreviewHarness
 
 private const val FEEDBACK_HANDLE = "grycmat@101010.pl"
+private const val PRIVACY_POLICY_URL = "https://gryc.dev/privacy-policy#neon"
 
 /** Settings — theme mode + account/session. */
 @Composable
@@ -329,6 +330,26 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                             )
                         )
                     }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(28.dp))
+            NeonLabel("Safety & Privacy", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+            GlassButton(
+                label = "Blocked & muted accounts",
+                onClick = Navigator::openBlockedAccounts,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            GlassButton(
+                label = "Privacy policy & community standards",
+                onClick = {
+                    context.startActivity(
+                        android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse(PRIVACY_POLICY_URL),
+                        )
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
             )

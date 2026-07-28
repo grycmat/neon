@@ -47,7 +47,8 @@ feature/settings      Theme mode + Material You toggle + logout, keyword filters
 - **Direct Messages**: Conversation list + recipient picker for starting a new direct message (visibility="direct" statuses, grouped as Mastodon Conversations).
 - **Bookmarks**: Dedicated Bookmarks tab/screen to save and view bookmarked statuses.
 - **Interactive Thread View**: Full discussion view with collapsible Content Warnings (CW) and sensitive media blur overlays.
-- **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts, plus a favourited/boosted-by sheet and edit history viewer.
+- **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts (from a status or directly from a profile), plus a favourited/boosted-by sheet and edit history viewer.
+- **Trust & Safety**: Settings > Safety & Privacy links the published privacy policy / CSAE standards (`privacy_policy.md`) and a "Blocked & muted accounts" screen to review/undo either list.
 - **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.
 - **Filters, Lists & Followed Hashtags**: Manage keyword filters, custom lists (with per-account membership from a profile), and followed hashtags from Settings; filtered-out notifications land in a review queue.
 - **Profile**: Edit profile, including a custom-fields editor, with an accessibility pass over profile screens.

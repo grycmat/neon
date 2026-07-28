@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Report
 import androidx.compose.material.icons.rounded.VolumeMute
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.AlertDialog
@@ -73,6 +74,7 @@ import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
+import com.gigapingu.neon.core.ui.StatusActionService
 import com.gigapingu.neon.core.ui.hingePaneWidth
 import com.gigapingu.neon.core.ui.isBigScreen
 import com.gigapingu.neon.core.ui.status.StatusCard
@@ -91,6 +93,8 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
     var showListSheet by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
+    var reportComment by remember { mutableStateOf("") }
     val onOpenListMembership: (() -> Unit)? =
         if (!uiState.isSelf && uiState.account != null) ({ showListSheet = true }) else null
 
@@ -126,6 +130,7 @@ fun ProfileScreen(
                         onToggleFollow = viewModel::toggleFollow,
                         onToggleMute = viewModel::toggleMute,
                         onToggleBlock = viewModel::toggleBlock,
+                        onRequestReport = { showReportDialog = true },
                         onAddFeaturedTag = viewModel::addFeaturedTag,
                         onRemoveFeaturedTag = viewModel::removeFeaturedTag,
                     )
@@ -198,6 +203,7 @@ fun ProfileScreen(
                                 onToggleFollow = viewModel::toggleFollow,
                                 onToggleMute = viewModel::toggleMute,
                                 onToggleBlock = viewModel::toggleBlock,
+                                onRequestReport = { showReportDialog = true },
                                 onAddFeaturedTag = viewModel::addFeaturedTag,
                                 onRemoveFeaturedTag = viewModel::removeFeaturedTag,
                             )
@@ -229,6 +235,63 @@ fun ProfileScreen(
 
     if (showListSheet) {
         ListMembershipSheet(accountId = accountId, onDismiss = { showListSheet = false })
+    }
+    if (showReportDialog) {
+        val account = uiState.account
+        AlertDialog(
+            onDismissRequest = { showReportDialog = false },
+            title = { Text("Report @${account?.acct.orEmpty()}", color = palette.text) },
+            text = {
+                Column {
+                    Text(
+                        "Please provide an optional comment for the moderators:",
+                        color = palette.textDim,
+                        style = NeonTheme.type.bodySmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    BasicTextField(
+                        value = reportComment,
+                        onValueChange = { reportComment = it },
+                        textStyle = NeonTheme.type.bodyMedium.copy(color = palette.text),
+                        cursorBrush = SolidColor(palette.cyan),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(palette.surface, RoundedCornerShape(8.dp))
+                            .border(1.dp, palette.border, RoundedCornerShape(8.dp))
+                            .padding(10.dp),
+                        decorationBox = { inner ->
+                            if (reportComment.isEmpty()) {
+                                Text("Write comment here...", style = NeonTheme.type.bodyMedium, color = palette.textMute)
+                            }
+                            inner()
+                        },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        account?.let { StatusActionService.reportAccount(it, reportComment) }
+                        showReportDialog = false
+                        reportComment = ""
+                    },
+                ) {
+                    Text("Report", color = palette.pink)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showReportDialog = false
+                        reportComment = ""
+                    },
+                ) {
+                    Text("Cancel", color = palette.textMute)
+                }
+            },
+            containerColor = palette.surfaceSolid,
+            shape = RoundedCornerShape(20.dp),
+        )
     }
 }
 
@@ -262,6 +325,7 @@ private fun ProfileHeader(
     onToggleFollow: () -> Unit,
     onToggleMute: () -> Unit,
     onToggleBlock: () -> Unit,
+    onRequestReport: () -> Unit = {},
     onAddFeaturedTag: (String) -> Unit = {},
     onRemoveFeaturedTag: (FeaturedTag) -> Unit = {},
 ) {
@@ -301,6 +365,12 @@ private fun ProfileHeader(
                                 tinted = rel.blocking,
                                 onClick = onToggleBlock,
                                 contentDescription = if (rel.blocking) "Unblock" else "Block",
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            GlassIconButton(
+                                icon = Icons.Rounded.Report,
+                                onClick = onRequestReport,
+                                contentDescription = "Report @${account.acct}",
                             )
                             Spacer(Modifier.width(8.dp))
                             if (following || requested) {
