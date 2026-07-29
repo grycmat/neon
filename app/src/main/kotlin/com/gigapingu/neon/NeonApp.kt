@@ -49,7 +49,7 @@ import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.NewMessageKey
 import com.gigapingu.neon.core.ui.NotificationRequestsKey
 import com.gigapingu.neon.core.ui.ProfileKey
-import com.gigapingu.neon.core.ui.LocalTwoPaneEnabled
+import com.gigapingu.neon.core.ui.LocalBigScreenLayout
 import com.gigapingu.neon.core.ui.SettingsKey
 import com.gigapingu.neon.core.ui.ThreadKey
 import com.gigapingu.neon.core.ui.media.MediaPreviewScreen
@@ -148,7 +148,7 @@ fun NeonApp(viewModel: ShellViewModel, modifier: Modifier = Modifier) {
 @Composable
 private fun AuthenticatedApp(viewModel: ShellViewModel) {
     val backStack = rememberNavBackStack(HomeKey)
-    val twoPaneEnabled by viewModel.twoPaneEnabled.collectAsStateWithLifecycle()
+    val bigScreenLayout by viewModel.bigScreenLayout.collectAsStateWithLifecycle()
 
     DisposableEffect(backStack) {
         Navigator.backStack = backStack
@@ -167,7 +167,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
         }
     }
 
-    CompositionLocalProvider(LocalTwoPaneEnabled provides twoPaneEnabled) {
+    CompositionLocalProvider(LocalBigScreenLayout provides bigScreenLayout) {
         NavDisplay(
             backStack = backStack,
             modifier = Modifier.fillMaxSize(),

@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.designsystem.theme.NeonDims
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
+import com.gigapingu.neon.core.ui.AsyncGrid
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PaneSelection
@@ -44,6 +45,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
@@ -54,10 +56,12 @@ import kotlinx.coroutines.launch
 /**
  * Home / Local / Federated timelines behind a segmented pill switcher.
  * [selectedStatusId] marks the toot open in the big-screen detail pane.
+ * [gridLayout] switches the list pane to a staggered two-column grid (big-screen "grid" layout).
  */
 @Composable
 fun TimelineScreen(
     selectedStatusId: String? = null,
+    gridLayout: Boolean = false,
     viewModel: TimelineViewModel = hiltViewModel(),
 ) {
     val palette = NeonTheme.palette
@@ -66,6 +70,7 @@ fun TimelineScreen(
     val newTootsCount by viewModel.currentNewTootsCount.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
     val listState = rememberLazyListState()
+    val gridState = rememberLazyStaggeredGridState()
     val coroutineScope = rememberCoroutineScope()
 
     // Pills float over the list (like HomeShell's bars) so items actually
@@ -73,8 +78,14 @@ fun TimelineScreen(
     var pillsHeightPx by remember { mutableIntStateOf(0) }
     val pillsHeight = with(LocalDensity.current) { pillsHeightPx.toDp() }
 
-    LaunchedEffect(listState, kind) {
-        snapshotFlow { (listState.firstVisibleItemIndex == 0) && (listState.firstVisibleItemScrollOffset == 0) }
+    LaunchedEffect(listState, gridState, kind, gridLayout) {
+        snapshotFlow {
+            if (gridLayout) {
+                gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
+            } else {
+                listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+            }
+        }
             .distinctUntilChanged()
             .collect { isAtTop ->
                 if (isAtTop) {
@@ -84,24 +95,47 @@ fun TimelineScreen(
     }
 
     Box(Modifier.fillMaxSize()) {
-        AsyncList(
-            state = state,
-            onRefresh = viewModel::refresh,
-            onLoadMore = viewModel::loadMore,
-            emptyLabel = "No toots yet — follow some people!",
-            modifier = Modifier.fillMaxSize(),
-            listState = listState,
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                top = pillsHeight,
-                end = 16.dp,
-                bottom = 90.dp + shellPadding.calculateBottomPadding(),
-            ),
-            key = { it.id },
-            loadingContent = { StatusListSkeleton() },
-        ) { status ->
-            PaneSelection(selected = status.display.id == selectedStatusId) {
-                StatusCard(status = status)
+        if (gridLayout) {
+            AsyncGrid(
+                state = state,
+                onRefresh = viewModel::refresh,
+                onLoadMore = viewModel::loadMore,
+                emptyLabel = "No toots yet — follow some people!",
+                modifier = Modifier.fillMaxSize(),
+                gridState = gridState,
+                contentPadding = PaddingValues(
+                    start = 12.dp,
+                    top = pillsHeight + 8.dp,
+                    end = 12.dp,
+                    bottom = 90.dp + shellPadding.calculateBottomPadding(),
+                ),
+                key = { it.id },
+                loadingContent = { StatusListSkeleton() },
+            ) { status ->
+                PaneSelection(selected = status.display.id == selectedStatusId) {
+                    StatusCard(status = status)
+                }
+            }
+        } else {
+            AsyncList(
+                state = state,
+                onRefresh = viewModel::refresh,
+                onLoadMore = viewModel::loadMore,
+                emptyLabel = "No toots yet — follow some people!",
+                modifier = Modifier.fillMaxSize(),
+                listState = listState,
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = pillsHeight,
+                    end = 16.dp,
+                    bottom = 90.dp + shellPadding.calculateBottomPadding(),
+                ),
+                key = { it.id },
+                loadingContent = { StatusListSkeleton() },
+            ) { status ->
+                PaneSelection(selected = status.display.id == selectedStatusId) {
+                    StatusCard(status = status)
+                }
             }
         }
         Row(
@@ -141,7 +175,7 @@ fun TimelineScreen(
                     tinted = true,
                     onClick = {
                         coroutineScope.launch {
-                            listState.animateScrollToItem(0)
+                            if (gridLayout) gridState.animateScrollToItem(0) else listState.animateScrollToItem(0)
                         }
                         viewModel.clearNewToots(kind)
                     }

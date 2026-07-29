@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.map
 /** App theme mode. The design's primary palette is neon dark. */
 enum class ThemeMode { Dark, Light, System }
 
+/** Big-screen tab body layout: phone-style single pane, hinge-aligned list-detail, or a list-detail grid. */
+enum class BigScreenLayout { List, TwoPane, Grid }
+
 private val Context.settingsStore by preferencesDataStore(name = "neon_settings")
 
 @Singleton
@@ -23,7 +26,9 @@ class SettingsRepository @Inject constructor(
 ) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
+    // Legacy on/off key, read as a fallback when bigScreenLayoutKey hasn't been written yet.
     private val twoPaneEnabledKey = booleanPreferencesKey("two_pane_enabled")
+    private val bigScreenLayoutKey = stringPreferencesKey("big_screen_layout")
     private val dynamicColorEnabledKey = booleanPreferencesKey("dynamic_color_enabled")
     private object AlertKeys {
         val mention = booleanPreferencesKey("alert_mention")
@@ -48,9 +53,14 @@ class SettingsRepository @Inject constructor(
         prefs[notificationsEnabledKey] ?: true
     }
 
-    /** Big-screen list-detail/two-pane layout, on by default; off falls back to phone-style single-pane. */
-    val twoPaneEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
-        prefs[twoPaneEnabledKey] ?: true
+    /** Big-screen tab body layout, list-detail by default; falls back to the legacy on/off key pre-migration. */
+    val bigScreenLayout: Flow<BigScreenLayout> = context.settingsStore.data.map { prefs ->
+        when (prefs[bigScreenLayoutKey]) {
+            "list" -> BigScreenLayout.List
+            "grid" -> BigScreenLayout.Grid
+            "two_pane" -> BigScreenLayout.TwoPane
+            else -> if (prefs[twoPaneEnabledKey] == false) BigScreenLayout.List else BigScreenLayout.TwoPane
+        }
     }
 
     /** Material You: derive the neon gradient/avatar/accent colors from the wallpaper (Android 12+). Off by default — the brand palette is the default identity. */
@@ -74,9 +84,13 @@ class SettingsRepository @Inject constructor(
         }
     }
 
-    suspend fun setTwoPaneEnabled(enabled: Boolean) {
+    suspend fun setBigScreenLayout(layout: BigScreenLayout) {
         context.settingsStore.edit { prefs ->
-            prefs[twoPaneEnabledKey] = enabled
+            prefs[bigScreenLayoutKey] = when (layout) {
+                BigScreenLayout.List -> "list"
+                BigScreenLayout.TwoPane -> "two_pane"
+                BigScreenLayout.Grid -> "grid"
+            }
         }
     }
 

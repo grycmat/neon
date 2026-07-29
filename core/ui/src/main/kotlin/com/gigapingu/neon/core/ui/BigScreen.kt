@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.gigapingu.neon.core.data.BigScreenLayout
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 
 /**
@@ -29,20 +30,20 @@ const val BigScreenMinWidthDp = 640
 val ShellRailWidth = 76.dp
 
 /**
- * User's two-pane preference (settable via the top app bar toggle on wide
- * windows), bound from [SettingsRepository.twoPaneEnabled][com.gigapingu.neon.core.data.SettingsRepository]
- * at the app root. Defaults to true so previews and any composition that
- * doesn't provide it keep the existing two-pane behavior.
+ * User's big-screen layout preference (settable via the top app bar's cycling
+ * toggle on wide windows), bound from [SettingsRepository.bigScreenLayout][com.gigapingu.neon.core.data.SettingsRepository]
+ * at the app root. Defaults to [BigScreenLayout.TwoPane] so previews and any
+ * composition that doesn't provide it keep the existing two-pane behavior.
  */
-val LocalTwoPaneEnabled = compositionLocalOf { true }
+val LocalBigScreenLayout = compositionLocalOf { BigScreenLayout.TwoPane }
 
-/** Raw window-width check, independent of the user's two-pane preference. */
+/** Raw window-width check, independent of the user's big-screen layout preference. */
 @Composable
 fun isWideWindow(): Boolean = LocalConfiguration.current.screenWidthDp >= BigScreenMinWidthDp
 
-/** Whether to render the two-pane/big-screen layout: a wide window *and* the user hasn't opted into single-pane. */
+/** Whether to render a big-screen layout (nav rail + hinge panes): a wide window *and* the user hasn't opted into the phone-style single pane. */
 @Composable
-fun isBigScreen(): Boolean = isWideWindow() && LocalTwoPaneEnabled.current
+fun isBigScreen(): Boolean = isWideWindow() && LocalBigScreenLayout.current != BigScreenLayout.List
 
 /**
  * Left-pane width for a two-pane layout (3:2 ratio). [inShell] subtracts the nav rail

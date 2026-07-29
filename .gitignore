@@ -108,3 +108,4 @@ app.*.map.json
 **/linux/flutter/generated_plugins.cmake
 
 deployment.md
+app/release

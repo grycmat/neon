@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.AuthStatus
+import com.gigapingu.neon.core.data.BigScreenLayout
 import com.gigapingu.neon.core.data.SettingsRepository
 import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.TimelineKind
@@ -48,11 +49,17 @@ class ShellViewModel @Inject constructor(
     val notificationAlertPrefs: StateFlow<NotificationAlertPrefs> = settings.notificationAlertPrefs
         .stateIn(viewModelScope, SharingStarted.Eagerly, NotificationAlertPrefs())
 
-    val twoPaneEnabled: StateFlow<Boolean> = settings.twoPaneEnabled
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+    val bigScreenLayout: StateFlow<BigScreenLayout> = settings.bigScreenLayout
+        .stateIn(viewModelScope, SharingStarted.Eagerly, BigScreenLayout.TwoPane)
 
-    fun setTwoPaneEnabled(enabled: Boolean) {
-        viewModelScope.launch { settings.setTwoPaneEnabled(enabled) }
+    /** Cycles the top app bar's layout toggle: List -> TwoPane -> Grid -> List. */
+    fun cycleBigScreenLayout() {
+        val next = when (bigScreenLayout.value) {
+            BigScreenLayout.List -> BigScreenLayout.TwoPane
+            BigScreenLayout.TwoPane -> BigScreenLayout.Grid
+            BigScreenLayout.Grid -> BigScreenLayout.List
+        }
+        viewModelScope.launch { settings.setBigScreenLayout(next) }
     }
 
     val dynamicColorEnabled: StateFlow<Boolean> = settings.dynamicColorEnabled

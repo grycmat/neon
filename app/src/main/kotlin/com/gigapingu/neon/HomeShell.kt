@@ -38,8 +38,10 @@ import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.ViewSidebar
+import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Home
@@ -71,7 +73,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gigapingu.neon.core.data.BigScreenLayout
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.ui.PreviewHarness
@@ -119,7 +123,7 @@ fun HomeShell(viewModel: ShellViewModel) {
     val pagerState = rememberPagerState(initialPage = 0) { 5 }
     val coroutineScope = rememberCoroutineScope()
 
-    androidx.compose.runtime.LaunchedEffect(selectedTab) {
+    LaunchedEffect(selectedTab) {
         selectedTab?.let { page ->
             pagerState.animateScrollToPage(page)
             viewModel.clearSelectedTab()
@@ -127,7 +131,7 @@ fun HomeShell(viewModel: ShellViewModel) {
     }
     val big = isBigScreen()
     val wideWindow = isWideWindow()
-    val twoPaneEnabled by viewModel.twoPaneEnabled.collectAsStateWithLifecycle()
+    val bigScreenLayout by viewModel.bigScreenLayout.collectAsStateWithLifecycle()
     var showClearConfirm by remember { mutableStateOf(false) }
 
     // Detail-pane selection per list-detail tab (big screens only).
@@ -136,11 +140,14 @@ fun HomeShell(viewModel: ShellViewModel) {
     var messagesThreadId by rememberSaveable { mutableStateOf<String?>(null) }
     if (big) {
         // Route thread opens from the visible list tab into its detail pane
-        // instead of pushing; other tabs keep the full-screen push.
-        DisposableEffect(pagerState) {
+        // instead of pushing; other tabs keep the full-screen push. Home's grid
+        // layout has no detail pane, so it falls through to the normal push too.
+        DisposableEffect(pagerState, bigScreenLayout) {
             Navigator.threadPaneHandler = { statusId ->
                 when (pagerState.currentPage) {
-                    0 -> {
+                    0 -> if (bigScreenLayout == BigScreenLayout.Grid) {
+                        false
+                    } else {
                         homeThreadId = statusId
                         true
                     }
@@ -178,12 +185,13 @@ fun HomeShell(viewModel: ShellViewModel) {
                 beyondViewportPageCount = 3,
             ) { page ->
                 when (page) {
-                    0 -> if (big) {
-                        ShellListDetail(detailId = homeThreadId) {
+                    0 -> when {
+                        // Grid has no detail pane — it takes the tab's full width.
+                        big && bigScreenLayout == BigScreenLayout.Grid -> TimelineScreen(gridLayout = true)
+                        big -> ShellListDetail(detailId = homeThreadId) {
                             TimelineScreen(selectedStatusId = homeThreadId)
                         }
-                    } else {
-                        TimelineScreen()
+                        else -> TimelineScreen()
                     }
                     1 -> if (big) {
                         ShellListDetail(detailId = notifThreadId) {
@@ -231,8 +239,8 @@ fun HomeShell(viewModel: ShellViewModel) {
                     onFeedbackClick = { Navigator.openCompose(directToHandle = FEEDBACK_HANDLE) },
                     onSettingsClick = { Navigator.openSettings() },
                     showPanelToggle = wideWindow,
-                    twoPaneEnabled = twoPaneEnabled,
-                    onTogglePanels = { viewModel.setTwoPaneEnabled(!twoPaneEnabled) },
+                    bigScreenLayout = bigScreenLayout,
+                    onCycleLayout = { viewModel.cycleBigScreenLayout() },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .onSizeChanged { topBarHeightPx = it.height },
@@ -248,8 +256,8 @@ fun HomeShell(viewModel: ShellViewModel) {
                 onSettingsClick = { Navigator.openSettings() },
                 onClearClick = { showClearConfirm = true },
                 showPanelToggle = wideWindow,
-                twoPaneEnabled = twoPaneEnabled,
-                onTogglePanels = { viewModel.setTwoPaneEnabled(!twoPaneEnabled) },
+                bigScreenLayout = bigScreenLayout,
+                onCycleLayout = { viewModel.cycleBigScreenLayout() },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { topBarHeightPx = it.height },
@@ -492,8 +500,8 @@ private fun TopAppBar(
     onSettingsClick: () -> Unit,
     onClearClick: (() -> Unit)? = null,
     showPanelToggle: Boolean = false,
-    twoPaneEnabled: Boolean = true,
-    onTogglePanels: () -> Unit = {},
+    bigScreenLayout: BigScreenLayout = BigScreenLayout.TwoPane,
+    onCycleLayout: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val palette = NeonTheme.palette
@@ -560,15 +568,16 @@ private fun TopAppBar(
                 Spacer(Modifier.width(8.dp))
             }
             if (showPanelToggle) {
+                val (layoutIcon, nextLayoutLabel) = when (bigScreenLayout) {
+                    BigScreenLayout.List -> Icons.AutoMirrored.Outlined.ViewList to "two-panel"
+                    BigScreenLayout.TwoPane -> Icons.Outlined.ViewSidebar to "grid"
+                    BigScreenLayout.Grid -> Icons.Outlined.GridView to "single-panel list"
+                }
                 GlassIconButton(
-                    icon = Icons.Outlined.ViewSidebar,
-                    onClick = onTogglePanels,
-                    tinted = twoPaneEnabled,
-                    contentDescription = if (twoPaneEnabled) {
-                        "Switch to single-panel layout"
-                    } else {
-                        "Switch to two-panel layout"
-                    },
+                    icon = layoutIcon,
+                    onClick = onCycleLayout,
+                    tinted = bigScreenLayout != BigScreenLayout.List,
+                    contentDescription = "Switch to $nextLayoutLabel layout",
                 )
                 Spacer(Modifier.width(8.dp))
             }
@@ -654,14 +663,16 @@ private fun TabBar(position: Float, onChanged: (Int) -> Unit, modifier: Modifier
     }
 }
 
-@Preview(name = "Top app bar (wide, panel toggle)", showBackground = true, heightDp = 200)
+@Preview(name = "Top app bar (wide, panel toggle)", showBackground = true, heightDp = 300)
 @Composable
 private fun TopAppBarPanelTogglePreview() {
     PreviewHarness {
         Column {
-            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = true)
+            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, bigScreenLayout = BigScreenLayout.List)
             Spacer(Modifier.height(12.dp))
-            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, twoPaneEnabled = false)
+            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, bigScreenLayout = BigScreenLayout.TwoPane)
+            Spacer(Modifier.height(12.dp))
+            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, bigScreenLayout = BigScreenLayout.Grid)
         }
     }
 }
