@@ -33,7 +33,8 @@ data class FilePart(val name: String, val filename: String, val bytes: ByteArray
 class ApiClient @Inject constructor(private val client: OkHttpClient) {
 
     @Volatile private var instanceHost: String? = null
-    @Volatile private var token: String? = null
+    @Volatile var token: String? = null
+        private set
 
     val isConfigured: Boolean get() = instanceHost != null
     val instance: String? get() = instanceHost

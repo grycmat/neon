@@ -81,6 +81,14 @@ class NotificationRepository @Inject constructor(
         }
     }
 
+    /** A notification arrived over the streaming connection — prepend if not already present. */
+    fun prependNotification(notification: MastoNotification) {
+        val current = _state.value
+        val data = current.data ?: return
+        if (data.any { it.id == notification.id }) return
+        _state.value = current.withData(listOf(notification) + data)
+    }
+
     fun applyStatusDelete(deletedId: String) {
         val current = _state.value
         val data = current.data ?: return

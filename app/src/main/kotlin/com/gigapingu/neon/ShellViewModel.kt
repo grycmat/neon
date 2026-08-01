@@ -7,6 +7,7 @@ import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.data.BigScreenLayout
 import com.gigapingu.neon.core.data.SettingsRepository
+import com.gigapingu.neon.core.data.StreamingRepository
 import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.data.TimelineRepository
@@ -32,6 +33,7 @@ class ShellViewModel @Inject constructor(
     private val timelines: TimelineRepository,
     private val pushRepository: PushRepository,
     private val fcmTokenProvider: FcmTokenProvider,
+    private val streamingRepository: StreamingRepository,
 ) : ViewModel() {
 
     val authStatus: StateFlow<AuthStatus> = auth.status
@@ -126,5 +128,10 @@ class ShellViewModel @Inject constructor(
                 Log.e(NEON_PUSH_TAG, "Push registration sync failed", e)
             }
         }
+    }
+
+    /** Connects/disconnects the live streaming WebSocket based on app foreground state. */
+    fun setStreamingForeground(active: Boolean) {
+        streamingRepository.setForeground(active)
     }
 }

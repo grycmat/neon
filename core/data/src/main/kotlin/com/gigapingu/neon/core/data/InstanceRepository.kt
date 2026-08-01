@@ -7,6 +7,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -41,14 +42,16 @@ class InstanceRepository @Inject constructor(
         runCatching { json.decodeFromString(Instance.serializer(), api.get("/api/v2/instance")) }
             .getOrElse { fetchLegacy() }
 
-    /** Pre-v2 servers (Mastodon < 3.4, some forks): flat `max_toot_chars` field. */
+    /** Pre-v2 servers (Mastodon < 3.4, some forks): flat `max_toot_chars` / `urls.streaming_api` fields. */
     private suspend fun fetchLegacy(): Instance = runCatching {
         val body = json.parseToJsonElement(api.get("/api/v1/instance")).jsonObject
         val maxChars = body["max_toot_chars"]?.jsonPrimitive?.intOrNull
             ?: Instance.DEFAULT_MAX_CHARACTERS
+        val streamingUrl = body["urls"]?.jsonObject?.get("streaming_api")?.jsonPrimitive?.contentOrNull
         Instance(
             configuration = Instance.Configuration(
                 statuses = Instance.Statuses(maxCharacters = maxChars),
+                urls = Instance.Urls(streaming = streamingUrl),
             ),
         )
     }.getOrDefault(Instance())

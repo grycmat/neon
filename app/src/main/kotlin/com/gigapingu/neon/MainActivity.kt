@@ -66,18 +66,27 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            var isAppForeground by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+
             val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
             androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
                 val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                        hasNotificationPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                            ContextCompat.checkSelfPermission(
-                                this@MainActivity,
-                                android.Manifest.permission.POST_NOTIFICATIONS
-                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        } else {
-                            true
+                    when (event) {
+                        androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
+                            isAppForeground = true
+                            hasNotificationPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                ContextCompat.checkSelfPermission(
+                                    this@MainActivity,
+                                    android.Manifest.permission.POST_NOTIFICATIONS
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                            } else {
+                                true
+                            }
                         }
+                        androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> {
+                            isAppForeground = false
+                        }
+                        else -> Unit
                     }
                 }
                 lifecycleOwner.lifecycle.addObserver(observer)
@@ -90,6 +99,10 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(authStatus, notificationsEnabled, hasNotificationPermission, notificationAlertPrefs) {
                 viewModel.syncPushRegistration(hasNotificationPermission)
+            }
+
+            LaunchedEffect(isAppForeground) {
+                viewModel.setStreamingForeground(isAppForeground)
             }
 
             val darkTheme = when (themeMode) {
