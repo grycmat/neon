@@ -18,6 +18,7 @@ class MediaRepository @Inject constructor(
     suspend fun upload(
         bytes: ByteArray,
         filename: String,
+        mimeType: String? = null,
         description: String? = null,
     ): MediaAttachment = json.decodeFromString(
         MediaAttachment.serializer(),
@@ -27,7 +28,7 @@ class MediaRepository @Inject constructor(
             fields = buildMap {
                 if (!description.isNullOrEmpty()) put("description", description)
             },
-            files = listOf(FilePart(name = "file", filename = filename, bytes = bytes)),
+            files = listOf(FilePart(name = "file", filename = filename, bytes = bytes, mimeType = mimeType)),
         ),
     )
 

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Poll
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
@@ -88,6 +89,23 @@ fun MediaStrip(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.size(92.dp),
                         )
+                    }
+                    if (attachment.isPlayable) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = .5f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.PlayArrow,
+                                contentDescription = "Video",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
                 Box(

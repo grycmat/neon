@@ -271,7 +271,7 @@ fun ComposeScreen(
                             {
                                 mediaPicker.launch(
                                     PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly,
+                                        ActivityResultContracts.PickVisualMedia.ImageAndVideo,
                                     ),
                                 )
                             }

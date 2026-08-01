@@ -22,7 +22,7 @@ class ApiException(val statusCode: Int, override val message: String) : IOExcept
 }
 
 /** A named binary part for multipart requests (media upload, profile images). */
-data class FilePart(val name: String, val filename: String, val bytes: ByteArray)
+data class FilePart(val name: String, val filename: String, val bytes: ByteArray, val mimeType: String? = null)
 
 /**
  * Thin HTTP wrapper bound to the current instance + access token.
@@ -98,7 +98,7 @@ class ApiClient @Inject constructor(private val client: OkHttpClient) {
                 addFormDataPart(
                     part.name,
                     part.filename,
-                    part.bytes.toRequestBody("application/octet-stream".toMediaType()),
+                    part.bytes.toRequestBody((part.mimeType ?: "application/octet-stream").toMediaType()),
                 )
             }
         }.build()

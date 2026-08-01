@@ -234,8 +234,8 @@ class ComposeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 uris.take(MAX_MEDIA - state.media.size).forEach { uri ->
-                    val (bytes, name) = withContext(Dispatchers.IO) { readUri(uri) }
-                    val uploaded = media.upload(bytes, filename = name)
+                    val file = withContext(Dispatchers.IO) { readUri(uri) }
+                    val uploaded = media.upload(file.bytes, filename = file.name, mimeType = file.mimeType)
                     _uiState.update { it.copy(media = it.media + uploaded) }
                 }
             } catch (e: Exception) {
@@ -261,7 +261,9 @@ class ComposeViewModel @Inject constructor(
         }
     }
 
-    private fun readUri(uri: Uri): Pair<ByteArray, String> {
+    private data class ReadFile(val bytes: ByteArray, val name: String, val mimeType: String?)
+
+    private fun readUri(uri: Uri): ReadFile {
         val resolver = application.contentResolver
         val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
             ?: error("Could not read file")
@@ -271,7 +273,7 @@ class ComposeViewModel @Inject constructor(
                 cursor.getString(0)?.let { name = it }
             }
         }
-        return bytes to name
+        return ReadFile(bytes, name, resolver.getType(uri))
     }
 
     // ── Poll ──
