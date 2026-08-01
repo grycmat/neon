@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,11 +79,19 @@ fun GlassCard(
 
 /** Kicker label — uppercase, letterspaced, cyan. */
 @Composable
-fun NeonLabel(text: String, modifier: Modifier = Modifier, color: Color? = null) {
+fun NeonLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color? = null,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip,
+) {
     Text(
         text = text.uppercase(),
         style = NeonTheme.type.labelMedium,
         color = color ?: NeonTheme.palette.label,
+        maxLines = maxLines,
+        overflow = overflow,
         modifier = modifier,
     )
 }

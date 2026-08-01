@@ -308,9 +308,9 @@ fun ComposeScreen(
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
-                        "${textField.text.length} / $MAX_CHARS",
+                        "${textField.text.length} / ${uiState.maxChars}",
                         style = type.bodySmall,
-                        color = if (textField.text.length > MAX_CHARS) palette.pink else palette.textMute,
+                        color = if (textField.text.length > uiState.maxChars) palette.pink else palette.textMute,
                     )
                     Spacer(Modifier.width(12.dp))
                     GradientButton(

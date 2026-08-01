@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,6 +71,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -241,6 +243,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                     showPanelToggle = wideWindow,
                     bigScreenLayout = bigScreenLayout,
                     onCycleLayout = { viewModel.cycleBigScreenLayout() },
+                    instanceHost = viewModel.instanceHost,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .onSizeChanged { topBarHeightPx = it.height },
@@ -258,6 +261,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                 showPanelToggle = wideWindow,
                 bigScreenLayout = bigScreenLayout,
                 onCycleLayout = { viewModel.cycleBigScreenLayout() },
+                instanceHost = viewModel.instanceHost,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .onSizeChanged { topBarHeightPx = it.height },
@@ -502,6 +506,7 @@ private fun TopAppBar(
     showPanelToggle: Boolean = false,
     bigScreenLayout: BigScreenLayout = BigScreenLayout.TwoPane,
     onCycleLayout: () -> Unit = {},
+    instanceHost: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val palette = NeonTheme.palette
@@ -556,6 +561,15 @@ private fun TopAppBar(
                     if (p == 1) {
                         Spacer(Modifier.width(8.dp))
                         NeonLabel("Live")
+                    }
+                    if (p == 0 && instanceHost != null) {
+                        Spacer(Modifier.width(8.dp))
+                        NeonLabel(
+                            instanceHost,
+                            modifier = Modifier.widthIn(max = 130.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
             }
@@ -682,7 +696,7 @@ private fun TopAppBarPanelTogglePreview() {
 private fun TopAppBarPreview() {
     PreviewHarness {
         Column {
-            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {})
+            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, instanceHost = "mastodon.social")
             Spacer(Modifier.height(12.dp))
             TopAppBar(page = 2, onFeedbackClick = {}, onSettingsClick = {})
         }

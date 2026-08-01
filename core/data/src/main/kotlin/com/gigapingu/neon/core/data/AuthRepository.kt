@@ -46,6 +46,7 @@ class AuthRepository @Inject constructor(
     private val api: ApiClient,
     private val cache: CacheStore,
     private val json: Json,
+    private val instanceRepository: InstanceRepository,
     private val pushRepository: PushRepository,
     private val pushKeyManager: PushKeyManager,
     @ApplicationScope private val scope: CoroutineScope,
@@ -188,6 +189,7 @@ class AuthRepository @Inject constructor(
         context.credentialStore.edit { it.clear() }
         cache.clear()
         api.reset()
+        instanceRepository.clear()
         pushKeyManager.clear()
 
         _me.value = null

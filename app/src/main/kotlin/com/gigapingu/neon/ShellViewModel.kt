@@ -36,6 +36,7 @@ class ShellViewModel @Inject constructor(
 
     val authStatus: StateFlow<AuthStatus> = auth.status
     val me: StateFlow<Account?> = auth.me
+    val instanceHost: String? get() = auth.instance
 
     private val _restoreError = MutableStateFlow<String?>(null)
     val restoreError: StateFlow<String?> = _restoreError.asStateFlow()

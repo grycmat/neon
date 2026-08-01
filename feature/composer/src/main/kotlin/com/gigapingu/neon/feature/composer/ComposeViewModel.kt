@@ -6,10 +6,12 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AuthRepository
+import com.gigapingu.neon.core.data.InstanceRepository
 import com.gigapingu.neon.core.data.MediaRepository
 import com.gigapingu.neon.core.data.SearchRepository
 import com.gigapingu.neon.core.data.StatusRepository
 import com.gigapingu.neon.core.model.Account
+import com.gigapingu.neon.core.model.Instance
 import com.gigapingu.neon.core.model.MediaAttachment
 import com.gigapingu.neon.core.model.PollDraft
 import com.gigapingu.neon.core.model.Status
@@ -29,7 +31,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-const val MAX_CHARS = 500
 const val MAX_MEDIA = 4
 
 data class PollDraftState(
@@ -54,9 +55,10 @@ data class ComposeUiState(
     val done: Boolean = false,
     val editingStatusId: String? = null,
     val lockedVisibility: Boolean = false,
+    val maxChars: Int = Instance.DEFAULT_MAX_CHARACTERS,
 ) {
     val canPost: Boolean
-        get() = !posting && !uploading && text.isNotBlank() && text.length <= MAX_CHARS
+        get() = !posting && !uploading && text.isNotBlank() && text.length <= maxChars
 }
 
 @OptIn(FlowPreview::class)
@@ -67,6 +69,7 @@ class ComposeViewModel @Inject constructor(
     private val media: MediaRepository,
     private val search: SearchRepository,
     private val auth: AuthRepository,
+    private val instances: InstanceRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ComposeUiState())
@@ -79,6 +82,10 @@ class ComposeViewModel @Inject constructor(
     private var initialized = false
 
     init {
+        viewModelScope.launch {
+            val maxChars = instances.getInstance().maxStatusCharacters
+            _uiState.update { it.copy(maxChars = maxChars) }
+        }
         viewModelScope.launch {
             mentionToken.debounce(300).collectLatest { token ->
                 if (token == null || token.length < 2) {
