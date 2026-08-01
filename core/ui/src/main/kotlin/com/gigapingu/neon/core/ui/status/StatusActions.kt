@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.FormatQuote
 import androidx.compose.material.icons.rounded.IosShare
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
@@ -83,6 +84,8 @@ fun StatusActions(status: Status, modifier: Modifier = Modifier) {
     val palette = NeonTheme.palette
     var showBoostSheet by remember { mutableStateOf(false) }
     var engagersKind by remember { mutableStateOf<EngagersKind?>(null) }
+    var showContextMenu by remember { mutableStateOf(false) }
+    val isOwn = StatusActionService.isOwnStatus(status)
 
     Column(
         modifier = modifier
@@ -139,7 +142,22 @@ fun StatusActions(status: Status, modifier: Modifier = Modifier) {
                 contentDescription = "Share",
                 onClick = { StatusActionService.share(status) },
             )
+            if (isOwn) {
+                ActionItem(
+                    icon = Icons.Rounded.MoreVert,
+                    contentDescription = "More options",
+                    onClick = { showContextMenu = true },
+                )
+            }
         }
+    }
+
+    if (showContextMenu) {
+        StatusContextMenuSheet(
+            status = status,
+            onDismiss = { showContextMenu = false },
+            onRequestReport = {},
+        )
     }
 
     if (showBoostSheet) {
