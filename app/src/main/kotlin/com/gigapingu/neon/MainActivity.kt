@@ -5,11 +5,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,29 +25,22 @@ import androidx.compose.runtime.setValue
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private val viewModel: ShellViewModel by viewModels()
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        viewModel.markNotificationPermissionRequested()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    101
-                )
-            }
-        }
-
         handleNotificationIntent(intent)
 
         setContent {
-            val viewModel: ShellViewModel = androidx.hilt.navigation.compose.hiltViewModel()
             val authStatus by viewModel.authStatus.collectAsStateWithLifecycle()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
@@ -96,6 +90,18 @@ class MainActivity : ComponentActivity() {
             }
 
             splash.setKeepOnScreenCondition { authStatus == AuthStatus.Unknown }
+
+            LaunchedEffect(Unit) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    val granted = ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        android.Manifest.permission.POST_NOTIFICATIONS
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (!granted && !viewModel.hasRequestedNotificationPermission()) {
+                        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            }
 
             LaunchedEffect(authStatus, notificationsEnabled, hasNotificationPermission, notificationAlertPrefs) {
                 viewModel.syncPushRegistration(hasNotificationPermission)

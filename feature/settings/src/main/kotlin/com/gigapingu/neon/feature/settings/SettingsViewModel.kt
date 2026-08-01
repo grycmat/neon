@@ -37,6 +37,9 @@ class SettingsViewModel @Inject constructor(
     val notificationAlertPrefs: StateFlow<NotificationAlertPrefs> = settings.notificationAlertPrefs
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), NotificationAlertPrefs())
 
+    val notificationPermissionRequested: StateFlow<Boolean> = settings.notificationPermissionRequested
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     val dynamicColorEnabled: StateFlow<Boolean> = settings.dynamicColorEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
@@ -56,6 +59,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setNotificationAlertPrefs(prefs: NotificationAlertPrefs) {
         viewModelScope.launch { settings.setNotificationAlertPrefs(prefs) }
+    }
+
+    fun markNotificationPermissionRequested() {
+        viewModelScope.launch { settings.setNotificationPermissionRequested(true) }
     }
 
     fun setDynamicColorEnabled(enabled: Boolean) {

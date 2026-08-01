@@ -26,6 +26,7 @@ class SettingsRepository @Inject constructor(
 ) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
+    private val notificationPermissionRequestedKey = booleanPreferencesKey("notification_permission_requested")
     // Legacy on/off key, read as a fallback when bigScreenLayoutKey hasn't been written yet.
     private val twoPaneEnabledKey = booleanPreferencesKey("two_pane_enabled")
     private val bigScreenLayoutKey = stringPreferencesKey("big_screen_layout")
@@ -51,6 +52,11 @@ class SettingsRepository @Inject constructor(
 
     val notificationsEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
         prefs[notificationsEnabledKey] ?: true
+    }
+
+    /** Whether the POST_NOTIFICATIONS OS permission dialog has ever been shown to completion. */
+    val notificationPermissionRequested: Flow<Boolean> = context.settingsStore.data.map { prefs ->
+        prefs[notificationPermissionRequestedKey] ?: false
     }
 
     /** Big-screen tab body layout, list-detail by default; falls back to the legacy on/off key pre-migration. */
@@ -81,6 +87,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.settingsStore.edit { prefs ->
             prefs[notificationsEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setNotificationPermissionRequested(requested: Boolean) {
+        context.settingsStore.edit { prefs ->
+            prefs[notificationPermissionRequestedKey] = requested
         }
     }
 

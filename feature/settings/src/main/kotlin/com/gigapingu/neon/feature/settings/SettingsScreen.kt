@@ -1,5 +1,8 @@
 package com.gigapingu.neon.feature.settings
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +52,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -68,6 +72,12 @@ import com.gigapingu.neon.core.ui.PreviewHarness
 
 private const val FEEDBACK_HANDLE = "grycmat@101010.pl"
 private const val PRIVACY_POLICY_URL = "https://gryc.dev/privacy-policy#neon"
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 /** Settings — theme mode + account/session. */
 @Composable
@@ -118,10 +128,15 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasPermission = isGranted
+        viewModel.markNotificationPermissionRequested()
         if (isGranted) {
             viewModel.setNotificationsEnabled(true)
         }
     }
+
+    val permissionRequested by viewModel.notificationPermissionRequested.collectAsStateWithLifecycle()
+    val notificationsDisallowed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        !hasPermission && permissionRequested
 
     val isToggled = prefNotificationsEnabled && hasPermission
 
@@ -208,14 +223,36 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text("Push notifications", style = type.titleSmall, color = palette.text)
-                        Text("Receive notifications on your device", style = type.bodySmall, color = palette.textDim)
+                        Text(
+                            if (notificationsDisallowed) {
+                                "Notification permission is off for Neon — tap to enable"
+                            } else {
+                                "Receive notifications on your device"
+                            },
+                            style = type.bodySmall,
+                            color = palette.textDim,
+                        )
                     }
                     Switch(
                         checked = isToggled,
                         onCheckedChange = { checked ->
                             if (checked) {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
-                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    val activity = context.findActivity()
+                                    val canShowDialog = activity == null || !permissionRequested ||
+                                        ActivityCompat.shouldShowRequestPermissionRationale(
+                                            activity,
+                                            Manifest.permission.POST_NOTIFICATIONS,
+                                        )
+                                    if (canShowDialog) {
+                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        context.startActivity(
+                                            android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                            }
+                                        )
+                                    }
                                 } else {
                                     viewModel.setNotificationsEnabled(true)
                                 }
@@ -230,31 +267,29 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     )
                 }
             }
-            if (isToggled) {
-                Spacer(Modifier.height(10.dp))
-                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                    Column {
-                        NotificationAlertToggle("Mentions", alertPrefs.mention) {
-                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(mention = it))
-                        }
-                        NotificationAlertToggle("Favourites", alertPrefs.favourite) {
-                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(favourite = it))
-                        }
-                        NotificationAlertToggle("Boosts", alertPrefs.reblog) {
-                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(reblog = it))
-                        }
-                        NotificationAlertToggle("New followers", alertPrefs.follow) {
-                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(follow = it))
-                        }
-                        NotificationAlertToggle("Follow requests", alertPrefs.followRequest) {
-                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(followRequest = it))
-                        }
-                        NotificationAlertToggle("Polls", alertPrefs.poll) {
-                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(poll = it))
-                        }
-                        NotificationAlertToggle("New posts", alertPrefs.status, isLast = true) {
-                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(status = it))
-                        }
+            Spacer(Modifier.height(10.dp))
+            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                Column {
+                    NotificationAlertToggle("Mentions", alertPrefs.mention, enabled = isToggled) {
+                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(mention = it))
+                    }
+                    NotificationAlertToggle("Favourites", alertPrefs.favourite, enabled = isToggled) {
+                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(favourite = it))
+                    }
+                    NotificationAlertToggle("Boosts", alertPrefs.reblog, enabled = isToggled) {
+                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(reblog = it))
+                    }
+                    NotificationAlertToggle("New followers", alertPrefs.follow, enabled = isToggled) {
+                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(follow = it))
+                    }
+                    NotificationAlertToggle("Follow requests", alertPrefs.followRequest, enabled = isToggled) {
+                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(followRequest = it))
+                    }
+                    NotificationAlertToggle("Polls", alertPrefs.poll, enabled = isToggled) {
+                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(poll = it))
+                    }
+                    NotificationAlertToggle("New posts", alertPrefs.status, isLast = true, enabled = isToggled) {
+                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(status = it))
                     }
                 }
             }
@@ -398,6 +433,7 @@ private fun NotificationAlertToggle(
     label: String,
     checked: Boolean,
     isLast: Boolean = false,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     val palette = NeonTheme.palette
@@ -408,9 +444,15 @@ private fun NotificationAlertToggle(
             .padding(vertical = if (isLast) 0.dp else 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = type.bodyMedium, color = palette.text, modifier = Modifier.weight(1f))
+        Text(
+            label,
+            style = type.bodyMedium,
+            color = if (enabled) palette.text else palette.textMute,
+            modifier = Modifier.weight(1f),
+        )
         Switch(
             checked = checked,
+            enabled = enabled,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedTrackColor = palette.cyan.copy(alpha = .35f),

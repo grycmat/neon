@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -133,5 +134,18 @@ class ShellViewModel @Inject constructor(
     /** Connects/disconnects the live streaming WebSocket based on app foreground state. */
     fun setStreamingForeground(active: Boolean) {
         streamingRepository.setForeground(active)
+    }
+
+    /**
+     * One-shot read of whether the POST_NOTIFICATIONS dialog has ever been shown —
+     * reads the DataStore Flow directly rather than the eagerly-`stateIn`'d
+     * [notificationsEnabled]-style StateFlow, since at cold-start time that would
+     * still report its initial default before the real persisted value loads.
+     */
+    suspend fun hasRequestedNotificationPermission(): Boolean =
+        settings.notificationPermissionRequested.first()
+
+    fun markNotificationPermissionRequested() {
+        viewModelScope.launch { settings.setNotificationPermissionRequested(true) }
     }
 }

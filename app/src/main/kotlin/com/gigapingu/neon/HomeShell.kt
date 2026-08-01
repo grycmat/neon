@@ -153,14 +153,17 @@ fun HomeShell(viewModel: ShellViewModel) {
                         homeThreadId = statusId
                         true
                     }
+
                     1 -> {
                         notifThreadId = statusId
                         true
                     }
+
                     2 -> {
                         messagesThreadId = statusId
                         true
                     }
+
                     else -> false
                 }
             }
@@ -193,8 +196,10 @@ fun HomeShell(viewModel: ShellViewModel) {
                         big -> ShellListDetail(detailId = homeThreadId) {
                             TimelineScreen(selectedStatusId = homeThreadId)
                         }
+
                         else -> TimelineScreen()
                     }
+
                     1 -> if (big) {
                         ShellListDetail(detailId = notifThreadId) {
                             NotificationsScreen(selectedStatusId = notifThreadId)
@@ -202,6 +207,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                     } else {
                         NotificationsScreen()
                     }
+
                     2 -> if (big) {
                         ShellListDetail(detailId = messagesThreadId) {
                             MessagesScreen(selectedStatusId = messagesThreadId)
@@ -209,6 +215,7 @@ fun HomeShell(viewModel: ShellViewModel) {
                     } else {
                         MessagesScreen()
                     }
+
                     3 -> ExploreScreen()
                     else -> me?.let { ProfileScreen(accountId = it.id, isRoot = true) }
                 }
@@ -288,7 +295,12 @@ fun HomeShell(viewModel: ShellViewModel) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showClearConfirm = false },
             title = { Text("Clear all notifications", color = NeonTheme.palette.text) },
-            text = { Text("Are you sure you want to clear all your notifications?", color = NeonTheme.palette.textDim) },
+            text = {
+                Text(
+                    "Are you sure you want to clear all your notifications?",
+                    color = NeonTheme.palette.textDim
+                )
+            },
             confirmButton = {
                 androidx.compose.material3.TextButton(
                     onClick = {
@@ -381,7 +393,7 @@ private fun ShellRail(
             Box(
                 modifier = Modifier
                     .size(48.dp),
-                    contentAlignment = Alignment.Center,
+                contentAlignment = Alignment.Center,
             ) {
                 Image(
                     painter = painterResource(R.drawable.ic_launcher),
@@ -531,9 +543,9 @@ private fun TopAppBar(
                     // Title slides in the swipe direction.
                     val dir = if (targetState > initialState) 1 else -1
                     (slideInHorizontally(NeonMotion.quick()) { dir * it / 2 } +
-                        fadeIn(NeonMotion.quick())) togetherWith
-                        (slideOutHorizontally(NeonMotion.quick()) { -dir * it / 2 } +
-                            fadeOut(NeonMotion.quick()))
+                            fadeIn(NeonMotion.quick())) togetherWith
+                            (slideOutHorizontally(NeonMotion.quick()) { -dir * it / 2 } +
+                                    fadeOut(NeonMotion.quick()))
                 },
                 label = "topBarTitle",
                 modifier = Modifier.weight(1f),
@@ -682,11 +694,29 @@ private fun TabBar(position: Float, onChanged: (Int) -> Unit, modifier: Modifier
 private fun TopAppBarPanelTogglePreview() {
     PreviewHarness {
         Column {
-            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, bigScreenLayout = BigScreenLayout.List)
+            TopAppBar(
+                page = 0,
+                onFeedbackClick = {},
+                onSettingsClick = {},
+                showPanelToggle = true,
+                bigScreenLayout = BigScreenLayout.List
+            )
             Spacer(Modifier.height(12.dp))
-            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, bigScreenLayout = BigScreenLayout.TwoPane)
+            TopAppBar(
+                page = 0,
+                onFeedbackClick = {},
+                onSettingsClick = {},
+                showPanelToggle = true,
+                bigScreenLayout = BigScreenLayout.TwoPane
+            )
             Spacer(Modifier.height(12.dp))
-            TopAppBar(page = 0, onFeedbackClick = {}, onSettingsClick = {}, showPanelToggle = true, bigScreenLayout = BigScreenLayout.Grid)
+            TopAppBar(
+                page = 0,
+                onFeedbackClick = {},
+                onSettingsClick = {},
+                showPanelToggle = true,
+                bigScreenLayout = BigScreenLayout.Grid
+            )
         }
     }
 }
