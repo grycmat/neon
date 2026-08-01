@@ -110,7 +110,7 @@ private fun PhoneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 focusItems(uiState)
-                replyItems(uiState.context?.descendants.orEmpty(), withLabel = true)
+                replyItems(uiState.context?.descendants.orEmpty(), withLabel = true, rootId = uiState.status?.id)
             }
         }
     }
@@ -160,7 +160,7 @@ private fun TwoPaneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
                 contentPadding = PaddingValues(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 24.dp),
                 modifier = Modifier.weight(1f).fillMaxWidth(),
             ) {
-                replyItems(descendants, withLabel = false)
+                replyItems(descendants, withLabel = false, rootId = uiState.status?.id)
                 if (descendants.isEmpty() && !uiState.loading) {
                     item(key = "no-replies") {
                         Box(
@@ -212,7 +212,7 @@ private fun EmbeddedThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 focusItems(uiState)
-                replyItems(uiState.context?.descendants.orEmpty(), withLabel = true)
+                replyItems(uiState.context?.descendants.orEmpty(), withLabel = true, rootId = uiState.status?.id)
             }
         }
         status?.let { ReplyBar(status = it.display) }
@@ -264,7 +264,40 @@ private fun LazyListScope.focusItems(uiState: ThreadUiState) {
     }
 }
 
-private fun LazyListScope.replyItems(descendants: List<Status>, withLabel: Boolean) {
+/** A descendant positioned within the reconstructed reply tree. */
+private data class ReplyNode(val status: Status, val depth: Int, val startsNewBranch: Boolean)
+
+private const val MAX_REPLY_INDENT_LEVEL = 2
+
+/**
+ * Walks `descendants` via [Status.inReplyToId] to recover branch structure, depth-first
+ * from each direct child of the focused status ([rootId]). Descendants whose parent isn't
+ * resolvable within this list (e.g. the API returning a partial context) are appended at
+ * depth 1 in their original order rather than dropped.
+ */
+private fun buildReplyTree(rootId: String?, descendants: List<Status>): List<ReplyNode> {
+    if (descendants.isEmpty()) return emptyList()
+    val byParent = descendants.groupBy { it.inReplyToId }
+    val visited = HashSet<String>()
+    val nodes = mutableListOf<ReplyNode>()
+
+    fun visit(parentId: String?, depth: Int) {
+        val children = byParent[parentId] ?: return
+        for (child in children) {
+            if (!visited.add(child.id)) continue
+            nodes += ReplyNode(child, depth, startsNewBranch = depth == 1 && nodes.isNotEmpty())
+            visit(child.id, depth + 1)
+        }
+    }
+    visit(rootId, 1)
+
+    descendants.filterNot { it.id in visited }.forEach { orphan ->
+        nodes += ReplyNode(orphan, 1, startsNewBranch = nodes.isNotEmpty())
+    }
+    return nodes
+}
+
+private fun LazyListScope.replyItems(descendants: List<Status>, withLabel: Boolean, rootId: String?) {
     if (descendants.isEmpty()) return
     if (withLabel) {
         item(key = "replies-label") {
@@ -274,9 +307,30 @@ private fun LazyListScope.replyItems(descendants: List<Status>, withLabel: Boole
             )
         }
     }
-    items(count = descendants.size, key = { "dec-" + descendants[it].id }) { index ->
-        StatusCard(status = descendants[index])
+    val nodes = buildReplyTree(rootId, descendants)
+    items(count = nodes.size, key = { "dec-" + nodes[it].status.id }) { index ->
+        val node = nodes[index]
+        if (node.startsNewBranch) {
+            BranchDivider()
+        }
+        val indentLevel = (node.depth - 1).coerceIn(0, MAX_REPLY_INDENT_LEVEL)
+        StatusCard(
+            status = node.status,
+            modifier = if (indentLevel > 0) Modifier.padding(start = 12.dp * indentLevel) else Modifier,
+        )
     }
+}
+
+/** Separates one top-level reply branch from the next within the descendants section. */
+@Composable
+private fun BranchDivider() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp)
+            .height(1.dp)
+            .background(NeonTheme.palette.divider),
+    )
 }
 
 /** Pane footer: tap-through reply prompt that opens the composer. */
