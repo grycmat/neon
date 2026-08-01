@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -43,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +77,7 @@ import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
 import com.gigapingu.neon.core.ui.isBigScreen
 import com.gigapingu.neon.core.ui.status.QuoteCard
+import kotlinx.coroutines.launch
 
 /**
  * Composer: new toot, reply, or quote. Media attachments (with alt text),
@@ -96,6 +100,8 @@ fun ComposeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var textField by remember { mutableStateOf(TextFieldValue("")) }
     val bodyFocusRequester = remember { FocusRequester() }
+    val bodyBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
@@ -193,6 +199,7 @@ fun ComposeScreen(
                     onValueChange = { value ->
                         textField = value
                         viewModel.onTextChange(value.text, value.selection.start)
+                        coroutineScope.launch { bodyBringIntoViewRequester.bringIntoView() }
                     },
                     textStyle = type.bodyLarge.copy(color = palette.text, fontSize = 16.sp),
                     cursorBrush = SolidColor(palette.cyan),
@@ -200,7 +207,8 @@ fun ComposeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 140.dp)
-                        .focusRequester(bodyFocusRequester),
+                        .focusRequester(bodyFocusRequester)
+                        .bringIntoViewRequester(bodyBringIntoViewRequester),
                     decorationBox = { inner ->
                         if (textField.text.isEmpty()) {
                             Text(
