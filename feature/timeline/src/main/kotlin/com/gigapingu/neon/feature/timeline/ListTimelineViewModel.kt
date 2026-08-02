@@ -73,7 +73,7 @@ class ListTimelineViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val page = fetchPage(maxId = null)
-                _state.value = AsyncState.ready(page, hasMore = page.size >= PAGE_SIZE)
+                _state.value = AsyncState.ready(page.distinctBy { it.id }, hasMore = page.size >= PAGE_SIZE)
                 cache.putList(cacheKey, page, Status.serializer()) { it.id }
             } catch (e: Exception) {
                 _state.value = if (_state.value.hasData) {
@@ -96,7 +96,7 @@ class ListTimelineViewModel @Inject constructor(
                 val current = _state.value.data ?: data
                 val seen = current.mapTo(HashSet()) { it.id }
                 _state.value = _state.value.withData(
-                    current + more.filterNot { it.id in seen },
+                    current + more.filterNot { it.id in seen }.distinctBy { it.id },
                     hasMore = more.size >= PAGE_SIZE,
                 )
             } catch (_: Exception) {

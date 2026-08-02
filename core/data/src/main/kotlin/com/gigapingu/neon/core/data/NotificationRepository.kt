@@ -57,7 +57,7 @@ class NotificationRepository @Inject constructor(
         }
         try {
             val items = fetchPage(maxId = null)
-            _state.value = AsyncState.ready(items, hasMore = items.size >= PAGE_SIZE)
+            _state.value = AsyncState.ready(items.distinctBy { it.id }, hasMore = items.size >= PAGE_SIZE)
             cache.putList(CACHE_KEY, items, MastoNotification.serializer()) { it.id }
         } catch (e: Exception) {
             _state.value = if (_state.value.hasData) {
@@ -75,7 +75,12 @@ class NotificationRepository @Inject constructor(
         _state.value = state.withPhase(AsyncPhase.LoadingMore)
         try {
             val more = fetchPage(maxId = data.last().id)
-            _state.value = state.withData(data + more, hasMore = more.size >= PAGE_SIZE)
+            val current = _state.value.data ?: data
+            val seen = current.mapTo(HashSet()) { it.id }
+            _state.value = state.withData(
+                current + more.filterNot { it.id in seen }.distinctBy { it.id },
+                hasMore = more.size >= PAGE_SIZE,
+            )
         } catch (_: Exception) {
             _state.value = state.withPhase(AsyncPhase.Ready)
         }

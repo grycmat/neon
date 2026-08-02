@@ -55,7 +55,7 @@ class BlockedAccountsViewModel @Inject constructor(
             if (!state.value.hasData) update(AsyncState.loading())
             try {
                 val list = fetch(null)
-                update(AsyncState.ready(list, hasMore = list.size >= 40))
+                update(AsyncState.ready(list.distinctBy { it.id }, hasMore = list.size >= 40))
             } catch (e: Exception) {
                 if (!state.value.hasData) {
                     update(AsyncState.error(e.message ?: "Could not load accounts"))
@@ -75,7 +75,12 @@ class BlockedAccountsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val more = fetch(data.last().id)
-                stateFlow.value = state.withData(data + more, hasMore = more.size >= 40)
+                val current = stateFlow.value.data ?: data
+                val seen = current.mapTo(HashSet()) { it.id }
+                stateFlow.value = state.withData(
+                    current + more.filterNot { it.id in seen }.distinctBy { it.id },
+                    hasMore = more.size >= 40,
+                )
             } catch (_: Exception) {
                 stateFlow.value = state.withPhase(AsyncPhase.Ready)
             }

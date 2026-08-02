@@ -113,7 +113,17 @@ class ThreadViewModel @Inject constructor(
                     val status = async { statuses.getStatus(id) }
                     val context = async { statuses.getContext(id) }
                     _uiState.update {
-                        it.copy(status = status.await(), context = context.await(), loading = false, refreshing = false)
+                        it.copy(
+                            status = status.await(),
+                            context = context.await().let { c ->
+                                c.copy(
+                                    ancestors = c.ancestors.distinctBy { s -> s.id },
+                                    descendants = c.descendants.distinctBy { s -> s.id },
+                                )
+                            },
+                            loading = false,
+                            refreshing = false,
+                        )
                     }
                 }
             } catch (e: Exception) {

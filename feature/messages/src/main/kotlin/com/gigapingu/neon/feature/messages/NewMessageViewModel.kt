@@ -29,7 +29,9 @@ class NewMessageViewModel @Inject constructor(
         viewModelScope.launch {
             query.debounce(300).collectLatest { q ->
                 _results.value = if (q.length < 2) emptyList() else {
-                    runCatching { search.searchAccounts(q, limit = 20) }.getOrDefault(emptyList())
+                    runCatching { search.searchAccounts(q, limit = 20) }
+                        .getOrDefault(emptyList())
+                        .distinctBy { it.id }
                 }
             }
         }

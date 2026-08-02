@@ -41,7 +41,7 @@ class BookmarkRepository @Inject constructor(
         }
         try {
             val page = fetchPage(maxId = null)
-            _bookmarksState.value = AsyncState.ready(page, hasMore = page.size >= PAGE_SIZE)
+            _bookmarksState.value = AsyncState.ready(page.distinctBy { it.id }, hasMore = page.size >= PAGE_SIZE)
             cache.putList(CACHE_KEY, page, Status.serializer()) { it.id }
         } catch (e: Exception) {
             _bookmarksState.value = if (_bookmarksState.value.hasData) {
@@ -62,7 +62,7 @@ class BookmarkRepository @Inject constructor(
             val current = _bookmarksState.value.data ?: data
             val seen = current.mapTo(HashSet()) { it.id }
             _bookmarksState.value = _bookmarksState.value.withData(
-                current + more.filterNot { it.id in seen },
+                current + more.filterNot { it.id in seen }.distinctBy { it.id },
                 hasMore = more.size >= PAGE_SIZE,
             )
         } catch (_: Exception) {

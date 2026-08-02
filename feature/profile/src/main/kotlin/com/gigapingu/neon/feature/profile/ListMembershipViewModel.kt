@@ -36,7 +36,7 @@ class ListMembershipViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
             try {
-                val all = lists.getLists()
+                val all = lists.getLists().distinctBy { it.id }
                 val member = lists.getListsContaining(accountId).mapTo(HashSet()) { it.id }
                 _state.update { it.copy(allLists = all, memberIds = member, loading = false) }
             } catch (e: Exception) {

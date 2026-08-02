@@ -66,7 +66,7 @@ class FollowListViewModel @Inject constructor(
             if (!_state.value.hasData) _state.value = AsyncState.loading()
             try {
                 val list = fetch(maxId = null)
-                _state.value = AsyncState.ready(list, hasMore = list.size >= 40)
+                _state.value = AsyncState.ready(list.distinctBy { it.id }, hasMore = list.size >= 40)
             } catch (e: Exception) {
                 if (!_state.value.hasData) {
                     _state.value = AsyncState.error(e.message ?: "Could not load accounts")
@@ -83,7 +83,12 @@ class FollowListViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val more = fetch(maxId = data.last().id)
-                _state.value = state.withData(data + more, hasMore = more.size >= 40)
+                val current = _state.value.data ?: data
+                val seen = current.mapTo(HashSet()) { it.id }
+                _state.value = state.withData(
+                    current + more.filterNot { it.id in seen }.distinctBy { it.id },
+                    hasMore = more.size >= 40,
+                )
             } catch (_: Exception) {
                 _state.value = state.withPhase(AsyncPhase.Ready)
             }

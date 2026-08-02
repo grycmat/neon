@@ -72,7 +72,11 @@ class ExploreViewModel @Inject constructor(
                     val tags = async { search.trendingTags() }
                     val trending = async { search.trendingStatuses() }
                     _uiState.update {
-                        it.copy(tags = tags.await(), trending = trending.await(), loadingTrends = false)
+                        it.copy(
+                            tags = tags.await().distinctBy { t -> t.name },
+                            trending = trending.await().distinctBy { s -> s.id },
+                            loadingTrends = false,
+                        )
                     }
                 }
             } catch (_: Exception) {
@@ -91,7 +95,12 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val results = search.search(q)
-                _uiState.update { it.copy(results = results, searching = false) }
+                val dedupedResults = results.copy(
+                    accounts = results.accounts.distinctBy { it.id },
+                    statuses = results.statuses.distinctBy { it.id },
+                    hashtags = results.hashtags.distinctBy { it.name },
+                )
+                _uiState.update { it.copy(results = dedupedResults, searching = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(searching = false) }
                 _errors.tryEmit("Search failed: ${e.message}")

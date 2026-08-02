@@ -8,6 +8,7 @@
 .buildlog/
 .history
 .svn/
+.artifacts/
 migrate_working_dir/
 .vscode
 # IntelliJ related

@@ -67,7 +67,7 @@ class TimelineRepository @Inject constructor(
         }
         try {
             val page = fetchPage(kind, maxId = null)
-            flow.value = AsyncState.ready(page, hasMore = page.size >= PAGE_SIZE)
+            flow.value = AsyncState.ready(page.distinctBy { it.id }, hasMore = page.size >= PAGE_SIZE)
             cache.putList(kind.cacheKey, page, Status.serializer()) { it.id }
         } catch (e: Exception) {
             flow.value = if (flow.value.hasData) {
@@ -90,8 +90,9 @@ class TimelineRepository @Inject constructor(
             // fetch. Dedupe by id — LazyColumn keys would crash on repeats.
             val current = flow.value.data ?: data
             val seen = current.mapTo(HashSet()) { it.id }
+            val dedupedMore = more.filterNot { it.id in seen }.distinctBy { it.id }
             flow.value = flow.value.withData(
-                current + more.filterNot { it.id in seen },
+                current + dedupedMore,
                 hasMore = more.size >= PAGE_SIZE,
             )
         } catch (_: Exception) {
@@ -112,6 +113,7 @@ class TimelineRepository @Inject constructor(
     fun prependCreated(status: Status) {
         val home = timelines.getValue(TimelineKind.Home)
         home.value.data?.let { data ->
+            if (data.any { it.id == status.id }) return
             home.value = home.value.withData(listOf(status) + data)
         }
     }
