@@ -21,10 +21,10 @@ import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.Navigator
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.LifecycleEventObserver
-import lifecycle.Lifecycle.Event
+import androidx.lifecycle.Lifecycle.Event
 import android.os.Build
 import androidx.compose.runtime.setValue
 import android.Manifest
