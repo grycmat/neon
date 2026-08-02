@@ -1,8 +1,10 @@
 package com.gigapingu.neon.feature.widget
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -12,7 +14,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
-import androidx.glance.action.actionStartActivity
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
@@ -122,7 +124,7 @@ private fun Header(snapshot: WidgetSnapshot) {
         Image(
             provider = ImageProvider(R.drawable.ic_widget_logo),
             contentDescription = null,
-            colorFilter = ColorFilter.tint(ColorProvider(palette.accentPink)),
+            colorFilter = ColorFilter.tint(colorProvider(palette.accentPink)),
             modifier = GlanceModifier.size(18.dp),
         )
         Spacer(GlanceModifier.width(8.dp))
@@ -134,7 +136,7 @@ private fun Header(snapshot: WidgetSnapshot) {
             Text(
                 text = "Notifications",
                 style = TextStyle(
-                    color = ColorProvider(palette.text),
+                    color = colorProvider(palette.text),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                 ),
@@ -143,7 +145,7 @@ private fun Header(snapshot: WidgetSnapshot) {
             if (snapshot.updatedLabel.isNotEmpty()) {
                 Text(
                     text = snapshot.updatedLabel,
-                    style = TextStyle(color = ColorProvider(palette.textMute), fontSize = 10.sp),
+                    style = TextStyle(color = colorProvider(palette.textMute), fontSize = 10.sp),
                     maxLines = 1,
                 )
             }
@@ -151,7 +153,7 @@ private fun Header(snapshot: WidgetSnapshot) {
         Image(
             provider = ImageProvider(R.drawable.ic_widget_refresh),
             contentDescription = "Refresh notifications",
-            colorFilter = ColorFilter.tint(ColorProvider(palette.textDim)),
+            colorFilter = ColorFilter.tint(colorProvider(palette.textDim)),
             modifier = GlanceModifier
                 .size(28.dp)
                 .padding(5.dp)
@@ -191,7 +193,7 @@ private fun NotificationRow(row: WidgetRow, palette: NeonPalette) {
                     Text(
                         text = row.name,
                         style = TextStyle(
-                            color = ColorProvider(palette.text),
+                            color = colorProvider(palette.text),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                         ),
@@ -201,7 +203,7 @@ private fun NotificationRow(row: WidgetRow, palette: NeonPalette) {
                     Spacer(GlanceModifier.width(6.dp))
                     Text(
                         text = row.time,
-                        style = TextStyle(color = ColorProvider(palette.textMute), fontSize = 11.sp),
+                        style = TextStyle(color = colorProvider(palette.textMute), fontSize = 11.sp),
                         maxLines = 1,
                     )
                 }
@@ -209,7 +211,7 @@ private fun NotificationRow(row: WidgetRow, palette: NeonPalette) {
                 // line instead of the two-tone treatment NotificationsScreen uses.
                 Text(
                     text = if (row.preview.isEmpty()) row.verb else "${row.verb} · ${row.preview}",
-                    style = TextStyle(color = ColorProvider(palette.textDim), fontSize = 12.sp),
+                    style = TextStyle(color = colorProvider(palette.textDim), fontSize = 12.sp),
                     maxLines = 2,
                 )
             }
@@ -228,7 +230,7 @@ private fun Message(
             Text(
                 text = text,
                 style = TextStyle(
-                    color = ColorProvider(palette.textDim),
+                    color = colorProvider(palette.textDim),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                 ),
@@ -239,7 +241,7 @@ private fun Message(
                 Text(
                     text = action.first,
                     style = TextStyle(
-                        color = ColorProvider(palette.onGradient),
+                        color = colorProvider(palette.onGradient),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                     ),
@@ -252,6 +254,17 @@ private fun Message(
         }
     }
 }
+
+/**
+ * Glance's fixed-[Color] provider factory.
+ *
+ * Wrapped so the lint suppression sits in one place: the sibling `ColorProvider(@ColorRes Int)`
+ * overload declared in the same Glance file is `@RestrictTo(LIBRARY_GROUP)`, and because the
+ * public [Color] overload is name-mangled (Color is a value class) lint resolves these calls to
+ * the restricted one. The compiler binds the public overload — this is a lint-only false positive.
+ */
+@SuppressLint("RestrictedApi")
+private fun colorProvider(color: Color): ColorProvider = ColorProvider(color)
 
 /** Picks the dark or light variant of a resource for the palette in play. */
 private fun NeonPalette.res(dark: Int, light: Int): Int = if (isLight) light else dark
