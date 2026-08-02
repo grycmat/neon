@@ -71,6 +71,7 @@ dependencies {
     implementation(projects.feature.composer)
     implementation(projects.feature.profile)
     implementation(projects.feature.settings)
+    implementation(projects.feature.widget)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

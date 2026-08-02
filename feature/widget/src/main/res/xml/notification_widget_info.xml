@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  updatePeriodMillis is the platform's cold-path safety net only, and 30 minutes is its floor
+  (shorter values are silently clamped). Real-time updates come from NotificationWidgetBridge:
+  push while backgrounded, streaming while foregrounded.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_notifications_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minResizeHeight="70dp"
+    android:minResizeWidth="150dp"
+    android:minWidth="180dp"
+    android:previewLayout="@layout/widget_notifications_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="3"
+    android:targetCellWidth="3"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

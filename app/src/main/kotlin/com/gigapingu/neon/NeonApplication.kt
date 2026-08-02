@@ -15,6 +15,7 @@ import com.gigapingu.neon.core.data.SearchRepository
 import com.gigapingu.neon.core.data.StatusRepository
 import com.gigapingu.neon.core.ui.StatusActionService
 import com.gigapingu.neon.feature.notifications.NEON_NOTIFICATION_CHANNEL_ID
+import com.gigapingu.neon.feature.widget.NotificationWidgetHost
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import okio.Path.Companion.toOkioPath
@@ -25,10 +26,14 @@ class NeonApplication : Application(), SingletonImageLoader.Factory {
     @Inject lateinit var searchRepository: SearchRepository
     @Inject lateinit var authRepository: AuthRepository
     @Inject lateinit var accountRepository: AccountRepository
+    @Inject lateinit var notificationWidgetHost: NotificationWidgetHost
 
     override fun onCreate() {
         super.onCreate()
         StatusActionService.init(this, statusRepository, searchRepository, authRepository, accountRepository)
+        // Lets the data layer drive the home-screen widget without core:data knowing about it.
+        // Runs in every process the system starts, including one woken only to deliver a push.
+        notificationWidgetHost.install()
         createNotificationChannel()
     }
 

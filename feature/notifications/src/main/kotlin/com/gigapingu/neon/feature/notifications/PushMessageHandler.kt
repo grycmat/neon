@@ -9,7 +9,9 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.NotificationRepository
+import com.gigapingu.neon.core.data.NotificationWidgetBridge
 import com.gigapingu.neon.core.data.SettingsRepository
 import com.gigapingu.neon.core.data.push.PushKeyManager
 import com.gigapingu.neon.core.data.push.WebPushDecryptor
@@ -33,6 +35,7 @@ class PushMessageHandler @Inject constructor(
     private val decryptor: WebPushDecryptor,
     private val notificationRepository: NotificationRepository,
     private val settingsRepository: SettingsRepository,
+    private val authRepository: AuthRepository,
     private val json: Json,
 ) {
 
@@ -44,10 +47,26 @@ class PushMessageHandler @Inject constructor(
             Log.w(NEON_PUSH_TAG, "Dropping push: missing body/contentEncoding")
             return
         }
-        if (!settingsRepository.notificationsEnabled.first()) {
+        if (settingsRepository.notificationsEnabled.first()) {
+            postNotification(body, contentEncoding, data, fallbackId)
+        } else {
             Log.w(NEON_PUSH_TAG, "Dropping push: notifications disabled in settings")
-            return
         }
+
+        // Last, and not gated on that setting: turning off notification *alerts* is not a reason
+        // to let the home-screen widget go stale. This is the widget's live update path while the
+        // app is backgrounded (streaming covers the foreground). Awaited rather than launched, so
+        // the caller's BroadcastReceiver PendingResult keeps the process alive for the fetch —
+        // and after the notification is posted, so that round-trip never delays what the user sees.
+        NotificationWidgetBridge.refresh()
+    }
+
+    private suspend fun postNotification(
+        body: String,
+        contentEncoding: String,
+        data: Map<String, String>,
+        fallbackId: String,
+    ) {
         try {
             val keys = pushKeyManager.getOrCreateKeys()
             val plaintext = decryptor.decrypt(
@@ -81,9 +100,13 @@ class PushMessageHandler @Inject constructor(
     @SuppressLint("MissingPermission")
     private suspend fun showNotification(notificationId: String, title: String, text: String) {
         // Best-effort: resolve the underlying status so the tap can deep-link to the thread.
+        // ensureConfigured matters here — a push often lands in a process the system started for
+        // the broadcast, where AuthRepository.restore never ran and ApiClient has no host/token,
+        // so this lookup would fail on every backgrounded delivery.
         val statusId = runCatching {
+            if (!authRepository.ensureConfigured()) return@runCatching null
             val full = notificationRepository.getNotification(notificationId)
-            full.status?.id ?: full.status?.reblog?.id
+            full.status?.display?.id
         }.getOrNull()
 
         val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {

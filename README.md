@@ -12,6 +12,7 @@ glassy pink→purple→cyan design (`Neon Mastodon Client.html`).
 - **Room** for the offline cache (same schema idea as the Flutter sqflite cache: raw entity JSON keyed by list + position → cache-first rendering)
 - **OkHttp + kotlinx.serialization** for the Mastodon REST API (dynamic instance host, so no Retrofit)
 - **Coil 3** for images, **DataStore** for credentials/settings
+- **Jetpack Glance** for the home-screen widget (the one part of the UI that isn't Compose UI — Glance emits `RemoteViews`)
 
 ## Modules
 
@@ -22,7 +23,8 @@ core/network          ApiClient (OkHttp wrapper bound to instance + token)
 core/database         Room cache (list_cache / entity_cache)
 core/data             Repositories: Auth, Timeline, Status, Notification, Account, Bookmark, Conversation, Media,
                       Search, Settings, List, Filter, Tag (followed hashtags);
-                      push/ (Web Push subscription + on-device decryption)
+                      push/ (Web Push subscription + on-device decryption);
+                      NotificationWidgetBridge (lets the data layer drive the widget without core/* → feature/*)
 core/designsystem     NeonPalette/NeonTheme/typography, Glass* components, NeonBackground, HtmlText
 core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCard, StatusActions, AccountRow, AsyncList,
                       VideoPlayer (ExoPlayer), MediaPreviewScreen (interactive full-screen viewer), EditHistorySheet,
@@ -39,6 +41,8 @@ feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, Bookmarks, edit profile (incl. field editor), list membership
 feature/settings      Theme mode + Material You toggle + logout, keyword filters, list management, followed-hashtag management
+feature/widget        Home-screen notifications widget (Glance): NotificationWidget + Receiver + Repository,
+                      WidgetAvatars (avatar/badge bitmap compositing), NotificationWidgetHost
 ```
 
 ## Features
@@ -56,6 +60,7 @@ feature/settings      Theme mode + Material You toggle + logout, keyword filters
 - **Feedback**: Bug-report icon in the TopAppBar (and a "Send feedback" entry in Settings) opens the composer pre-addressed as a locked direct message to the developer's account.
 - **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).
 - **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Delivered via two manifest entry points — the modern `FirebaseMessagingService` and a legacy C2DM `BroadcastReceiver` mirroring the official Mastodon app — since some OEMs silently drop background `Service` wake-ups well before Doze/App-Standby checks apply (see `notification_report.md`). Taps deep-link to the relevant thread.
+- **Home-screen Widget**: Resizable Glance widget listing the newest notifications in the app's own glass styling — avatar with the notification-type badge composited in, name/verb/toot preview/time, an "Updated Xm ago" line and a refresh button. It follows the app's Theme mode setting (falling back to the system's night mode for `System`), renders from the Room cache so it works before the app has ever been opened in that process, and taps deep-link to the thread through the same route push notifications use. It refreshes as notifications arrive: push while backgrounded, streaming while foregrounded, plus in-app mutations, the refresh button, and a staleness-gated fetch on the platform's periodic update. See the "Home-screen widget" section in `CLAUDE.md` for the design constraints (Binder payload budget, Glance's single `goAsync` PendingResult).
 - **Material You**: Optional "Match wallpaper colors" toggle in Settings (Android 12+, off by default) re-derives the gradient, avatars, glow and accent ink from the device's wallpaper colors while keeping the glass surfaces and typography untouched; falls back to the static neon palette below API 31 or when off. Paired with a themed (monochrome) launcher icon. See `material_you.md` for the implementation.
 
 Architecture mirrors the Flutter app: singleton repositories hold
@@ -126,5 +131,11 @@ Phone layouts remain untouched below the threshold.
   system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
   from the AndroidX downloadable-fonts docs — the base64 certs must match
   exactly.
-- Streaming is not implemented (parity with the Flutter version, which also lacks it). Push notifications **are** implemented (see Features), ahead of the Flutter sibling.
+- **Glance is pinned at `1.1.1`** in `gradle/libs.versions.toml`. The widget uses
+  `SizeMode.Single` and caps rows/avatar pixels deliberately — a widget update has
+  to clear the ~1MB Binder transaction limit, and `SizeMode.Exact`/`Responsive`
+  compose one `RemoteViews` tree (and one copy of every avatar bitmap) *per host
+  size*. Keep that in mind before adding rows or raising the avatar size.
+- Both streaming (live `user` WebSocket while foregrounded) and push notifications
+  **are** implemented, ahead of the Flutter sibling.
 

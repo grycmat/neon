@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GradientButton pill (pink→purple), for the signed-out call to action. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="100dp" />
+    <gradient
+        android:angle="0"
+        android:endColor="#FF7B3DFF"
+        android:startColor="#FFFF2E8B"
+        android:type="linear" />
+</shape>

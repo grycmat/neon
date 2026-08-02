@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only used if WidgetAvatars fails to allocate its composited bitmap — the same pink→purple
+     fallback NeonAvatar paints, minus the type badge. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:angle="315"
+        android:endColor="#FF7B3DFF"
+        android:startColor="#FFFF2E8B"
+        android:type="linear" />
+</shape>

@@ -51,6 +51,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home-screen notifications widget. Not exported: the APPWIDGET_UPDATE broadcast comes
+             from system_server, and the taps inside the widget are our own PendingIntents. -->
+        <receiver
+            android:name="com.gigapingu.neon.feature.widget.NotificationWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_notifications_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/notification_widget_info" />
+        </receiver>
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_neon" />

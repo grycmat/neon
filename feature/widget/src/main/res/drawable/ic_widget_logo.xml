@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Neon "constellation" mark, same geometry as feature:notifications' ic_stat_neon
+     (duplicated rather than shared, since feature modules don't depend on each other). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M6.5,7 L18,10 L10.5,18 Z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4.2,7 a2.3,2.3 0 1,0 4.6,0 a2.3,2.3 0 1,0 -4.6,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M15.7,10 a2.3,2.3 0 1,0 4.6,0 a2.3,2.3 0 1,0 -4.6,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M8.2,18 a2.3,2.3 0 1,0 4.6,0 a2.3,2.3 0 1,0 -4.6,0 Z" />
+</vector>

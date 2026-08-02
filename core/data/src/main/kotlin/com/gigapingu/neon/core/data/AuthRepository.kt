@@ -106,6 +106,24 @@ class AuthRepository @Inject constructor(
         _status.value = AuthStatus.Authenticated
     }
 
+    /**
+     * Points [ApiClient] at the stored session if nothing has configured it yet, without the
+     * network round-trip (or the [status] transitions) [restore] does.
+     *
+     * Background entry points — the push handler, the home-screen widget — run in a process the
+     * system woke up for a broadcast, where [restore] was never called, so every request would
+     * otherwise die on `ApiClient`'s "not configured" check. Returns false when there is no
+     * stored session at all, i.e. logged out.
+     */
+    suspend fun ensureConfigured(): Boolean {
+        if (api.isConfigured && api.token != null) return true
+        val prefs = context.credentialStore.data.first()
+        val instance = prefs[Keys.instance] ?: return false
+        val token = prefs[Keys.token] ?: return false
+        api.configure(instance = instance, token = token)
+        return true
+    }
+
     /** Step 1 — register the app and build the authorize URL. */
     suspend fun beginLogin(rawInstance: String): String {
         val instance = normalizeInstance(rawInstance)

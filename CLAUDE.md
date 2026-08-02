@@ -66,6 +66,7 @@ feature/thread        Thread view (ancestors → focused → replies)
 feature/composer      Composer: media + alt text, polls, CW, visibility, @-autocomplete
 feature/profile       Profile, follow lists, bookmarks, edit profile (incl. field editor), list membership
 feature/settings      Theme mode + Material You toggle + logout, keyword filters, list management, followed-hashtag management
+feature/widget        Home-screen notifications widget (Jetpack Glance) — see Home-screen widget below
 ```
 
 `core/*` modules have no dependency on `feature/*` or `app`; `feature/*`
@@ -167,6 +168,45 @@ via FCM. Pieces:
 - Notification taps route through `Navigator.handleNotificationClick` (via
   `MainActivity.handleNotificationIntent` on `status_id` / `open_notifications`
   extras).
+
+### Home-screen widget
+
+`feature/widget` is a **Jetpack Glance** app widget listing the newest notifications. It is the
+only place in the app that isn't Compose UI — Glance emits `RemoteViews`, so none of `core/ui`
+or `core/designsystem`'s composables can be reused. It borrows the palette (`NeonPalette.Dark` /
+`.Light` are plain data, no composition needed) and `htmlToPlainText` / `relativeTime`, and
+re-states the layout in Glance primitives.
+
+- **Data** comes from the Room notifications cache via `NotificationRepository.cachedNotifications`,
+  never the in-memory `state`: the widget is routinely composed in a process the system started for
+  a broadcast, where no ViewModel ever ran a load. `NotificationRepository.refreshForWidget()` is
+  the fetch — deliberately **not** `refresh()`, which would move the in-memory phase out of `Idle`
+  and make the in-app screen's first `load()` return early on a background fetch's result.
+- **`AuthRepository.ensureConfigured()`** points `ApiClient` at the stored session without the
+  network round-trip `restore()` does. Any background entry point needs it; `PushMessageHandler`
+  now calls it too, which is what makes push notifications' thread deep-link resolve when the app
+  wasn't already running.
+- **Refresh triggers**, all converging on re-running `provideGlance`:
+  - push (backgrounded) — `PushMessageHandler` awaits `NotificationWidgetBridge.refresh()` after
+    posting the notification, so the fetch runs inside the receiver's `goAsync` window;
+  - streaming (foregrounded) — `NotificationRepository.prependNotification` persists, then redraws;
+  - in-app mutations — `refresh` / `dismiss` / `clear` redraw from `persist()`;
+  - the refresh button — `RefreshWidgetAction`;
+  - cold path — `NotificationWidgetRepository.refreshIfStale()` runs inside `provideGlance`, so the
+    system's `updatePeriodMillis` tick and first placement fetch too.
+  `NotificationWidgetReceiver` deliberately does **not** override `onUpdate`: Glance's own
+  implementation already claims the receiver's single `goAsync()` PendingResult, and skipping
+  `super` would lose the `GlanceAppWidgetManager` bookkeeping `updateAll` needs.
+- **`NotificationWidgetBridge`** (`core/data`) is how the data layer reaches the widget without
+  `core/*` depending on `feature/*` — same plain-singleton pattern as `Navigator` /
+  `StatusActionService`, installed by `NeonApplication.onCreate` from `NotificationWidgetHost`.
+  `redraw()` is fire-and-forget (callers are on the main thread); `refresh()` suspends so a push
+  entry point's PendingResult keeps the process alive for it.
+- **Binder budget** shapes two decisions that look arbitrary otherwise: `SizeMode.Single` (Exact /
+  Responsive compose one RemoteViews tree *per host size*, duplicating every avatar bitmap), and
+  `MAX_ROWS` = 10 with avatars capped at 100px in `WidgetAvatars`. `WidgetAvatars` also composites
+  the type badge *into* the avatar bitmap, because a Glance `Box` has one `contentAlignment` for
+  all children and so cannot offset a badge over an image.
 
 ### Navigation
 
