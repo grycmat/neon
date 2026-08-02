@@ -47,7 +47,7 @@ caches in memory for the session, cleared on logout via `AuthRepository`).
 the repository instead of the hardcoded `MAX_CHARS` constant; `ComposeScreen`'s
 counter and `canPost` gate both use it.
 
-### 2. Video attachments can't be picked or uploaded
+### 2. Video attachments can't be picked or uploaded ✅ RESOLVED
 **Report** (#14b): can't attach a video to a toot; the app doesn't show
 videos in the gallery picker at all.
 
@@ -72,7 +72,7 @@ product decision. Secondary issue: `core/network/.../ApiClient.kt:94-102`
    thumbnail/icon fallback. (Verify during implementation; not confirmed as
    broken by research, just adjacent risk.)
 
-### 3. Push notification permission dialog reappears every launch
+### 3. Push notification permission dialog reappears every launch ✅ RESOLVED
 **Report** (#12): the app asks to enable notifications every time it's
 opened.
 
@@ -150,7 +150,7 @@ never compete with the counter/button for space. Verify at a 360dp width
 (smallest common Android device class) once the real (larger) character
 counts from fix #1 are in place.
 
-### 6. Composer text field doesn't scroll while typing
+### 6. Composer text field doesn't scroll while typing ✅ RESOLVED
 **Report** (#6): the text field doesn't scroll as you type, so the caret can
 end up off-screen.
 
@@ -169,7 +169,7 @@ scrollable ancestor."
 
 ## P1 — Thread view
 
-### 7. Can't tell where one reply thread ends and another begins
+### 7. Can't tell where one reply thread ends and another begins ✅ RESOLVED
 **Report** (#7): looking at replies to a toot, hard to tell where a new
 reply subthread starts vs. ends.
 
