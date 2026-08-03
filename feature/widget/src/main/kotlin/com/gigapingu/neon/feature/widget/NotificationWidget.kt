@@ -142,13 +142,6 @@ private fun Header(snapshot: WidgetSnapshot) {
                 ),
                 maxLines = 1,
             )
-            if (snapshot.updatedLabel.isNotEmpty()) {
-                Text(
-                    text = snapshot.updatedLabel,
-                    style = TextStyle(color = colorProvider(palette.textMute), fontSize = 10.sp),
-                    maxLines = 1,
-                )
-            }
         }
         Image(
             provider = ImageProvider(R.drawable.ic_widget_refresh),
