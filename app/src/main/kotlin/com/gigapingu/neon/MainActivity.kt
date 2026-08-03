@@ -20,6 +20,8 @@ import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.update.AppUpdateUiState
+import com.gigapingu.neon.update.UpdateReadyDialog
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.DisposableEffect
@@ -41,6 +43,12 @@ class MainActivity : ComponentActivity() {
         viewModel.markNotificationPermissionRequested()
     }
 
+    private val appUpdateLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        viewModel.onUpdateFlowResult(result.resultCode)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         enableEdgeToEdge()
@@ -54,6 +62,7 @@ class MainActivity : ComponentActivity() {
             val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
             val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
             val notificationAlertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
+            val updateState by viewModel.updateState.collectAsStateWithLifecycle()
 
             var hasNotificationPermission by remember {
                 mutableStateOf(
@@ -121,6 +130,13 @@ class MainActivity : ComponentActivity() {
                 viewModel.setStreamingForeground(isAppForeground)
             }
 
+            // Fires on cold start and again on every resume (isAppForeground is flipped by the
+            // lifecycle observer above) — Play needs the resume check to re-enter a stalled
+            // immediate update and to surface a flexible download that finished in the background.
+            LaunchedEffect(isAppForeground) {
+                if (isAppForeground) viewModel.checkForUpdate(appUpdateLauncher)
+            }
+
             val darkTheme = when (themeMode) {
                 ThemeMode.Dark -> true
                 ThemeMode.Light -> false
@@ -128,6 +144,14 @@ class MainActivity : ComponentActivity() {
             }
             NeonTheme(darkTheme = darkTheme, dynamicColor = dynamicColorEnabled) {
                 NeonApp(viewModel = viewModel, modifier = Modifier)
+
+                // Its own window, so it floats above the shell and any pushed Nav3 screen.
+                if (authStatus != AuthStatus.Unknown && updateState is AppUpdateUiState.ReadyToInstall) {
+                    UpdateReadyDialog(
+                        onRestart = viewModel::completeUpdate,
+                        onLater = viewModel::dismissUpdatePrompt,
+                    )
+                }
             }
         }
     }

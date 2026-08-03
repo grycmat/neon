@@ -1,6 +1,8 @@
 package com.gigapingu.neon
 
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AuthRepository
@@ -16,6 +18,8 @@ import com.gigapingu.neon.core.data.push.PushRepository
 import com.gigapingu.neon.core.model.Account
 import com.gigapingu.neon.feature.notifications.FcmTokenProvider
 import com.gigapingu.neon.feature.notifications.NEON_PUSH_TAG
+import com.gigapingu.neon.update.AppUpdateController
+import com.gigapingu.neon.update.AppUpdateUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +39,7 @@ class ShellViewModel @Inject constructor(
     private val pushRepository: PushRepository,
     private val fcmTokenProvider: FcmTokenProvider,
     private val streamingRepository: StreamingRepository,
+    private val appUpdate: AppUpdateController,
 ) : ViewModel() {
 
     val authStatus: StateFlow<AuthStatus> = auth.status
@@ -135,6 +140,23 @@ class ShellViewModel @Inject constructor(
     fun setStreamingForeground(active: Boolean) {
         streamingRepository.setForeground(active)
     }
+
+    /** Play in-app update state; drives the "Update ready" restart prompt in [MainActivity]. */
+    val updateState: StateFlow<AppUpdateUiState> = appUpdate.state
+
+    /**
+     * Checks Play for an update and starts the flow if one applies. Called on cold start and on
+     * every resume — Play needs the resume call to re-enter a stalled immediate update.
+     */
+    suspend fun checkForUpdate(launcher: ActivityResultLauncher<IntentSenderRequest>) {
+        appUpdate.checkAndStart(launcher)
+    }
+
+    fun onUpdateFlowResult(resultCode: Int) = appUpdate.onFlowResult(resultCode)
+
+    fun completeUpdate() = appUpdate.completeUpdate()
+
+    fun dismissUpdatePrompt() = appUpdate.dismissInstallPrompt()
 
     /**
      * One-shot read of whether the POST_NOTIFICATIONS dialog has ever been shown —

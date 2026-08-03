@@ -95,6 +95,10 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
 
+    // In-app updates via Play (see update/AppUpdateController.kt).
+    implementation(libs.play.app.update)
+    implementation(libs.play.app.update.ktx)
+
     debugImplementation(libs.compose.ui.tooling)
 
 }

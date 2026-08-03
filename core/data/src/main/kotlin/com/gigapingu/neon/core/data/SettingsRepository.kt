@@ -3,6 +3,7 @@ package com.gigapingu.neon.core.data
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
@@ -31,6 +32,7 @@ class SettingsRepository @Inject constructor(
     private val twoPaneEnabledKey = booleanPreferencesKey("two_pane_enabled")
     private val bigScreenLayoutKey = stringPreferencesKey("big_screen_layout")
     private val dynamicColorEnabledKey = booleanPreferencesKey("dynamic_color_enabled")
+    private val dismissedUpdateVersionKey = intPreferencesKey("dismissed_update_version")
     private object AlertKeys {
         val mention = booleanPreferencesKey("alert_mention")
         val favourite = booleanPreferencesKey("alert_favourite")
@@ -74,6 +76,14 @@ class SettingsRepository @Inject constructor(
         prefs[dynamicColorEnabledKey] ?: false
     }
 
+    /**
+     * The `availableVersionCode` the user declined in the flexible in-app-update flow, so we don't
+     * re-offer the same build on every launch. `0` means nothing has been declined.
+     */
+    val dismissedUpdateVersion: Flow<Int> = context.settingsStore.data.map { prefs ->
+        prefs[dismissedUpdateVersionKey] ?: 0
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         context.settingsStore.edit { prefs ->
             prefs[themeModeKey] = when (mode) {
@@ -109,6 +119,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setDynamicColorEnabled(enabled: Boolean) {
         context.settingsStore.edit { prefs ->
             prefs[dynamicColorEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setDismissedUpdateVersion(versionCode: Int) {
+        context.settingsStore.edit { prefs ->
+            prefs[dismissedUpdateVersionKey] = versionCode
         }
     }
 

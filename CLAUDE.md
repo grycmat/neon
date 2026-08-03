@@ -208,6 +208,41 @@ re-states the layout in Glance primitives.
   the type badge *into* the avatar bitmap, because a Glance `Box` has one `contentAlignment` for
   all children and so cannot offset a badge over an image.
 
+### In-app updates
+
+Google Play in-app updates (`com.google.android.play:app-update-ktx`), all in `app/.../update/`
+— no `core/*` or `feature/*` module needs them, so the Play dependency stays in `:app`.
+
+- `AppUpdateController` is the whole implementation: a Hilt `@Singleton` wrapping
+  `AppUpdateManager`, same shape as `FcmTokenProvider` (thin coroutine wrapper over a
+  Play-services Task API). It exposes `StateFlow<AppUpdateUiState>` — `Idle` / `Downloading` /
+  `ReadyToInstall`, deliberately **free of Play types** so the Compose layer never observes an
+  unstable `AppUpdateInfo`.
+- **Strategy is priority-driven**: `FLEXIBLE` (background download, app stays usable) for routine
+  releases, escalating to Play's blocking `IMMEDIATE` flow only when `updatePriority() >= 4` or
+  `clientVersionStalenessDays() >= 14`. Note `updatePriority` is **not** settable in the Play
+  Console UI — it's `inAppUpdatePriority` on `Edits.tracks.releases` via the Play Developer API,
+  fixed at publish time. Without setting it per-release, only the 14-day staleness rule ever
+  triggers the immediate flow.
+- **`checkAndStart(launcher)` is the single entry point** (the `syncPushRegistration` pattern),
+  called from a `MainActivity` `LaunchedEffect` keyed on the **existing** `isAppForeground` state,
+  so it runs on cold start *and* every resume. The resume call is not optional — it's what
+  re-enters a stalled immediate update (`DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS`) and what
+  surfaces a flexible download that completed while the app was away (`installStatus() ==
+  DOWNLOADED`), which is also how the prompt survives process death.
+- **Gated on install source**, not `BuildConfig.DEBUG` — `installingPackageName ==
+  "com.android.vending"`. Deliberate: it keeps internal-app-sharing builds (the only real way to
+  test this) working, and keeps sideloaded/dev builds from logging a failed check every resume.
+  `requestAppUpdateInfo()` throws off-Play, so it is always wrapped.
+- **Two guards against nagging**: `promptedThisProcess` (in-memory, one flexible offer per
+  process however often we re-check) and `SettingsRepository.dismissedUpdateVersion` (persisted
+  `availableVersionCode` the user cancelled). Immediate flows set neither — an urgent update is
+  meant to re-prompt on every launch.
+- `MainActivity` owns the `StartIntentSenderForResult` launcher (the codebase has no
+  `onActivityResult` override anywhere — keep it that way) and renders `UpdateReadyDialog`
+  inside `NeonTheme` next to `NeonApp`, so its own window floats above the shell and any pushed
+  Nav3 screen.
+
 ### Navigation
 
 Built on **Navigation 3** (`androidx.navigation3`, still pre-1.0 — see below),
