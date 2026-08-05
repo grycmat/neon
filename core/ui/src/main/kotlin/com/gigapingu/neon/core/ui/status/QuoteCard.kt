@@ -26,6 +26,8 @@ import com.gigapingu.neon.core.designsystem.component.NeonAvatar
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.relativeTime
 import com.gigapingu.neon.core.model.Status
+import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.StatusActionService
 
 /** Embedded quoted status — compact glass card inside a StatusCard. */
 @Composable
@@ -81,6 +83,9 @@ fun QuoteCard(
             maxLines = 5,
             style = type.bodyMedium.copy(fontSize = 13.5.sp),
             emojis = status.emojis,
+            onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+            onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
+            onLinkClick = { url -> StatusActionService.openUrl(url) },
         )
         if (status.mediaAttachments.isNotEmpty()) {
             MediaGrid(attachments = status.mediaAttachments, sensitive = status.sensitive)

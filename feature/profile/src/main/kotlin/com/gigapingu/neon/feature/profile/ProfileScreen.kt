@@ -421,7 +421,14 @@ private fun ProfileHeader(
             }
             if (account.note.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
-                HtmlText(account.note, style = type.bodyMedium, emojis = account.emojis)
+                HtmlText(
+                    account.note,
+                    style = type.bodyMedium,
+                    emojis = account.emojis,
+                    onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+                    onMentionClick = { acctOrUrl -> StatusActionService.openMention(acctOrUrl) },
+                    onLinkClick = { url -> StatusActionService.openUrl(url) },
+                )
             }
             if (uiState.featuredTags.isNotEmpty() || uiState.isSelf) {
                 Spacer(Modifier.height(12.dp))

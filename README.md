@@ -51,7 +51,7 @@ feature/widget        Home-screen notifications widget (Glance): NotificationWid
 - **Direct Messages**: Conversation list + recipient picker for starting a new direct message (visibility="direct" statuses, grouped as Mastodon Conversations).
 - **Bookmarks**: Dedicated Bookmarks tab/screen to save and view bookmarked statuses.
 - **Interactive Thread View**: Full discussion view with collapsible Content Warnings (CW) and sensitive media blur overlays.
-- **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts (from a status or directly from a profile), plus a favourited/boosted-by sheet and edit history viewer.
+- **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts (from a status or directly from a profile), plus a favourited/boosted-by sheet and edit history viewer. Hashtags, mentions and links are tappable throughout — in timelines, threads, quoted statuses, edit history and profile bios — jumping to the hashtag timeline, resolving and opening the mentioned profile, or opening the link in the browser.
 - **Trust & Safety**: Settings > Safety & Privacy links the published privacy policy / CSAE standards (`privacy_policy.md`) and a "Blocked & muted accounts" screen to review/undo either list.
 - **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.
 - **Filters, Lists & Followed Hashtags**: Manage keyword filters, custom lists (with per-account membership from a profile), and followed hashtags from Settings; filtered-out notifications land in a review queue.
@@ -71,7 +71,9 @@ stay in sync across timelines, thread, notifications and profiles.
 
 Navigation is a plain singleton: `Navigator` in `core/ui` holds the Nav3 back
 stack (bound by `NeonApp` while the shell is on screen) and screens call it
-directly; `StatusActionService` does the same for favourite/boost/vote/share.
+directly; `StatusActionService` does the same for favourite/boost/vote/share,
+plus resolving tapped mentions and opening tapped links from status/bio text
+rendered by `HtmlText`.
 Screen transitions slide right-to-left on push and mirror back left-to-right
 on pop, with the predictive back gesture driving the same slide. The composer
 (`ComposeKey`) overrides this to slide up from the bottom like a sheet and back

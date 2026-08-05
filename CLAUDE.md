@@ -169,6 +169,19 @@ via FCM. Pieces:
   `MainActivity.handleNotificationIntent` on `status_id` / `open_notifications`
   extras).
 
+### Streaming
+
+`StreamingRepository` (`core/data`) holds a live Mastodon `user` WebSocket (new/edited/deleted
+statuses + notifications, multiplexed on one connection) via `StreamingClient` (`core/network`).
+It only runs while foregrounded and authenticated — `combine(AuthRepository.status,
+foreground)`, with `foreground` driven by `ShellViewModel.setForeground` from `MainActivity`'s
+lifecycle — and reconnects with exponential backoff (2s–30s) on drop or failure. Backgrounded
+delivery stays on the FCM push path above; the two don't overlap. Events patch the same
+`TimelineRepository` / `NotificationRepository` singletons the REST-driven mutations do, so a
+status arriving over the socket flows through the same `applyStatusUpdate` /
+`applyStatusDelete` / `prependCreated` / `prependNotification` calls described in Cross-screen
+sync, and reaches the widget via the same `NotificationWidgetBridge.redraw()` path.
+
 ### Home-screen widget
 
 `feature/widget` is a **Jetpack Glance** app widget listing the newest notifications. It is the
@@ -267,7 +280,7 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
     `DisposableEffect` while the authenticated shell is on screen; while null
     (previews, login) every call no-ops. Screens call `Navigator.openThread(id)`,
     `Navigator.back()`, etc.
-  - `StatusActionService` (favourite/boost/vote/share/open-mention) is
+  - `StatusActionService` (favourite/boost/vote/share/open-mention/open-url) is
     initialized from `NeonApplication.onCreate` with Hilt-injected repos; it
     owns a Main-dispatcher scope, shows failures as Toasts, and resolves
     mention taps straight to `Navigator.openProfile`.
@@ -276,6 +289,30 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
   state survives swiping, and draws the shared glassmorphic top app bar itself
   — tab screens must not add their own headers or `statusBarsPadding`
   (`ProfileScreen` pads conditionally because it is also pushed standalone).
+
+### Clickable status/bio content
+
+`HtmlText` (`core/designsystem/.../component/HtmlText.kt`) parses Mastodon HTML
+(`parseStatusHtml`, `core/designsystem/.../util/Html.kt`) into `Text` / `Mention`
+/ `Hashtag` / `Link` segments and renders each as a `LinkAnnotation.Clickable`
+span *only* when the matching `on*Click` callback is passed — a null callback
+still gets accent/underline styling but renders inert, so every call site must
+wire all three or a tap silently no-ops. The four call sites (`StatusBody` in
+`StatusCard.kt`, used by feed cards and `ThreadScreen`'s focused status;
+`QuoteCard`; `EditHistorySheet`; `ProfileScreen`'s bio) all wire:
+- `onHashtagClick` → `Navigator.openHashtag(tag)`.
+- `onMentionClick` → `StatusActionService.openMention(status, acctOrUrl)`,
+  which cross-references the tapped text/href against that status'
+  structured `mentions` list before resolving the match via
+  `SearchRepository.searchAccounts` and `Navigator.openProfile` (a live
+  network round trip; a miss silently no-ops). `EditHistorySheet` reuses the
+  parent status' `mentions` for this, since Mastodon doesn't expose
+  per-revision structured mentions. `ProfileScreen`'s bio has no `Status` to
+  cross-reference, so it calls the `openMention(acctOrUrl)` overload instead,
+  which derives the handle straight from the tapped text/href.
+- `onLinkClick` → `StatusActionService.openUrl(url)` — a plain `ACTION_VIEW`
+  intent, the same pattern already used inline for the profile "Server info"
+  and privacy-policy buttons in `ProfileScreen.kt`.
 
 ### Big screens (unfolded foldables / tablets)
 
@@ -357,10 +394,8 @@ reworking a screen so it stays previewable without Hilt/ViewModels.
 - **Downloadable fonts** (Space Grotesk + Manrope): if they silently fall back
   to the system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
   from the AndroidX downloadable-fonts docs — the base64 certs must match exactly.
-- Streaming is intentionally not implemented yet (parity with the Flutter
-  version) — don't treat its absence as a bug. **Push notifications, by contrast,
-  are now implemented** (see Push notifications above), ahead of the Flutter
-  sibling. (The media viewer is also implemented:
+- Both streaming (see Streaming above) and push notifications are implemented, ahead of the
+  Flutter sibling — don't treat either as missing. (The media viewer is also implemented:
   `core/ui/.../media/MediaPreviewScreen.kt`, opened via
   `Navigator.openMediaPreview`; `MediaGrid` falls back to it when no
   custom click handler is given.)

@@ -2,6 +2,7 @@ package com.gigapingu.neon.core.ui
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AuthRepository
@@ -126,6 +127,30 @@ object StatusActionService {
                 .onSuccess { found ->
                     found.firstOrNull()?.let { Navigator.openProfile(it.id) }
                 }
+        }
+    }
+
+    /** Resolves a tapped mention with no status context (e.g. an account bio) by acct/URL alone. */
+    fun openMention(acctOrUrl: String) {
+        val search = search ?: return
+        val handle = acctOrUrl.substringAfterLast('/').removePrefix("@")
+        if (handle.isBlank()) return
+        scope.launch {
+            runCatching { search.searchAccounts(handle, limit = 1) }
+                .onSuccess { found ->
+                    found.firstOrNull()?.let { Navigator.openProfile(it.id) }
+                }
+        }
+    }
+
+    fun openUrl(url: String) {
+        val app = app ?: return
+        runCatching {
+            app.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }.onFailure {
+            Toast.makeText(app, "Couldn't open link", Toast.LENGTH_SHORT).show()
         }
     }
 

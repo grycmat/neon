@@ -213,7 +213,7 @@ fun StatusCard(
         }
     }
     if (showEditHistory) {
-        EditHistorySheet(statusId = display.id, onDismiss = { showEditHistory = false })
+        EditHistorySheet(statusId = display.id, status = display, onDismiss = { showEditHistory = false })
     }
     if (showContextMenu) {
         StatusContextMenuSheet(
@@ -340,6 +340,7 @@ fun StatusBody(
                 emojis = status.emojis,
                 onHashtagClick = { tag -> Navigator.openHashtag(tag) },
                 onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
+                onLinkClick = { url -> StatusActionService.openUrl(url) },
             )
         }
     }

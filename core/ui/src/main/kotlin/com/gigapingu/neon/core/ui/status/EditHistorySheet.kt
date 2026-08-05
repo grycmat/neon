@@ -28,14 +28,16 @@ import androidx.compose.ui.unit.dp
 import com.gigapingu.neon.core.designsystem.component.HtmlText
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.relativeTime
+import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.model.StatusEdit
 import com.gigapingu.neon.core.ui.ErrorPane
+import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.StatusActionService
 
 /** Prior revisions of an edited status — text + media per version, oldest first. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditHistorySheet(statusId: String, onDismiss: () -> Unit) {
+fun EditHistorySheet(statusId: String, status: Status, onDismiss: () -> Unit) {
     val palette = NeonTheme.palette
     var history by remember { mutableStateOf<List<StatusEdit>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -78,7 +80,7 @@ fun EditHistorySheet(statusId: String, onDismiss: () -> Unit) {
                 }
                 else -> LazyColumn(modifier = Modifier.heightIn(max = 460.dp)) {
                     items(history!!, key = { it.createdAt?.toEpochMilli() ?: it.hashCode() }) { edit ->
-                        EditHistoryRow(edit)
+                        EditHistoryRow(edit, status)
                     }
                 }
             }
@@ -87,7 +89,7 @@ fun EditHistorySheet(statusId: String, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun EditHistoryRow(edit: StatusEdit) {
+private fun EditHistoryRow(edit: StatusEdit, status: Status) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
     Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
@@ -101,7 +103,14 @@ private fun EditHistoryRow(edit: StatusEdit) {
             )
             Spacer(Modifier.height(4.dp))
         }
-        HtmlText(edit.content, style = type.bodyMedium, emojis = edit.emojis)
+        HtmlText(
+            edit.content,
+            style = type.bodyMedium,
+            emojis = edit.emojis,
+            onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+            onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
+            onLinkClick = { url -> StatusActionService.openUrl(url) },
+        )
         if (edit.mediaAttachments.isNotEmpty()) {
             Spacer(Modifier.height(4.dp))
             MediaGrid(attachments = edit.mediaAttachments, sensitive = edit.sensitive)

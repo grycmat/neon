@@ -27,7 +27,12 @@ Full codebase audit and step-by-step plan to a shippable release.
 | Hashtag timeline | ✅ Complete |
 | Push notifications | ✅ Complete (FCM relay + on-device Web Push decryption) |
 | Video playback (Media3 / ExoPlayer) | ✅ Complete |
-| Streaming (WebSocket) | ❌ Post-MVP |
+| Streaming (live `user` WebSocket) | ✅ Complete |
+| Quote posts (Mastodon 4.4+) | ✅ Complete |
+| Home-screen widget (Jetpack Glance) | ✅ Complete |
+| Material You (dynamic color) | ✅ Complete |
+| Google Play in-app updates | ✅ Complete |
+| Clickable status/bio content (hashtags, mentions, links) | ✅ Complete |
 
 ---
 
@@ -36,16 +41,16 @@ Full codebase audit and step-by-step plan to a shippable release.
 Compared against `mastodon/mastodon-android` (the official client) on GitHub —
 its fragment/API-request package layout was audited directly. Neon covers the
 core toot lifecycle (read/write/boost/fave/vote/bookmark/moderate) and beats
-the official app on push notifications and big-screen support, but is missing
-several features that are table-stakes in every mainstream Mastodon client
-(official app, Ivory, Ice Cubes, Elk). These are broken out as **Milestone 5**
-below, ahead of Release Prep.
+the official app on push notifications, streaming, a home-screen widget, and
+big-screen support, but is missing several features that are table-stakes in
+every mainstream Mastodon client (official app, Ivory, Ice Cubes, Elk). These
+are broken out as **Milestone 5** below, ahead of Release Prep.
 
 Not counted as gaps (deliberately out of scope / already tracked): in-app
 account signup & onboarding carousel (Neon only logs into existing accounts,
 per `NeonConfig`), read markers (sync-position bookkeeping, invisible to the
 user), donation/tipping screens, and anything already in the Post-MVP Backlog
-below (streaming, multi-account, etc.).
+below (multi-account, etc.).
 
 ---
 
@@ -307,22 +312,68 @@ below (streaming, multi-account, etc.).
 
 ---
 
+## Milestone 7 — Shipped Ahead of MVP
+> Goal: track work that landed beyond the original milestone scope, pulled
+> forward from the Post-MVP Backlog or added outright.
+
+- [x] **Streaming (WebSocket)**
+  - `StreamingRepository` (`core/data`) holds a live Mastodon `user` WebSocket
+    (new/edited/deleted statuses + notifications, multiplexed on one
+    connection) via `StreamingClient` (`core/network`). Runs only while
+    foregrounded and authenticated, reconnects with exponential backoff
+    (2s–30s). Events patch the same `TimelineRepository` /
+    `NotificationRepository` singletons the REST-driven mutations do, and
+    reach the home-screen widget via the same redraw path.
+
+- [x] **Quote posts**
+  - Native Mastodon 4.4+ quote support: `Status.quote` decodes the
+    `{"state": "accepted", "quoted_status": {...}}` wire wrapper
+    (`QuoteUnwrapSerializer`), rendered via `QuoteCard` under the quoting
+    status's body, tapping through to the quoted thread.
+
+- [x] **Home-screen widget**
+  - `feature/widget`: a Jetpack Glance widget listing the newest
+    notifications in the app's own glass styling (avatar + type badge,
+    name/verb/preview/time, refresh button). Reads from the Room cache so it
+    works before the app has been opened in-process; refreshes on push,
+    streaming, in-app mutations, the refresh button, and a staleness-gated
+    periodic tick.
+
+- [x] **Material You**
+  - Optional "Match wallpaper colors" toggle (Settings, Android 12+, off by
+    default): `NeonPalette.dynamic()` re-derives gradients/avatars/glow/accent
+    ink from the device's dynamic color scheme while keeping glass surfaces
+    and typography untouched. Paired with a themed monochrome launcher icon.
+
+- [x] **Google Play in-app updates**
+  - `AppUpdateController` (`app/.../update/`) wraps Play Core's
+    `AppUpdateManager`: `FLEXIBLE` background download for routine releases,
+    escalating to blocking `IMMEDIATE` on high-priority/stale-version
+    releases. Gated on install source so sideloaded/dev builds are unaffected.
+
+- [x] **Clickable status/bio content**
+  - Hashtags, mentions and links are tappable everywhere status/bio HTML
+    renders (`HtmlText`): main timeline/thread body, quoted statuses, edit
+    history revisions, and profile bios. Hashtags jump to the hashtag
+    timeline, mentions resolve via search to the profile, links open in the
+    browser (`StatusActionService.openUrl` / `openMention`).
+
+---
+
 ## Post-MVP Backlog
 
 These are desirable but intentionally deferred past the initial release:
 
 | Feature | Notes |
 |---------|-------|
-| **Streaming (WebSocket)** | Real-time timeline + notification updates via `GET /api/v1/streaming` |
 | **Multi-account support** | Currently one credential set in DataStore |
-| **Image alt-text viewer** | Show `MediaAttachment.description` on long-press |
+| **Image alt-text viewer** | Show `MediaAttachment.description` on long-press — still not surfaced anywhere in `MediaGrid`/`MediaPreviewScreen` |
 | **Profile media tab** | `onlyMedia=true` param exists in `AccountRepository` but no UI tab |
 | **Local search history** | Persist recent searches in DataStore / Room |
 | **Haptic feedback** | On favourite / boost animations |
 | **Toot language picker** | Per-toot `language` param on `POST /api/v1/statuses` (default-language setting is in Milestone 5; a per-toot override picker is lower priority) |
 | **Animated GIF support** | Coil supports it; needs explicit `ImageLoader` config |
 | **Follow request management** | Accept / reject from Notifications screen |
-| **Quote posts** | Newer Mastodon (4.4+) quote-post feature (`StatusQuotesFragment` in the official app) — depends on server-side adoption, not yet universal |
 | **Announcements** | Instance-wide banner (`GET /api/v1/announcements`, with reactions) shown in the official app's Home fragment |
 | **Read markers** | `GET/POST /api/v1/markers` — sync last-read position across devices; invisible/QoL, not a user-facing gap |
 | **Server info / rules screen (detail view)** | Beyond the Settings link in Milestone 5 — full about page with extended description, contact account, rules list with numbering |

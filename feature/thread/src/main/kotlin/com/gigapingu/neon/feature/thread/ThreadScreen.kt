@@ -450,7 +450,7 @@ private fun FocusedStatus(status: Status) {
         }
     }
     if (showEditHistory) {
-        EditHistorySheet(statusId = status.id, onDismiss = { showEditHistory = false })
+        EditHistorySheet(statusId = status.id, status = status, onDismiss = { showEditHistory = false })
     }
 }
 
