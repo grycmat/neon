@@ -125,6 +125,12 @@ object Navigator {
         backStack?.add(HashtagTimelineKey(tag))
     }
 
+    /** Tapped from inline status/bio text: Explore's search, prepopulated and
+     *  run, same as tapping a trending tag — not the dedicated hashtag timeline. */
+    fun openHashtagSearch(tag: String) {
+        backStack?.add(HashtagKey("#$tag"))
+    }
+
     fun openCompose(
         replyToId: String? = null,
         quotingId: String? = null,

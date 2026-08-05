@@ -107,7 +107,7 @@ private fun EditHistoryRow(edit: StatusEdit, status: Status) {
             edit.content,
             style = type.bodyMedium,
             emojis = edit.emojis,
-            onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+            onHashtagClick = { tag -> Navigator.openHashtagSearch(tag) },
             onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
             onLinkClick = { url -> StatusActionService.openUrl(url) },
         )

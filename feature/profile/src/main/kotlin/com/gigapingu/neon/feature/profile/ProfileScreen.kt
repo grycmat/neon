@@ -425,7 +425,7 @@ private fun ProfileHeader(
                     account.note,
                     style = type.bodyMedium,
                     emojis = account.emojis,
-                    onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+                    onHashtagClick = { tag -> Navigator.openHashtagSearch(tag) },
                     onMentionClick = { acctOrUrl -> StatusActionService.openMention(acctOrUrl) },
                     onLinkClick = { url -> StatusActionService.openUrl(url) },
                 )

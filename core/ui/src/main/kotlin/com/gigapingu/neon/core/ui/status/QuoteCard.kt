@@ -83,7 +83,7 @@ fun QuoteCard(
             maxLines = 5,
             style = type.bodyMedium.copy(fontSize = 13.5.sp),
             emojis = status.emojis,
-            onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+            onHashtagClick = { tag -> Navigator.openHashtagSearch(tag) },
             onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
             onLinkClick = { url -> StatusActionService.openUrl(url) },
         )

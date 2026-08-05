@@ -57,10 +57,14 @@ fun parseStatusHtml(html: String): List<HtmlSegment> {
         val href = hrefAttr.find(attrs)?.groupValues?.get(1)?.let(::decodeEntities)
         val classes = classAttr.find(attrs)?.groupValues?.get(1).orEmpty()
         val segment = when {
-            "mention" in classes || inner.startsWith("@") ->
-                HtmlSegment(HtmlSegmentType.Mention, inner, href)
+            // Mastodon hashtag anchors carry class="mention hashtag" (the
+            // "mention" class is reused for hashtags too), so "hashtag" must
+            // be checked before the "mention" class/prefix check below, or
+            // every hashtag misclassifies as a mention.
             "hashtag" in classes || inner.startsWith("#") ->
                 HtmlSegment(HtmlSegmentType.Hashtag, inner, href)
+            "mention" in classes || inner.startsWith("@") ->
+                HtmlSegment(HtmlSegmentType.Mention, inner, href)
             else -> HtmlSegment(HtmlSegmentType.Link, inner, href)
         }
         segments += segment

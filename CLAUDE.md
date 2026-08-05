@@ -300,7 +300,13 @@ still gets accent/underline styling but renders inert, so every call site must
 wire all three or a tap silently no-ops. The four call sites (`StatusBody` in
 `StatusCard.kt`, used by feed cards and `ThreadScreen`'s focused status;
 `QuoteCard`; `EditHistorySheet`; `ProfileScreen`'s bio) all wire:
-- `onHashtagClick` → `Navigator.openHashtag(tag)`.
+- `onHashtagClick` → `Navigator.openHashtagSearch(tag)`, which pushes
+  `HashtagKey("#$tag")` into `ExploreScreen(initialQuery = …)` — Explore's
+  search prepopulated and run, the same destination a trending-tag tap lands
+  on. This is deliberately a different method/route from `Navigator.openHashtag(tag)`
+  (pushes `HashtagTimelineKey` → the dedicated `HashtagTimelineScreen` with its
+  follow/unfollow toggle), which stays reserved for explicit tag-chip taps —
+  `ProfileScreen`'s featured-tags row and `ManageFollowedHashtagsScreen`.
 - `onMentionClick` → `StatusActionService.openMention(status, acctOrUrl)`,
   which cross-references the tapped text/href against that status'
   structured `mentions` list before resolving the match via

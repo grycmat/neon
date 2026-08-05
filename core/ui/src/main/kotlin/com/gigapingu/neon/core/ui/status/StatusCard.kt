@@ -338,7 +338,7 @@ fun StatusBody(
                 html = status.content,
                 style = style,
                 emojis = status.emojis,
-                onHashtagClick = { tag -> Navigator.openHashtag(tag) },
+                onHashtagClick = { tag -> Navigator.openHashtagSearch(tag) },
                 onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
                 onLinkClick = { url -> StatusActionService.openUrl(url) },
             )
