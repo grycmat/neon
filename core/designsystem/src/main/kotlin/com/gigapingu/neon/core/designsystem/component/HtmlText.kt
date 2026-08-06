@@ -14,6 +14,7 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -45,6 +46,7 @@ fun HtmlText(
     onMentionClick: ((acctOrUrl: String) -> Unit)? = null,
     onHashtagClick: ((tag: String) -> Unit)? = null,
     onLinkClick: ((url: String) -> Unit)? = null,
+    onTextLayout: (TextLayoutResult) -> Unit = {},
 ) {
     val palette = NeonTheme.palette
     // Callbacks are typically fresh lambda instances every recomposition (they
@@ -104,6 +106,7 @@ fun HtmlText(
         maxLines = maxLines,
         overflow = if (maxLines == Int.MAX_VALUE) TextOverflow.Clip else TextOverflow.Ellipsis,
         inlineContent = inlineContent,
+        onTextLayout = onTextLayout,
         modifier = modifier,
     )
 }

@@ -191,7 +191,8 @@ fun StatusCard(
                     StatusBody(
                         status = display,
                         revealed = revealed,
-                        onToggleReveal = { revealed = !revealed }
+                        onToggleReveal = { revealed = !revealed },
+                        truncatable = true,
                     )
                     if (!hasWarning || revealed) {
                         display.card?.let { card ->
@@ -281,6 +282,9 @@ fun StatusCard(
     }
 }
 
+/** Feed/list body text is clipped past this many lines, with a "Show more" hint. */
+private const val FeedBodyMaxLines = 15
+
 /** Body text with content-warning gating. */
 @Composable
 fun StatusBody(
@@ -289,6 +293,7 @@ fun StatusBody(
     textStyle: TextStyle? = null,
     revealed: Boolean = false,
     onToggleReveal: () -> Unit = {},
+    truncatable: Boolean = false,
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
@@ -296,6 +301,7 @@ fun StatusBody(
     val filterTitle = status.filtered.firstOrNull()?.filter?.title
     val hasWarning = hasCw || filterTitle != null
     val style = textStyle ?: type.bodyMedium
+    var isOverflowing by remember(status.id) { mutableStateOf(false) }
 
     Column(modifier = modifier) {
         if (hasWarning) {
@@ -338,10 +344,20 @@ fun StatusBody(
                 html = status.content,
                 style = style,
                 emojis = status.emojis,
+                maxLines = if (truncatable) FeedBodyMaxLines else Int.MAX_VALUE,
+                onTextLayout = { isOverflowing = it.hasVisualOverflow },
                 onHashtagClick = { tag -> Navigator.openHashtagSearch(tag) },
                 onMentionClick = { acctOrUrl -> StatusActionService.openMention(status, acctOrUrl) },
                 onLinkClick = { url -> StatusActionService.openUrl(url) },
             )
+            if (truncatable && isOverflowing) {
+                Text(
+                    "Show more",
+                    style = type.bodySmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = palette.cyan,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
     }
 }
