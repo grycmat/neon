@@ -69,6 +69,9 @@ data object FiltersKey : NavKey
 data object NotificationRequestsKey : NavKey
 
 @Serializable
+data object FollowRequestsKey : NavKey
+
+@Serializable
 data object BlockedAccountsKey : NavKey
 
 /**
@@ -191,6 +194,10 @@ object Navigator {
 
     fun openNotificationRequests() {
         backStack?.add(NotificationRequestsKey)
+    }
+
+    fun openFollowRequests() {
+        backStack?.add(FollowRequestsKey)
     }
 
     fun openBlockedAccounts() {

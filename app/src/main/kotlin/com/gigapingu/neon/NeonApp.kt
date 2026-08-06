@@ -48,6 +48,7 @@ import com.gigapingu.neon.core.ui.MediaPreviewKey
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.NewMessageKey
 import com.gigapingu.neon.core.ui.NotificationRequestsKey
+import com.gigapingu.neon.core.ui.FollowRequestsKey
 import com.gigapingu.neon.core.ui.ProfileKey
 import com.gigapingu.neon.core.ui.LocalBigScreenLayout
 import com.gigapingu.neon.core.ui.SettingsKey
@@ -67,6 +68,7 @@ import com.gigapingu.neon.feature.settings.ManageListsScreen
 import com.gigapingu.neon.feature.settings.SettingsScreen
 import com.gigapingu.neon.feature.messages.NewMessageScreen
 import com.gigapingu.neon.feature.notifications.NotificationRequestsScreen
+import com.gigapingu.neon.feature.notifications.FollowRequestsScreen
 import com.gigapingu.neon.feature.thread.ThreadScreen
 import com.gigapingu.neon.feature.timeline.HashtagTimelineScreen
 import com.gigapingu.neon.feature.timeline.ListTimelineScreen
@@ -214,6 +216,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                 entry<ListTimelineKey> { key -> ListTimelineScreen(listId = key.listId, title = key.title) }
                 entry<FiltersKey> { FiltersScreen() }
                 entry<NotificationRequestsKey> { NotificationRequestsScreen() }
+                entry<FollowRequestsKey> { FollowRequestsScreen() }
                 entry<BlockedAccountsKey> { BlockedAccountsScreen() }
                 entry<BookmarksKey> { BookmarksScreen() }
                 entry<NewMessageKey> { NewMessageScreen() }

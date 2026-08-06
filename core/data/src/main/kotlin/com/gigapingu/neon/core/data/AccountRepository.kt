@@ -76,6 +76,21 @@ class AccountRepository @Inject constructor(
     suspend fun getMutes(maxId: String? = null): List<Account> =
         accountList("/api/v1/mutes", maxId)
 
+    suspend fun getFollowRequests(maxId: String? = null): List<Account> =
+        accountList("/api/v1/follow_requests", maxId)
+
+    suspend fun authorizeFollowRequest(id: String): Relationship =
+        json.decodeFromString(
+            Relationship.serializer(),
+            api.post("/api/v1/follow_requests/$id/authorize"),
+        )
+
+    suspend fun rejectFollowRequest(id: String): Relationship =
+        json.decodeFromString(
+            Relationship.serializer(),
+            api.post("/api/v1/follow_requests/$id/reject"),
+        )
+
     /**
      * favourited_by/reblogged_by only support Link-header pagination (favourite
      * and reblog IDs aren't exposed), so we fetch a single page at the API max.

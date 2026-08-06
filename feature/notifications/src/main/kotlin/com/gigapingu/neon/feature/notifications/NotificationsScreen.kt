@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FormatQuote
 import androidx.compose.material.icons.rounded.AlternateEmail
@@ -68,6 +69,7 @@ fun NotificationsScreen(
     val type = NeonTheme.type
     val state by viewModel.state.collectAsStateWithLifecycle()
     val requestsCount by viewModel.requestsCount.collectAsStateWithLifecycle()
+    val followRequestsCount by viewModel.followRequestsCount.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
 
     Column(Modifier.fillMaxSize()) {
@@ -85,6 +87,12 @@ fun NotificationsScreen(
             key = { it.id },
             contentType = { it.status != null },
             header = {
+                if (followRequestsCount > 0) {
+                    FollowRequestsBanner(
+                        count = followRequestsCount,
+                        onClick = Navigator::openFollowRequests,
+                    )
+                }
                 if (requestsCount > 0) {
                     NotificationRequestsBanner(
                         count = requestsCount,
@@ -99,7 +107,9 @@ fun NotificationsScreen(
             ) {
                 NotificationRow(
                     item = notification,
-                    onDismiss = { viewModel.dismiss(notification.id) }
+                    onDismiss = { viewModel.dismiss(notification.id) },
+                    onAuthorizeFollow = { viewModel.authorizeFollow(notification) },
+                    onRejectFollow = { viewModel.rejectFollow(notification) },
                 )
             }
         }
@@ -129,7 +139,34 @@ private fun NotificationRequestsBanner(count: Int, onClick: () -> Unit) {
 }
 
 @Composable
-private fun NotificationRow(item: MastoNotification, onDismiss: () -> Unit) {
+private fun FollowRequestsBanner(count: Int, onClick: () -> Unit) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    GlassCard(
+        modifier = Modifier.padding(bottom = 8.dp),
+        contentPadding = PaddingValues(14.dp),
+        onClick = onClick,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.PersonAddAlt, contentDescription = null, tint = palette.purple, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "$count follow ${if (count == 1) "request" else "requests"} to review",
+                style = type.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = palette.text,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotificationRow(
+    item: MastoNotification,
+    onDismiss: () -> Unit,
+    onAuthorizeFollow: () -> Unit = {},
+    onRejectFollow: () -> Unit = {},
+) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
 
@@ -211,16 +248,43 @@ private fun NotificationRow(item: MastoNotification, onDismiss: () -> Unit) {
                     color = palette.textMute,
                 )
                 Spacer(Modifier.height(4.dp))
-                androidx.compose.material3.IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = "Dismiss notification",
-                        tint = palette.textMute,
-                        modifier = Modifier.size(16.dp)
-                    )
+                if (item.type == NotificationType.FollowRequest) {
+                    Row {
+                        androidx.compose.material3.IconButton(
+                            onClick = onRejectFollow,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Reject follow request",
+                                tint = palette.textMute,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        androidx.compose.material3.IconButton(
+                            onClick = onAuthorizeFollow,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = "Authorize follow request",
+                                tint = palette.purple,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                } else {
+                    androidx.compose.material3.IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Dismiss notification",
+                            tint = palette.textMute,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
@@ -245,6 +309,7 @@ private fun NotificationRowPreview() {
             NotificationRow(item = previewNotification("3", "mention"), onDismiss = {})
             NotificationRow(item = previewNotification("4", "follow", withStatus = false), onDismiss = {})
             NotificationRow(item = previewNotification("5", "poll"), onDismiss = {})
+            NotificationRow(item = previewNotification("6", "follow_request", withStatus = false), onDismiss = {})
         }
     }
 }
