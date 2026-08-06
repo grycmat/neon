@@ -314,17 +314,17 @@ fun ComposeScreen(
                         onClick = viewModel::toggleCw,
                         contentDescription = "Content warning",
                     )
-                }
-                Row(
-                    modifier = Modifier.padding(start = 14.dp, top = 8.dp, end = 14.dp, bottom = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         "${textField.text.length} / ${uiState.maxChars}",
                         style = type.bodySmall,
                         color = if (textField.text.length > uiState.maxChars) palette.pink else palette.textMute,
                     )
-                    Spacer(Modifier.width(12.dp))
+                }
+                Row(
+                    modifier = Modifier.padding(start = 14.dp, top = 8.dp, end = 14.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     GradientButton(
                         label = "Post",
                         busy = uiState.posting,
