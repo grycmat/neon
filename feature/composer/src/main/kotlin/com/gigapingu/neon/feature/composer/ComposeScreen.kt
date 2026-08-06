@@ -269,7 +269,7 @@ fun ComposeScreen(
                         .background(palette.divider),
                 )
                 Row(
-                    modifier = Modifier.padding(start = 14.dp, top = 8.dp, end = 14.dp, bottom = 12.dp),
+                    modifier = Modifier.padding(start = 14.dp, top = 8.dp, end = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     GlassIconButton(
@@ -314,7 +314,11 @@ fun ComposeScreen(
                         onClick = viewModel::toggleCw,
                         contentDescription = "Content warning",
                     )
-                    Spacer(Modifier.weight(1f))
+                }
+                Row(
+                    modifier = Modifier.padding(start = 14.dp, top = 8.dp, end = 14.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
                         "${textField.text.length} / ${uiState.maxChars}",
                         style = type.bodySmall,
@@ -323,9 +327,8 @@ fun ComposeScreen(
                     Spacer(Modifier.width(12.dp))
                     GradientButton(
                         label = "Post",
-                        height = 44.dp,
                         busy = uiState.posting,
-                        modifier = Modifier.width(96.dp),
+                        modifier = Modifier.weight(1f),
                         onClick = if (uiState.canPost) viewModel::post else null,
                     )
                 }
@@ -375,6 +378,7 @@ fun ComposeScreen(
                 Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
+                    .navigationBarsPadding()
                     .imePadding(),
             )
         }
