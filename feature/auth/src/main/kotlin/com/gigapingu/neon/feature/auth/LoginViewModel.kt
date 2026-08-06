@@ -1,5 +1,6 @@
 package com.gigapingu.neon.feature.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AuthRepository
@@ -36,6 +37,7 @@ class LoginViewModel @Inject constructor(
                 val url = auth.beginLogin(instance)
                 _uiState.value = LoginUiState(busy = true, authorizeUrl = url)
             } catch (e: Exception) {
+                Log.e("LoginViewModel", "beginLogin failed for instance=$instance", e)
                 _uiState.value = LoginUiState(error = "Could not connect: ${e.message}")
             }
         }
@@ -49,6 +51,7 @@ class LoginViewModel @Inject constructor(
                 auth.finishLogin(code)
                 // The auth gate swaps to the shell.
             } catch (e: Exception) {
+                Log.e("LoginViewModel", "finishLogin failed", e)
                 _uiState.value = LoginUiState(error = "Could not connect: ${e.message}")
             }
         }

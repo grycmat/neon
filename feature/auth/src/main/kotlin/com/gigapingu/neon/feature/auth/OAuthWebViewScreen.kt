@@ -1,6 +1,8 @@
 package com.gigapingu.neon.feature.auth
 
 import android.annotation.SuppressLint
+import android.webkit.CookieManager
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -70,7 +72,15 @@ fun OAuthWebViewScreen(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context ->
                     WebView(context).apply {
+                        // Some instances delegate /auth/sign_in to an external OIDC/SSO
+                        // provider (e.g. social.vivaldi.net -> login.vivaldi.net). Those
+                        // SPA-style login pages commonly need DOM storage, cross-domain
+                        // cookies, and window.open() support to complete the flow.
                         settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        val cookieManager = CookieManager.getInstance()
+                        cookieManager.setAcceptCookie(true)
+                        cookieManager.setAcceptThirdPartyCookies(this, true)
                         webViewClient = object : WebViewClient() {
                             override fun shouldOverrideUrlLoading(
                                 view: WebView?,
@@ -88,6 +98,25 @@ fun OAuthWebViewScreen(
 
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 loading = false
+                            }
+                        }
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onCreateWindow(
+                                view: WebView?,
+                                isDialog: Boolean,
+                                isUserGesture: Boolean,
+                                resultMsg: android.os.Message?,
+                            ): Boolean {
+                                // Navigate window.open()/target="_blank" requests in this
+                                // same WebView instead of silently dropping them — Neon has
+                                // no UI for a second window, and the redirect-URI
+                                // interception above still needs to see the final hop.
+                                val transport = resultMsg?.obj as? WebView.WebViewTransport
+                                    ?: return false
+                                if (view == null) return false
+                                transport.webView = view
+                                resultMsg.sendToTarget()
+                                return true
                             }
                         }
                         loadUrl(authorizeUrl)

@@ -5,7 +5,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
@@ -114,12 +116,18 @@ class ApiClient @Inject constructor(private val client: OkHttpClient) {
             .apply { token?.let { header("Authorization", "Bearer $it") } }
             .build()
         val response = client.newCall(request).await()
-        return response.use { res ->
-            val body = res.body?.string().orEmpty()
-            if (res.isSuccessful) {
-                body
-            } else {
-                throw ApiException(res.code, extractError(body))
+        // await()'s continuation resumes on the calling coroutine's dispatcher (often Main,
+        // e.g. viewModelScope), not the OkHttp callback thread. Reading the body can still
+        // require a blocking socket read (chunked responses aren't fully buffered yet), which
+        // would trip StrictMode's NetworkOnMainThreadException — so force it onto IO.
+        return withContext(Dispatchers.IO) {
+            response.use { res ->
+                val body = res.body?.string().orEmpty()
+                if (res.isSuccessful) {
+                    body
+                } else {
+                    throw ApiException(res.code, extractError(body))
+                }
             }
         }
     }
