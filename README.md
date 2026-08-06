@@ -33,8 +33,8 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCar
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills, plus hashtag and list timelines
 feature/explore       Trends + search (also pushed for hashtag taps)
-feature/notifications Notifications feed + filtered-notification requests queue, NeonFirebaseMessagingService +
-                      NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (FCM push)
+feature/notifications Notifications feed + filtered-notification requests queue + follow-request review,
+                      NeonFirebaseMessagingService + NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (FCM push)
 feature/messages      Direct messages: Conversation list + new-message composer (a Conversation just groups
                       visibility="direct" statuses — Mastodon has no separate DM system)
 feature/thread        Thread view (ancestors → focused → replies)
@@ -47,10 +47,11 @@ feature/widget        Home-screen notifications widget (Glance): NotificationWid
 
 ## Features
 
-- **Timelines**: Home, Local, Federated timelines (with pull-to-refresh and "new toots" banner), plus hashtag and list timelines.
+- **Timelines**: Home, Local, Federated timelines (with pull-to-refresh and "new toots" banner), plus hashtag and list timelines. On the Home tab, tapping the shared TopAppBar scrolls straight to the top and dismisses the "new toots" banner, same as tapping the banner itself.
 - **Direct Messages**: Conversation list + recipient picker for starting a new direct message (visibility="direct" statuses, grouped as Mastodon Conversations).
 - **Bookmarks**: Dedicated Bookmarks tab/screen to save and view bookmarked statuses.
-- **Interactive Thread View**: Full discussion view with collapsible Content Warnings (CW) and sensitive media blur overlays.
+- **Interactive Thread View**: Full discussion view with collapsible Content Warnings (CW) and sensitive media blur overlays. Long posts in feeds and lists are clipped with a "Show more" hint; the focused status in a thread always renders in full.
+- **Follow Requests**: For locked accounts, incoming follow requests can be accepted or rejected inline from a Notifications banner, or from a dedicated Follow requests screen.
 - **Status Interactions**: Favourite, boost, vote on polls, share, edit status, delete & re-draft, mute, block, and report accounts (from a status or directly from a profile), plus a favourited/boosted-by sheet and edit history viewer. Hashtags, mentions and links are tappable throughout — in timelines, threads, quoted statuses, edit history and profile bios — jumping to the hashtag timeline, resolving and opening the mentioned profile, or opening the link in the browser.
 - **Trust & Safety**: Settings > Safety & Privacy links the published privacy policy / CSAE standards (`privacy_policy.md`) and a "Blocked & muted accounts" screen to review/undo either list.
 - **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.

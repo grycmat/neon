@@ -190,14 +190,19 @@ fun HomeShell(viewModel: ShellViewModel) {
                 beyondViewportPageCount = 3,
             ) { page ->
                 when (page) {
-                    0 -> when {
-                        // Grid has no detail pane — it takes the tab's full width.
-                        big && bigScreenLayout == BigScreenLayout.Grid -> TimelineScreen(gridLayout = true)
-                        big -> ShellListDetail(detailId = homeThreadId) {
-                            TimelineScreen(selectedStatusId = homeThreadId)
-                        }
+                    0 -> {
+                        val isActiveTab = page == pagerState.currentPage
+                        when {
+                            // Grid has no detail pane — it takes the tab's full width.
+                            big && bigScreenLayout == BigScreenLayout.Grid ->
+                                TimelineScreen(gridLayout = true, isActiveTab = isActiveTab)
 
-                        else -> TimelineScreen()
+                            big -> ShellListDetail(detailId = homeThreadId) {
+                                TimelineScreen(selectedStatusId = homeThreadId, isActiveTab = isActiveTab)
+                            }
+
+                            else -> TimelineScreen(isActiveTab = isActiveTab)
+                        }
                     }
 
                     1 -> if (big) {
@@ -548,7 +553,12 @@ private fun TopAppBar(
                                     fadeOut(NeonMotion.quick()))
                 },
                 label = "topBarTitle",
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { Navigator.scrollToTopHandler?.invoke() },
             ) { p ->
                 val (title, icon) = when (p) {
                     0 -> Pair("Home", Icons.Rounded.Home)

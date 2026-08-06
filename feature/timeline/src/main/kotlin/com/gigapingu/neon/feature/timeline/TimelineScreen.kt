@@ -46,10 +46,12 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import com.gigapingu.neon.core.designsystem.component.GlassButton
+import com.gigapingu.neon.core.ui.Navigator
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -62,6 +64,7 @@ import kotlinx.coroutines.launch
 fun TimelineScreen(
     selectedStatusId: String? = null,
     gridLayout: Boolean = false,
+    isActiveTab: Boolean = true,
     viewModel: TimelineViewModel = hiltViewModel(),
 ) {
     val palette = NeonTheme.palette
@@ -92,6 +95,21 @@ fun TimelineScreen(
                     viewModel.clearNewToots(kind)
                 }
             }
+    }
+
+    // Lets HomeShell's top app bar scroll-to-top tap reach this tab's list —
+    // only while it's the visible tab, so a preloaded off-screen pager page
+    // doesn't steal the handler.
+    DisposableEffect(isActiveTab, kind, gridLayout, listState, gridState) {
+        if (isActiveTab) {
+            Navigator.scrollToTopHandler = {
+                coroutineScope.launch {
+                    if (gridLayout) gridState.animateScrollToItem(0) else listState.animateScrollToItem(0)
+                }
+                viewModel.clearNewToots(kind)
+            }
+        }
+        onDispose { if (isActiveTab) Navigator.scrollToTopHandler = null }
     }
 
     Box(Modifier.fillMaxSize()) {

@@ -115,6 +115,9 @@ object Navigator {
      */
     var threadPaneHandler: ((String) -> Boolean)? = null
 
+    /** Set by the currently-active Home tab instance; null elsewhere/no-op. */
+    var scrollToTopHandler: (() -> Unit)? = null
+
     fun openThread(statusId: String) {
         if (threadPaneHandler?.invoke(statusId) == true) return
         backStack?.add(ThreadKey(statusId))

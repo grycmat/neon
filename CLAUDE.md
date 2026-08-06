@@ -58,8 +58,8 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCar
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills, plus hashtag and list timelines
 feature/explore       Trends (with TrendSpark sparklines) + search (also pushed for hashtag taps)
-feature/notifications Notifications feed + filtered-notification requests queue; NeonFirebaseMessagingService +
-                      NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (push)
+feature/notifications Notifications feed + filtered-notification requests queue + follow-request review;
+                      NeonFirebaseMessagingService + NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (push)
 feature/messages      Direct messages: Conversation list + new-message composer (Mastodon has no
                       separate DM system — a Conversation just groups visibility="direct" statuses)
 feature/thread        Thread view (ancestors → focused → replies)
@@ -122,6 +122,13 @@ runtime to whichever instance host + token the user authenticated with —
 there is no Retrofit and no compile-time base URL. Repositories build request
 bodies manually with `kotlinx.serialization`'s `buildJsonObject` DSL and parse
 responses with per-model `KSerializer`s, rather than generating API interfaces.
+Reading the response body is forced onto `Dispatchers.IO` even though it runs
+after the call's `await()` continuation already resumed: that resumption lands
+on whatever dispatcher the caller used (often `viewModelScope`'s Main), and a
+chunked response (observed from e.g. `social.vivaldi.net`) isn't fully
+buffered yet, so `body.string()` can still block on the socket — which trips
+`NetworkOnMainThreadException` and silently breaks login/requests without
+that `withContext`.
 
 ### Push notifications
 
@@ -289,6 +296,17 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
   state survives swiping, and draws the shared glassmorphic top app bar itself
   — tab screens must not add their own headers or `statusBarsPadding`
   (`ProfileScreen` pads conditionally because it is also pushed standalone).
+  Tapping the bar's title area invokes `Navigator.scrollToTopHandler?.invoke()`
+  directly (same file, no callback param threaded through). Only the Home tab
+  (`TimelineScreen`) registers it, in a `DisposableEffect` keyed on an
+  `isActiveTab` param `HomeShell` passes as `page == pagerState.currentPage` —
+  needed because `beyondViewportPageCount` keeps adjacent pages composed, so
+  without that guard an off-screen preloaded Home instance could steal the
+  handler. The handler body is identical to the "N new toots" pill's
+  `onClick` (`animateScrollToItem(0)` + `clearNewToots(kind)`), so tapping the
+  bar acts exactly like tapping that pill. Null on every other tab, so the tap
+  silently no-ops there — same null-is-a-no-op convention as
+  `threadPaneHandler` below.
 
 ### Clickable status/bio content
 
@@ -297,9 +315,18 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
 / `Hashtag` / `Link` segments and renders each as a `LinkAnnotation.Clickable`
 span *only* when the matching `on*Click` callback is passed — a null callback
 still gets accent/underline styling but renders inert, so every call site must
-wire all three or a tap silently no-ops. The four call sites (`StatusBody` in
-`StatusCard.kt`, used by feed cards and `ThreadScreen`'s focused status;
-`QuoteCard`; `EditHistorySheet`; `ProfileScreen`'s bio) all wire:
+wire all three or a tap silently no-ops. `HtmlText` also exposes the underlying
+`Text`'s `onTextLayout`; `StatusBody` (`StatusCard.kt`) uses it in feed/list
+contexts (`truncatable = true`) to clip the body at `FeedBodyMaxLines` (15) and
+show a "Show more" hint based on `TextLayoutResult.hasVisualOverflow` — real
+visual overflow, not a character-count guess, since emoji/mention/hashtag
+inline content and font metrics make line count unpredictable from the raw
+string length. The focused status in `ThreadScreen` renders with
+`truncatable = false` (the default) so it's never clipped.
+
+The four call sites (`StatusBody` in `StatusCard.kt`, used by feed cards and
+`ThreadScreen`'s focused status; `QuoteCard`; `EditHistorySheet`;
+`ProfileScreen`'s bio) all wire:
 - `onHashtagClick` → `Navigator.openHashtagSearch(tag)`, which pushes
   `HashtagKey("#$tag")` into `ExploreScreen(initialQuery = …)` — Explore's
   search prepopulated and run, the same destination a trending-tag tap lands
