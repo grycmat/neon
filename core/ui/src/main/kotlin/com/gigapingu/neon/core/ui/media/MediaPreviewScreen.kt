@@ -18,13 +18,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,6 +49,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.gigapingu.neon.core.model.MediaAttachment
+import com.gigapingu.neon.core.model.MediaType
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.media.VideoPlayer
 import kotlin.math.abs
@@ -53,10 +59,67 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MediaPreviewScreen(
-    url: String,
-    previewUrl: String? = null,
-    type: String? = null,
+    attachments: List<MediaAttachment>,
+    startIndex: Int = 0,
     modifier: Modifier = Modifier,
+) {
+    val pagerState = rememberPagerState(
+        initialPage = startIndex.coerceIn(0, attachments.lastIndex.coerceAtLeast(0)),
+    ) { attachments.size }
+
+    // Shared across pages so a dismiss-drag on the current page fades the whole
+    // screen's background; idle pages never touch this (see MediaPreviewPage).
+    var backgroundAlpha by remember { mutableFloatStateOf(1f) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = backgroundAlpha))
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+        ) { page ->
+            MediaPreviewPage(
+                attachment = attachments[page],
+                onBackgroundAlphaChange = { backgroundAlpha = it },
+            )
+        }
+
+        // Floating Close Button in top-left
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 48.dp)
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.4f))
+                .clickable { Navigator.back() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = "Close",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+/**
+ * One pager page: pinch-zoom/pan + swipe-down-to-dismiss for a single
+ * attachment. At scale == 1f a single-finger drag that's more horizontal than
+ * vertical is ceded (left unconsumed) to the enclosing [HorizontalPager] so it
+ * pages between attachments instead of being treated as a dismiss; a
+ * vertical-dominant drag keeps dismissing as before. Once zoomed in
+ * (scale > 1f) every drag is consumed here to pan the image, which naturally
+ * blocks the pager from swiping.
+ */
+@Composable
+private fun MediaPreviewPage(
+    attachment: MediaAttachment,
+    onBackgroundAlphaChange: (Float) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var scale by remember { mutableStateOf(1f) }
@@ -65,7 +128,7 @@ fun MediaPreviewScreen(
     val density = LocalDensity.current
     val dismissThreshold = remember { with(density) { 150.dp.toPx() } }
 
-    val backgroundAlpha = remember(scale) {
+    val backgroundAlpha by remember(scale) {
         derivedStateOf {
             if (scale == 1f) {
                 val distance = offset.value.getDistance()
@@ -76,12 +139,9 @@ fun MediaPreviewScreen(
             }
         }
     }
+    SideEffect { onBackgroundAlphaChange(backgroundAlpha) }
 
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = backgroundAlpha.value))
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val screenWidth = constraints.maxWidth.toFloat()
         val screenHeight = constraints.maxHeight.toFloat()
 
@@ -90,10 +150,11 @@ fun MediaPreviewScreen(
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTransformAndDismissGestures(
+                        scaleProvider = { scale },
                         onGesture = { centroid, pan, zoom ->
                             val oldScale = scale
                             val newScale = (scale * zoom).coerceIn(1f, 5f)
-                            
+
                             if (zoom != 1f) {
                                 val scaleFactor = newScale / oldScale
                                 val relativeCentroid = centroid - Offset(screenWidth / 2f, screenHeight / 2f)
@@ -136,11 +197,11 @@ fun MediaPreviewScreen(
                     )
                 }
         ) {
-            val isVideo = type == "video" || type == "gifv"
-            val isGifv = type == "gifv"
+            val isVideo = attachment.isPlayable
+            val isGifv = attachment.type == MediaType.Gifv
             if (isVideo) {
                 VideoPlayer(
-                    url = url,
+                    url = attachment.url,
                     modifier = Modifier
                         .fillMaxSize()
                         .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) },
@@ -153,10 +214,10 @@ fun MediaPreviewScreen(
                     // Start from the already-cached grid thumbnail so the image
                     // never flashes while the full-size version loads.
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(url)
-                        .placeholderMemoryCacheKey(previewUrl)
+                        .data(attachment.url)
+                        .placeholderMemoryCacheKey(attachment.preview)
                         .build(),
-                    contentDescription = "Media Preview",
+                    contentDescription = attachment.altText.ifEmpty { "Media Preview" },
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxSize()
@@ -168,29 +229,11 @@ fun MediaPreviewScreen(
                 )
             }
         }
-
-        // Floating Close Button in top-left
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 16.dp, top = 48.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.4f))
-                .clickable { Navigator.back() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Close,
-                contentDescription = "Close",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-        }
     }
 }
 
 private suspend fun PointerInputScope.detectTransformAndDismissGestures(
+    scaleProvider: () -> Float,
     onGesture: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
     onGestureEnd: () -> Unit
 ) {
@@ -198,6 +241,9 @@ private suspend fun PointerInputScope.detectTransformAndDismissGestures(
         var zoom = 1f
         var pan = Offset.Zero
         var pastTouchSlop = false
+        // Once a single-finger drag at scale 1f turns out to be more
+        // horizontal than vertical, stop consuming so the pager can swipe.
+        var cedeToPager = false
         val touchSlop = viewConfiguration.touchSlop
 
         awaitFirstDown(requireUnconsumed = false)
@@ -217,10 +263,13 @@ private suspend fun PointerInputScope.detectTransformAndDismissGestures(
 
                     if (zoomMotion > touchSlop || panMotion > touchSlop) {
                         pastTouchSlop = true
+                        if (event.changes.size == 1 && scaleProvider() == 1f && abs(pan.x) > abs(pan.y)) {
+                            cedeToPager = true
+                        }
                     }
                 }
 
-                if (pastTouchSlop) {
+                if (pastTouchSlop && !cedeToPager) {
                     val centroid = event.calculateCentroid(useCurrent = false)
                     if (zoomChange != 1f || panChange != Offset.Zero) {
                         onGesture(centroid, panChange, zoomChange)
@@ -234,6 +283,8 @@ private suspend fun PointerInputScope.detectTransformAndDismissGestures(
             }
         } while (!canceled && event.changes.any { it.pressed })
 
-        onGestureEnd()
+        if (!cedeToPager) {
+            onGestureEnd()
+        }
     }
 }

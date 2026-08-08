@@ -71,21 +71,21 @@ fun MediaGrid(
 
         Box(modifier = contentModifier) {
             when (items.size) {
-                1 -> Box(Modifier.aspectRatio(16f / 10f)) { Tile(items[0], onClick) }
+                1 -> Box(Modifier.aspectRatio(16f / 10f)) { Tile(items, 0, onClick) }
                 2 -> Row(Modifier.aspectRatio(16f / 9f), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                    Box(Modifier.weight(1f).fillMaxSize()) { Tile(items[0], onClick) }
-                    Box(Modifier.weight(1f).fillMaxSize()) { Tile(items[1], onClick) }
+                    Box(Modifier.weight(1f).fillMaxSize()) { Tile(items, 0, onClick) }
+                    Box(Modifier.weight(1f).fillMaxSize()) { Tile(items, 1, onClick) }
                 }
                 else -> Row(Modifier.aspectRatio(16f / 9f), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                    Box(Modifier.weight(1f).fillMaxSize()) { Tile(items[0], onClick) }
+                    Box(Modifier.weight(1f).fillMaxSize()) { Tile(items, 0, onClick) }
                     Column(Modifier.weight(1f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(gap)) {
-                        Box(Modifier.weight(1f).fillMaxWidth()) { Tile(items[1], onClick) }
+                        Box(Modifier.weight(1f).fillMaxWidth()) { Tile(items, 1, onClick) }
                         if (items.size == 3) {
-                            Box(Modifier.weight(1f).fillMaxWidth()) { Tile(items[2], onClick) }
+                            Box(Modifier.weight(1f).fillMaxWidth()) { Tile(items, 2, onClick) }
                         } else {
                             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                                Box(Modifier.weight(1f).fillMaxSize()) { Tile(items[2], onClick) }
-                                Box(Modifier.weight(1f).fillMaxSize()) { Tile(items[3], onClick) }
+                                Box(Modifier.weight(1f).fillMaxSize()) { Tile(items, 2, onClick) }
+                                Box(Modifier.weight(1f).fillMaxSize()) { Tile(items, 3, onClick) }
                             }
                         }
                     }
@@ -128,19 +128,21 @@ fun MediaGrid(
 }
 
 @Composable
-private fun Tile(attachment: MediaAttachment, onClick: ((MediaAttachment) -> Unit)?) {
+private fun Tile(attachments: List<MediaAttachment>, index: Int, onClick: ((MediaAttachment) -> Unit)?) {
     val palette = NeonTheme.palette
+    val attachment = attachments[index]
 
     // Video/gifv attachments are never played inline in the feed — a live
     // ExoPlayer per visible tile (AndroidView-hosted SurfaceView) is a severe
     // Compose LazyColumn jank source, and neither the official Mastodon app
     // nor Tusky autoplay in the timeline either. Tapping opens the existing
-    // fullscreen player (Navigator.openMediaPreview / MediaPreviewScreen).
+    // fullscreen player (Navigator.openMediaPreview / MediaPreviewScreen), which
+    // swipes between all of this status' attachments starting at the tapped one.
     val clickModifier = if (onClick != null) {
         Modifier.clickable { onClick(attachment) }
     } else {
         Modifier.clickable {
-            Navigator.openMediaPreview(attachment.url, attachment.preview.ifEmpty { null }, attachment.rawType)
+            Navigator.openMediaPreview(attachments, index)
         }
     }
 

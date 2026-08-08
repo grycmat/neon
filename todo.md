@@ -60,7 +60,7 @@ to that case instead of rebuilding the strip.
 
 ---
 
-## 3. Swipe between media items in the full-screen preview
+## 3. Swipe between media items in the full-screen preview — DONE
 
 Instead of opening → closing → opening the next photo/video individually in a
 timeline post or thread, support swiping left/right between the items of the

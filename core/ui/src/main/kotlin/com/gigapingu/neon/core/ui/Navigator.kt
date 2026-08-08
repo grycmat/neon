@@ -2,6 +2,7 @@ package com.gigapingu.neon.core.ui
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.gigapingu.neon.core.model.MediaAttachment
 import kotlinx.serialization.Serializable
 
 /**
@@ -51,7 +52,7 @@ data object SettingsKey : NavKey
 data object ManageFollowedHashtagsKey : NavKey
 
 @Serializable
-data class MediaPreviewKey(val url: String, val previewUrl: String? = null, val type: String? = null) : NavKey
+data class MediaPreviewKey(val attachments: List<MediaAttachment>, val startIndex: Int = 0) : NavKey
 
 @Serializable
 data class HashtagTimelineKey(val hashtag: String) : NavKey
@@ -207,9 +208,10 @@ object Navigator {
         backStack?.add(BlockedAccountsKey)
     }
 
-    /** [previewUrl] is the already-cached thumbnail shown while [url] loads. */
-    fun openMediaPreview(url: String, previewUrl: String? = null, type: String? = null) {
-        backStack?.add(MediaPreviewKey(url, previewUrl, type))
+    /** [startIndex] is which of [attachments] to open on, for a status with multiple media items. */
+    fun openMediaPreview(attachments: List<MediaAttachment>, startIndex: Int = 0) {
+        if (attachments.isEmpty()) return
+        backStack?.add(MediaPreviewKey(attachments, startIndex.coerceIn(0, attachments.size - 1)))
     }
 
     fun back() {

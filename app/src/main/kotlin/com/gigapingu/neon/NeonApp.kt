@@ -224,7 +224,7 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                     HashtagTimelineScreen(hashtag = key.hashtag)
                 }
                 entry<MediaPreviewKey> { key ->
-                    MediaPreviewScreen(url = key.url, previewUrl = key.previewUrl, type = key.type)
+                    MediaPreviewScreen(attachments = key.attachments, startIndex = key.startIndex)
                 }
             },
         )

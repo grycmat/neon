@@ -321,6 +321,6 @@ private fun AsyncListEmptyPreview() {
 @Composable
 private fun MediaPreviewScreenPreview() {
     PreviewHarness {
-        MediaPreviewScreen(url = "")
+        MediaPreviewScreen(attachments = listOf(PreviewFixtures.attachment("1")))
     }
 }
