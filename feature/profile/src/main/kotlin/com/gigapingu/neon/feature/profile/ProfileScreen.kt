@@ -3,6 +3,7 @@ package com.gigapingu.neon.feature.profile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.gigapingu.neon.core.data.AsyncPhase
 import com.gigapingu.neon.core.data.AsyncState
 import com.gigapingu.neon.core.designsystem.component.EmojiText
@@ -65,9 +68,11 @@ import com.gigapingu.neon.core.designsystem.component.GradientButton
 import com.gigapingu.neon.core.designsystem.component.HtmlText
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
+import com.gigapingu.neon.core.designsystem.theme.NeonDims
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.compactCount
 import com.gigapingu.neon.core.model.FeaturedTag
+import com.gigapingu.neon.core.model.MediaAttachment
 import com.gigapingu.neon.core.model.Relationship
 import com.gigapingu.neon.core.ui.AsyncList
 import com.gigapingu.neon.core.ui.Navigator
@@ -336,14 +341,78 @@ private fun ProfileHeader(
     val following = rel?.following == true
     val requested = rel?.requested == true
 
+    val bannerHeight = 130.dp
+    val avatarSize = 84.dp
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(bannerHeight + avatarSize / 2),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(bannerHeight)
+                .clip(RoundedCornerShape(NeonDims.RadiusCard))
+                .then(if (account.hasCustomHeader) Modifier else Modifier.background(palette.gradient))
+                .then(
+                    if (account.hasCustomHeader) {
+                        Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) {
+                            Navigator.openMediaPreview(
+                                listOf(MediaAttachment(id = "header", rawType = "image", url = account.header)),
+                            )
+                        }
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
+            if (account.hasCustomHeader) {
+                AsyncImage(
+                    model = account.header,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        NeonAvatar(
+            account = account,
+            size = avatarSize,
+            ring = true,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 18.dp)
+                .then(
+                    if (account.avatar.isNotBlank()) {
+                        Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) {
+                            Navigator.openMediaPreview(
+                                listOf(MediaAttachment(id = "avatar", rawType = "image", url = account.avatar)),
+                            )
+                        }
+                    } else {
+                        Modifier
+                    },
+                ),
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(18.dp),
     ) {
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                NeonAvatar(account = account, size = 72.dp, ring = true)
-                Spacer(Modifier.weight(1f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
                 when {
                     uiState.isSelf -> GlassButton(
                         label = "Edit profile",
@@ -605,7 +674,7 @@ private fun ProfileHeaderPreview() {
     }
 }
 
-@Preview(name = "Profile header — self + following", showBackground = true, heightDp = 760)
+@Preview(name = "Profile header — self + following", showBackground = true, heightDp = 1100)
 @Composable
 private fun ProfileHeaderVariantsPreview() {
     PreviewHarness {
@@ -620,6 +689,15 @@ private fun ProfileHeaderVariantsPreview() {
                 uiState = ProfileUiState(
                     account = PreviewFixtures.account2,
                     relationship = Relationship(id = "2", following = true),
+                ),
+                onToggleFollow = {},
+                onToggleMute = {},
+                onToggleBlock = {},
+            )
+            ProfileHeader(
+                uiState = ProfileUiState(
+                    account = PreviewFixtures.account.copy(header = "https://picsum.photos/id/1015/800/400"),
+                    isSelf = true,
                 ),
                 onToggleFollow = {},
                 onToggleMute = {},

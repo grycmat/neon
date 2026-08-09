@@ -580,10 +580,6 @@ private fun TopAppBar(
                         style = type.headlineMedium,
                         color = palette.text,
                     )
-                    if (p == 1) {
-                        Spacer(Modifier.width(8.dp))
-                        NeonLabel("Live")
-                    }
                     if (p == 0 && instanceHost != null) {
                         Spacer(Modifier.width(8.dp))
                         NeonLabel(

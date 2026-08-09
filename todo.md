@@ -90,21 +90,6 @@ Steps:
 
 ---
 
-## 4. Alt text for media
-
-Description as filed: let the user add an alt/description message to
-attached media.
-
-Current state: **this already exists.** `MediaStrip` shows an "ALT" chip per
-attachment (cyan when filled, dim when empty) that opens `AltTextSheet`
-(`ComposeWidgets.kt:166`), a bottom sheet with a text field for "Describe this
-image", wired through `onEditAlt` back to `ComposeViewModel`. Re-verify in-app
-before treating this as open — if the gap is elsewhere (e.g. editing alt text
-isn't possible when *editing* an existing post, only when composing new),
-narrow the task to that specific gap.
-
----
-
 ## 5. Translations (Polish first) + locale-aware default language
 
 Add Polish as a translated UI language, and default the app's language to
@@ -187,7 +172,7 @@ Steps:
 
 ---
 
-## 8. Background image support
+## 8. Background image support — DONE
 
 Let the user set a custom background image behind the glassy UI, instead of
 only the flat `palette.bg` + accent orbs.
@@ -249,7 +234,7 @@ versions"). Open questions to resolve first:
 
 ---
 
-## 10. Full-screen preview of profile photo (avatar)
+## 10. Full-screen preview of profile photo (avatar) — DONE
 
 Tapping a profile's avatar should open it full-screen, same as tapping status
 media does today.
@@ -299,7 +284,7 @@ Steps:
 
 ---
 
-## 12. Remove "Live" label from the Notifications tab app bar
+## 12. Remove "Live" label from the Notifications tab app bar — DONE
 
 Small cleanup: drop the "Live" pill shown next to the "Notifications" title
 in the shared top app bar.
@@ -318,7 +303,7 @@ Home tab, so the import stays).
 
 ---
 
-## 13. Rename "post" to "toot" in UI copy
+## 13. Rename "post" to "toot" in UI copy — DONE
 
 Use Mastodon's original "toot" terminology instead of "post" throughout
 user-facing strings (compose button, FAB, action labels, etc.), matching the

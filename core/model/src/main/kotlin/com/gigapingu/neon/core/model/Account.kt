@@ -31,6 +31,7 @@ data class Account(
 ) {
     val displayNameOrUsername: String get() = displayName.ifEmpty { username }
     val fullHandle: String get() = "@$acct"
+    val hasCustomHeader: Boolean get() = header.isNotBlank() && !header.endsWith("missing.png")
 }
 
 /** Self-only preferences embedded in Account.source. */
