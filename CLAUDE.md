@@ -165,7 +165,6 @@ via FCM. Pieces:
     entry points can fire for the same message; that's harmless since
     `PushMessageHandler` always resolves the same `notification_id` and
     `NotificationManagerCompat.notify()` on a duplicate id just overwrites in place.
-    Full investigation writeup: `notification_report.md`.
 - **Sync loop**: `ShellViewModel.syncPushRegistration(hasPermission)` is the single
   entry point, called from a `MainActivity` `LaunchedEffect` keyed on auth status,
   the `notificationsEnabled` setting, and `POST_NOTIFICATIONS` permission (re-checked
@@ -407,7 +406,23 @@ Material You (dynamic color, Android 12+) is opt-in and off by default:
   dynamic color too. `NeonAccents` itself is referenced only from `NeonPalette.kt` now.
 - Themed launcher icon (monochrome adaptive-icon layer, `app/src/main/res/mipmap-anydpi-v26/`) is
   the other half of Material You and needs no Compose wiring — it's handled entirely by the OS.
-- Full design rationale and implementation notes: `material_you.md`.
+
+### Profile header photo & full-screen preview
+
+`ProfileHeader` (`feature/profile/.../ProfileScreen.kt`, shared by both the phone and
+big-screen layouts) renders a cover banner behind the avatar from the account's Mastodon
+`header` field via `AsyncImage`, falling back to `palette.gradient` (the same brand brush used
+elsewhere) when `Account.hasCustomHeader` is false — true only when `header` is non-empty and
+isn't Mastodon's default `.../headers/original/missing.png` placeholder. The avatar (84dp here,
+vs. 72dp elsewhere) overlaps the banner's bottom edge.
+
+Both photos are tappable into the existing full-screen media viewer (`Navigator.openMediaPreview`
+/ `MediaPreviewScreen`, see Known caveats below) via a single-item `MediaAttachment` built ad hoc
+at the call site (`id = "avatar"`/`"header"`, `rawType = "image"`), gated on the photo actually
+being set (`account.avatar.isNotBlank()` / `hasCustomHeader`) so a gradient/no-photo state isn't
+tappable. This wiring lives only in `ProfileHeader` — `NeonAvatar` itself gained no `onClick`
+param, so every other avatar in the app (feed cards, notifications, composer, thread, messages,
+quote cards, edit-profile) stays exactly as it was.
 
 ### Compose previews & stateless screens
 
