@@ -8,9 +8,6 @@ the referenced files again before starting — this snapshot is from 2026-08-08.
 
 ## 1. Multi-account support
 
-Let a user log into more than one Mastodon account and switch between them
-without re-authenticating each time.
-
 Current state: `AuthRepository` (`core/data/AuthRepository.kt`) stores exactly
 one session in a single `preferencesDataStore(name = "neon_credentials")`, and
 `ApiClient` is a singleton bound to one instance host + token. This is a
@@ -44,53 +41,7 @@ Steps:
 
 ---
 
-## 2. Preview of uploaded photos in the composer
-
-Description as filed: show a thumbnail preview of attached photos when
-composing a new toot.
-
-Current state: **this already exists.** `MediaStrip` in
-`feature/composer/ComposeWidgets.kt:62` renders a 92dp thumbnail
-(`AsyncImage` from the attachment's `preview` URL) per attached item, with a
-play-icon overlay for video and a remove (X) button, and it's wired into
-`ComposeScreen.kt:234`. Re-verify against current behavior in-app before
-treating this as still open — if there's a specific case that doesn't show a
-preview (e.g. right after picking, before upload finishes), narrow the task
-to that case instead of rebuilding the strip.
-
----
-
-## 3. Swipe between media items in the full-screen preview — DONE
-
-Instead of opening → closing → opening the next photo/video individually in a
-timeline post or thread, support swiping left/right between the items of the
-same status while already in full-screen preview.
-
-Current state: `Navigator.openMediaPreview(url, previewUrl, type)`
-(`core/ui/Navigator.kt:211`) pushes a single-item `MediaPreviewKey(url,
-previewUrl, type)`, and `MediaPreviewScreen` (`core/ui/media/
-MediaPreviewScreen.kt`) renders exactly one media item with pinch-zoom/pan and
-swipe-down-to-dismiss — there's no concept of a sibling list or index.
-
-Steps:
-- Extend `MediaPreviewKey` to carry the full list of attachments for the
-  status plus a starting index, instead of a single url/previewUrl/type.
-- Update `Navigator.openMediaPreview` call sites (`MediaGrid` in `core/ui`,
-  any other fallback callers) to pass the full attachment list + tapped
-  index.
-- Wrap `MediaPreviewScreen`'s current content in a horizontal pager
-  (`HorizontalPager`), one page per attachment, keeping the existing
-  pinch/zoom/pan/dismiss gesture logic per-page. Watch for gesture conflicts
-  between the pager's horizontal swipe and the existing pan/zoom
-  `pointerInput` handling — zoomed-in pages likely need to disable pager
-  swipe (same pattern most photo viewers use: only swipe pages at scale ==
-  1f).
-- Confirm swipe-down-to-dismiss still works per-page and doesn't fight the
-  pager's own gesture detection.
-
----
-
-## 5. Translations (Polish first) + locale-aware default language
+## 2. Translations (Polish first) + locale-aware default language
 
 Add Polish as a translated UI language, and default the app's language to
 match system language (Polish if the device is set to Polish, English
@@ -117,7 +68,7 @@ Steps:
 
 ---
 
-## 6. Fix background gradient blending
+## 3. Fix background gradient blending
 
 The three blurred accent orbs in `NeonBackground` don't blend smoothly into
 the base background color — visible seams/edges instead of a smooth fade.
@@ -142,7 +93,7 @@ worth checking:
 
 ---
 
-## 7. Fix Follow button width on narrow screens
+## 4. Fix Follow button width on narrow screens
 
 In `ProfileScreen`, the Follow / Following / Requested button breaks its
 inner text on narrow devices instead of fitting on one line.
@@ -172,38 +123,7 @@ Steps:
 
 ---
 
-## 8. Background image support — DONE
-
-Let the user set a custom background image behind the glassy UI, instead of
-only the flat `palette.bg` + accent orbs.
-
-Current state: `NeonBackground` always draws `palette.bg` as a flat
-`Modifier.background(...)`, with no image layer. No settings entry exists for
-this yet (`SettingsRepository` today only has things like `dynamicColorEnabled`
-— check that file for the current shape before adding to it).
-
-Steps:
-- Decide the source: a bundled set of preset background images, or a
-  user-picked photo (`ActivityResultContracts.PickVisualMedia`, same
-  mechanism the composer's media picker likely already uses — check
-  `feature/composer` for the existing picker call before adding a second
-  one).
-- Persist the choice (preset id, or a copied content-uri) via
-  `SettingsRepository`/DataStore, same pattern as `dynamicColorEnabled`.
-- In `NeonBackground`, replace/augment the flat `background(palette.bg)` with
-  an `Image`/`AsyncImage` layer when a background image is set, keeping the
-  glass surfaces' blur/translucency working on top of it — glass components
-  in `core/designsystem` rely on there being *something* visible behind them
-  to blur, so verify `Glass*` components still read correctly over a busy
-  photo (may need a dimming/scrim layer for contrast, especially for light
-  theme).
-- Respect the existing dark/light theme split (`NeonPalette.Dark`/`.Light`) —
-  decide whether a custom background image is theme-independent or swaps per
-  theme.
-
----
-
-## 9. UnifiedPush support for non-Google builds
+## 5. UnifiedPush support for non-Google builds
 
 Support push notifications without Google/FCM, for users on de-Googled
 devices or F-Droid-style builds, via UnifiedPush.
@@ -234,29 +154,7 @@ versions"). Open questions to resolve first:
 
 ---
 
-## 10. Full-screen preview of profile photo (avatar) — DONE
-
-Tapping a profile's avatar should open it full-screen, same as tapping status
-media does today.
-
-Current state: `MediaPreviewScreen` + `Navigator.openMediaPreview` already
-provide a generic full-screen image viewer (pinch-zoom, pan,
-swipe-down-to-dismiss) — it just isn't wired up from the avatar in
-`ProfileScreen`.
-
-Steps:
-- In `ProfileScreen.kt`, find the avatar composable (`NeonAvatar` usage near
-  the header) and add a tap handler that calls
-  `Navigator.openMediaPreview(account.avatar, type = "image")` (check the
-  `Account` model in `core/model` for the exact full-resolution avatar field
-  name vs. the thumbnail one — Mastodon accounts expose both `avatar` and
-  `avatar_static`).
-- This is a small, self-contained task — no new screen needed, just reusing
-  the existing preview infra, similar to how status media already opens it.
-
----
-
-## 11. "Suggest a review" prompt
+## 6. "Suggest a review" prompt
 
 Periodically prompt happy/engaged users to leave a Play Store review.
 
@@ -283,39 +181,3 @@ Steps:
   available.
 
 ---
-
-## 12. Remove "Live" label from the Notifications tab app bar — DONE
-
-Small cleanup: drop the "Live" pill shown next to the "Notifications" title
-in the shared top app bar.
-
-Current state: `app/HomeShell.kt:583-586`:
-```kotlin
-if (p == 1) {
-    Spacer(Modifier.width(8.dp))
-    NeonLabel("Live")
-}
-```
-Delete this `if` block (both the `Spacer` and `NeonLabel`). Check whether
-`NeonLabel` is still used elsewhere in `HomeShell.kt` before removing its
-import (it's also used a few lines below for the instance-host pill on the
-Home tab, so the import stays).
-
----
-
-## 13. Rename "post" to "toot" in UI copy — DONE
-
-Use Mastodon's original "toot" terminology instead of "post" throughout
-user-facing strings (compose button, FAB, action labels, etc.), matching the
-Flutter sibling app's tone if it already does this.
-
-Steps:
-- Grep the app for user-facing occurrences of "Post"/"post" as a noun/verb
-  referring to a status (compose button label, FAB content description,
-  success toasts, etc.) — careful not to rename unrelated uses (e.g. HTTP
-  POST, "posted X ago" timestamps might read fine either way, Kotlin
-  `postValue`-style code isn't UI copy).
-- If tackled after task 5 (i18n string extraction), this becomes a
-  straightforward string-resource edit; if done first, it's inline string
-  edits across composables that will need to be re-touched during extraction
-  anyway — doing 5 first avoids doing this copy pass twice.

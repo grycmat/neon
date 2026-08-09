@@ -326,7 +326,7 @@ fun ComposeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     GradientButton(
-                        label = "Post",
+                        label = "Toot",
                         busy = uiState.posting,
                         modifier = Modifier.weight(1f),
                         onClick = if (uiState.canPost) viewModel::post else null,
