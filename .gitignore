@@ -62,9 +62,13 @@ app.*.map.json
 **/android/captures/
 **/android/gradlew
 **/android/gradlew.bat
+local.properties
 **/android/local.properties
+key.properties
 **/android/key.properties
 **/android/**/GeneratedPluginRegistrant.java
+*.jks
+*.keystore
 /android/app/debug
 /android/app/profile
 /android/app/release
