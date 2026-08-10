@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
@@ -91,6 +93,7 @@ fun ThreadScreen(
 @Composable
 private fun PhoneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
     val palette = NeonTheme.palette
+    val listState = rememberLazyListState()
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         ThreadTopBar()
         val status = uiState.status
@@ -100,12 +103,14 @@ private fun PhoneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
             }
             return@Column
         }
+        ScrollToFocused(uiState, listState)
         PullToRefreshBox(
             isRefreshing = uiState.refreshing,
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
         ) {
             LazyColumn(
+                state = listState,
                 contentPadding = PaddingValues(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 40.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -121,6 +126,7 @@ private fun PhoneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
 @Composable
 private fun TwoPaneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
     val palette = NeonTheme.palette
+    val listState = rememberLazyListState()
     Row(Modifier.fillMaxSize().statusBarsPadding()) {
         Column(Modifier.width(hingePaneWidth()).fillMaxHeight()) {
             ThreadTopBar()
@@ -130,12 +136,14 @@ private fun TwoPaneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
                     CircularProgressIndicator(color = palette.cyan)
                 }
             } else {
+                ScrollToFocused(uiState, listState)
                 PullToRefreshBox(
                     isRefreshing = uiState.refreshing,
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 40.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
@@ -186,6 +194,7 @@ private fun TwoPaneThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
 @Composable
 private fun EmbeddedThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
     val palette = NeonTheme.palette
+    val listState = rememberLazyListState()
     Column(
         Modifier
             .fillMaxSize()
@@ -202,12 +211,14 @@ private fun EmbeddedThread(uiState: ThreadUiState, onRefresh: () -> Unit) {
             }
             return@Column
         }
+        ScrollToFocused(uiState, listState)
         PullToRefreshBox(
             isRefreshing = uiState.refreshing,
             onRefresh = onRefresh,
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) {
             LazyColumn(
+                state = listState,
                 contentPadding = PaddingValues(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 24.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -232,6 +243,22 @@ private fun ThreadTopBar() {
         )
         Spacer(Modifier.width(10.dp))
         Text("Thread", style = NeonTheme.type.headlineMedium, color = NeonTheme.palette.text)
+    }
+}
+
+/**
+ * Jumps to the focused status once it's loaded, so a thread opened from a mid-discussion tap
+ * doesn't land on the ancestors instead. Index must match [focusItems]' emission order exactly.
+ * Keyed on [ThreadUiState.loading] (not the whole state) so later in-place patches from
+ * favourite/boost/etc. don't re-trigger the jump and fight the user's own scrolling.
+ */
+@Composable
+private fun ScrollToFocused(uiState: ThreadUiState, listState: LazyListState) {
+    LaunchedEffect(uiState.loading) {
+        val ancestors = uiState.context?.ancestors.orEmpty()
+        if (!uiState.loading && uiState.status != null && ancestors.isNotEmpty()) {
+            listState.scrollToItem(ancestors.size + 1)
+        }
     }
 }
 
