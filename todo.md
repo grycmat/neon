@@ -158,7 +158,7 @@ versions"). Open questions to resolve first:
 
 Periodically prompt happy/engaged users to leave a Play Store review.
 
-Current state: no in-app review integration exists yet. `app/update/
+Current state: no in-app review integration exists yet. `app/update/  
 AppUpdateController.kt` is a close structural analog worth mirroring — a
 Hilt `@Singleton` wrapping a Play-services Task API, gated on install source
 (`installingPackageName == "com.android.vending"`), called from a
@@ -181,3 +181,159 @@ Steps:
   available.
 
 ---
+
+## 7. Status tap opens thread from the top instead of scrolling to the tapped status
+
+Reported: tapping a status in a timeline/list always opens the thread
+scrolled to its beginning (ancestors), not to the specific status that was
+tapped. In any longer discussion this means scrolling to the bottom of the
+list every time.
+
+Current state: `Navigator.openThread(statusId)`
+(`core/ui/.../Navigator.kt:122-125`) pushes `ThreadKey(statusId)` with only
+the target status id, carrying no "scroll to me" signal. `ThreadScreen.kt`'s
+`PhoneThread` (:108-116), `TwoPaneThread` (:138-144), and `EmbeddedThread`
+(:210-217) each build a plain `LazyColumn` with an unremembered default
+`LazyListState`. `focusItems` (:239-265) always emits ancestors first, then
+the focused `FocusedStatus`, and nothing in the file calls
+`scrollToItem`/`animateScrollToItem` to jump to the focused entry.
+
+Steps:
+- Give each of the three thread layouts (`PhoneThread`, `TwoPaneThread`,
+  `EmbeddedThread`) a `rememberLazyListState()` and, once `focusItems`
+  resolves the index of the focused status, call
+  `listState.scrollToItem(focusedIndex)` (or `animateScrollToItem`) on first
+  composition/load, similar to how a "scroll to top" is already done
+  elsewhere (`Navigator.scrollToTopHandler`).
+- Skip the scroll when there are no ancestors (focused status is already
+  first) to avoid an unnecessary animation.
+
+---
+
+## 8. Alt text is never shown to sighted users
+
+Reported: no way to see alt text on photos in a status.
+
+Current state: `MediaAttachment.altText` is only ever passed as Coil's
+`contentDescription` (`MediaGrid.kt:158` in `Tile`, and
+`MediaPreviewScreen.kt:220`), which is screen-reader-only. There's no visible
+"ALT" badge/chip or tap-to-reveal overlay in either file.
+
+Steps:
+- In `MediaGrid.kt`'s `Tile` and in `MediaPreviewScreen.kt`, when
+  `attachment.altText` is non-blank, render a small "ALT" badge (similar
+  treatment to the existing sensitive-content overlay in
+  `MediaGrid.kt:96-126`) that on tap shows the full alt text (e.g. a bottom
+  sheet/dialog), mirroring how Mastodon's own official apps expose it.
+
+---
+
+## 9. Poll option limit ignores the instance's configured maximum
+
+Reported: the server-side poll option limit isn't respected (e.g. the
+reporter's instance allows 6, but Neon caps at 4).
+
+Current state: `ComposeWidgets.kt:311` hardcodes
+`if (poll.options.size < 4)` to gate showing "Add option", a plain literal,
+not read from anywhere. `PollDraftState` (`ComposeViewModel.kt:36-40`) has no
+max-options field, and `core/model/.../Instance.kt` has no poll-limits fields
+at all; `ComposeViewModel.init` only fetches `maxStatusCharacters` (:86),
+never `configuration.polls.max_options` from `/api/v1/instance`.
+
+Steps:
+- Add `maxOptions` (and while at it, `minExpiration`/`maxExpiration` if
+  useful) to the `Instance` model's poll configuration, parsed from
+  `configuration.polls.max_options`.
+- Fetch it alongside `maxStatusCharacters` in `ComposeViewModel.init` and
+  thread it into `PollDraftState`.
+- Replace the hardcoded `4` in `ComposeWidgets.kt:311` with the fetched
+  limit, falling back to Mastodon's documented default (4) if the instance
+  doesn't report one.
+
+---
+
+## 10. Status header: name/handle truncate illegibly on one line, and the timestamp shifts position
+
+Reported: display name and handle are packed onto a single line and both get
+cut off so short that neither is readable; separately, the "time ago" text
+doesn't stay in a fixed spot.
+
+Current state: `StatusCard.kt:142-186` lays out display name, handle, and
+timestamp all in one `Row`: `EmojiText` display name (:151-159, `maxLines=1`,
+`weight(1f, fill=false)`), handle `Text` (:161-168, same weighting), a
+flexible `Spacer(Modifier.weight(1f))` (:169), then the relative timestamp
+(:170-174) and optional "edited" suffix (:175-185). Because name and handle
+share weighted space with `fill=false`, their rendered width, and therefore
+where the timestamp starts, depends on how long each is, so the timestamp's
+horizontal position shifts row to row. `ThreadScreen.kt:396-410`'s
+`FocusedStatus` already uses a two-line `Column` for name/handle (without a
+timestamp in that row), showing the alternate layout exists elsewhere in the
+codebase.
+
+Steps:
+- Restructure `StatusCard.kt`'s header (:142-186) into two lines: display
+  name on the first line, handle on the second (mirroring `FocusedStatus`'s
+  `Column` approach), with the timestamp pinned to a fixed position (e.g.
+  top-right of the first line) so it no longer moves based on name/handle
+  length.
+- Check `NotificationRow` (`feature/notifications/.../NotificationsScreen.kt`)
+  for the same single-line truncation, since the user's screenshot for this
+  was from the notifications list.
+
+---
+
+## 11. Media upload error handling: verify against report of silent failure
+
+Reported: attaching a photo/video that exceeds the server's size limit shows
+no error; the "uploading" indicator just disappears and the item vanishes
+from the list.
+
+Current state: this doesn't match what the code does today.
+`ComposeViewModel.kt:230-247` (`pickMedia`) wraps each upload in
+`try`/`catch`, and on failure emits `_errors.tryEmit("Upload failed:
+${e.message}")` (:242), always resetting `uploading` in `finally` (:244);
+`ApiClient.kt:113-145` throws `ApiException` with the server's
+`error`/`error_description` on non-2xx (e.g. 413/422); `ComposeScreen.kt:122`
+shows `errors` as a Snackbar. A rejected file is never added to `state.media`
+in the first place (only added after a successful upload, :238-239), so it
+wouldn't visually "appear then disappear", it just never appears, with a
+Snackbar explaining why.
+
+Steps:
+- Reproduce on-device against the specific instance/limit mentioned before
+  changing anything, the error path already looks wired, so the report may
+  reflect an older build, a Snackbar that's easy to miss, or a specific
+  server response shape that isn't being classified as an error.
+- One real gap worth fixing regardless: in `pickMedia`'s
+  `uris.take(...).forEach` (:236), if one file in a multi-select batch
+  throws, the `forEach` aborts and any remaining files in that batch are
+  silently never attempted (only the failing file's error is shown).
+  Consider catching per-file instead of aborting the whole batch, so one
+  oversized file doesn't also drop the others silently.
+
+---
+
+## 12. Notification dismiss ("X") button doesn't visibly remove the row
+
+Reported: notifications have an X on the right, seemingly for dismissal, but
+it doesn't appear to do anything.
+
+Current state: it is wired to a real call, not a no-op:
+`NotificationsScreen.kt:108-113` passes
+`onDismiss = { viewModel.dismiss(notification.id) }`, the `IconButton`/
+`Icons.Rounded.Close` at :276-288 invokes it, `NotificationsViewModel.kt:78-82`
+calls `NotificationRepository.dismiss(id)`
+(`core/data/.../NotificationRepository.kt:126`), which hits the real API.
+However, `dismiss()` doesn't appear to optimistically remove the item from
+the in-memory list or trigger a refetch after success, which would explain
+the "nothing happens" perception even though the server-side call succeeds.
+
+Steps:
+- After a successful `NotificationRepository.dismiss(id)`, patch the
+  cached/in-memory notification list to remove that entry immediately
+  (optimistic update), following the same direct-patch pattern used
+  elsewhere (`patchStatusList`/`StatusListPatch.kt`) rather than waiting for
+  a future refresh.
+
+---
+
