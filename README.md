@@ -23,14 +23,10 @@ with Mastodon gGmbH.
 
 <p align="center">
   <img src="docs/foldable/2.jpg" width="49%" alt="Home timeline, two-column list-detail" />
-  <img src="docs/foldable/3.jpg" width="49%" alt="Notifications with thread pane" />
-</p>
-<p align="center">
   <img src="docs/foldable/4.jpg" width="49%" alt="Explore split at the hinge" />
-  <img src="docs/foldable/5.jpg" width="49%" alt="Profile split at the hinge" />
 </p>
 <p align="center">
-  <img src="docs/foldable/1.jpg" width="49%" alt="Home timeline with thread pane" />
+  <img src="docs/foldable/5.jpg" width="49%" alt="Profile split at the hinge" />
   <img src="docs/foldable/6.jpg" width="49%" alt="Composer as a centered dialog" />
 </p>
 
