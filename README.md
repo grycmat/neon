@@ -4,7 +4,13 @@ An independent, unofficial Mastodon client — not developed by or affiliated
 with Mastodon gGmbH.
 
 <p align="center">
-  <img src="docs/playstore-feature-graphic-1024x500.png" width="100%" alt="Neon for Mastodon" />
+  <a href="https://play.google.com/store/apps/details?id=com.gigapingu.neon">
+    <img src="docs/playstore-feature-graphic-1024x500.png" width="100%" alt="Neon for Mastodon" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.gigapingu.neon">Get it on Google Play</a>
 </p>
 
 ## Screenshots
