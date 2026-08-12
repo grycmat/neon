@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.TimelineKind
-import com.gigapingu.neon.core.designsystem.theme.NeonDims
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncGrid
 import com.gigapingu.neon.core.ui.AsyncList
@@ -50,7 +50,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
-import com.gigapingu.neon.core.designsystem.component.GlassButton
 import com.gigapingu.neon.core.ui.Navigator
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -70,7 +69,6 @@ fun TimelineScreen(
     val palette = NeonTheme.palette
     val kind by viewModel.kind.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val newTootsCount by viewModel.currentNewTootsCount.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
     val listState = rememberLazyListState()
     val gridState = rememberLazyStaggeredGridState()
@@ -81,19 +79,33 @@ fun TimelineScreen(
     var pillsHeightPx by remember { mutableIntStateOf(0) }
     val pillsHeight = with(LocalDensity.current) { pillsHeightPx.toDp() }
 
+    // Hidden while scrolling down through the list, shown again on scroll-up
+    // or once back at the top. Reset per-kind so switching tabs always shows it.
+    var pillsVisible by remember(kind) { mutableStateOf(true) }
+    var lastScrollPosition by remember(kind) { mutableStateOf(0 to 0) }
+
     LaunchedEffect(listState, gridState, kind, gridLayout) {
         snapshotFlow {
             if (gridLayout) {
-                gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
+                gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
             } else {
-                listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
             }
         }
             .distinctUntilChanged()
-            .collect { isAtTop ->
+            .collect { (index, offset) ->
+                val isAtTop = index == 0 && offset == 0
                 if (isAtTop) {
                     viewModel.clearNewToots(kind)
+                    pillsVisible = true
+                } else {
+                    val (lastIndex, lastOffset) = lastScrollPosition
+                    val scrolledDown = index > lastIndex || (index == lastIndex && offset > lastOffset)
+                    val scrolledUp = index < lastIndex || (index == lastIndex && offset < lastOffset)
+                    if (scrolledDown) pillsVisible = false
+                    if (scrolledUp) pillsVisible = true
                 }
+                lastScrollPosition = index to offset
             }
     }
 
@@ -156,50 +168,34 @@ fun TimelineScreen(
                 }
             }
         }
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .background(palette.surfaceSolid.copy(alpha = .80f))
-                .onSizeChanged { pillsHeightPx = it.height }
-                .padding(top = shellPadding.calculateTopPadding())
-                .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            TimelineKind.entries.forEach { entry ->
-                SegmentPill(
-                    label = entry.label,
-                    active = entry == kind,
-                    onClick = { viewModel.switchTo(entry) },
-                )
-            }
-        }
-
         AnimatedVisibility(
-            visible = newTootsCount > 0,
+            visible = pillsVisible,
             enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = pillsHeight + 8.dp),
+                .fillMaxWidth(),
         ) {
-            Box(
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(NeonDims.RadiusButton))
-                    .background(palette.surfaceSolid.copy(alpha = .92f)),
+                    .fillMaxWidth()
+                    .background(palette.surfaceSolid.copy(alpha = .80f))
+                    .onSizeChanged { pillsHeightPx = it.height }
+                    .padding(top = shellPadding.calculateTopPadding())
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                GlassButton(
-                    label = "↑ $newTootsCount new toots",
-                    tinted = true,
-                    onClick = {
-                        coroutineScope.launch {
-                            if (gridLayout) gridState.animateScrollToItem(0) else listState.animateScrollToItem(0)
-                        }
-                        viewModel.clearNewToots(kind)
-                    }
-                )
+                TimelineKind.entries.forEach { entry ->
+                    SegmentPill(
+                        label = entry.label,
+                        active = entry == kind,
+                        onClick = { viewModel.switchTo(entry) },
+                    )
+                }
             }
         }
+
+        // "N new toots" pill temporarily removed — see git history to restore.
     }
 }
 
