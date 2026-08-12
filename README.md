@@ -3,6 +3,9 @@
 Kotlin + Jetpack Compose port of the Flutter app (`../flutter`), matching the
 glassy pink→purple→cyan design (`Neon Mastodon Client.html`).
 
+An independent, unofficial Mastodon client — not developed by or affiliated
+with Mastodon gGmbH.
+
 ## Stack
 
 - **Kotlin 2.2**, JVM 17, AGP 8.11, compileSdk 36 / minSdk 26
@@ -141,4 +144,14 @@ Phone layouts remain untouched below the threshold.
   size*. Keep that in mind before adding rows or raising the avatar size.
 - Both streaming (live `user` WebSocket while foregrounded) and push notifications
   **are** implemented, ahead of the Flutter sibling.
+
+## Contributing
+
+Issues and pull requests are welcome. There's no automated test suite yet, so
+please check that `./gradlew build` succeeds and exercise the change on-device
+before opening a PR.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
