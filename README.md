@@ -1,10 +1,38 @@
 # Neon — Native Android Mastodon Client
 
-Kotlin + Jetpack Compose port of the Flutter app (`../flutter`), matching the
-glassy pink→purple→cyan design (`Neon Mastodon Client.html`).
-
 An independent, unofficial Mastodon client — not developed by or affiliated
 with Mastodon gGmbH.
+
+<p align="center">
+  <img src="docs/playstore-feature-graphic-1024x500.png" width="100%" alt="Neon for Mastodon" />
+</p>
+
+## Screenshots
+
+### Phone
+
+<p align="center">
+  <img src="docs/smartphone/4.png" width="19%" alt="Login screen" />
+  <img src="docs/smartphone/2.png" width="19%" alt="Thread view" />
+  <img src="docs/smartphone/3.png" width="19%" alt="Explore / trending" />
+  <img src="docs/smartphone/1.png" width="19%" alt="Profile" />
+  <img src="docs/smartphone/6.png" width="19%" alt="Composer" />
+</p>
+
+### Foldable & tablet
+
+<p align="center">
+  <img src="docs/foldable/2.jpg" width="49%" alt="Home timeline, two-column list-detail" />
+  <img src="docs/foldable/3.jpg" width="49%" alt="Notifications with thread pane" />
+</p>
+<p align="center">
+  <img src="docs/foldable/4.jpg" width="49%" alt="Explore split at the hinge" />
+  <img src="docs/foldable/5.jpg" width="49%" alt="Profile split at the hinge" />
+</p>
+<p align="center">
+  <img src="docs/foldable/1.jpg" width="49%" alt="Home timeline with thread pane" />
+  <img src="docs/foldable/6.jpg" width="49%" alt="Composer as a centered dialog" />
+</p>
 
 ## Stack
 
@@ -12,7 +40,6 @@ with Mastodon gGmbH.
 - **Jetpack Compose** (Material 3, BOM), downloadable Google Fonts (Space Grotesk + Manrope)
 - **Navigation 3** (`androidx.navigation3`) — serializable `NavKey`s, `NavDisplay`, ViewModel-scoped entries
 - **Hilt** for DI (`@HiltViewModel` per screen, `@Singleton` repositories)
-- **Room** for the offline cache (same schema idea as the Flutter sqflite cache: raw entity JSON keyed by list + position → cache-first rendering)
 - **OkHttp + kotlinx.serialization** for the Mastodon REST API (dynamic instance host, so no Retrofit)
 - **Coil 3** for images, **DataStore** for credentials/settings
 - **Jetpack Glance** for the home-screen widget (the one part of the UI that isn't Compose UI — Glance emits `RemoteViews`)
@@ -66,12 +93,6 @@ feature/widget        Home-screen notifications widget (Glance): NotificationWid
 - **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Delivered via two manifest entry points — the modern `FirebaseMessagingService` and a legacy C2DM `BroadcastReceiver` mirroring the official Mastodon app — since some OEMs silently drop background `Service` wake-ups well before Doze/App-Standby checks apply (see the "Push notifications" section in `CLAUDE.md`). Taps deep-link to the relevant thread.
 - **Home-screen Widget**: Resizable Glance widget listing the newest notifications in the app's own glass styling — avatar with the notification-type badge composited in, name/verb/toot preview/time, an "Updated Xm ago" line and a refresh button. It follows the app's Theme mode setting (falling back to the system's night mode for `System`), renders from the Room cache so it works before the app has ever been opened in that process, and taps deep-link to the thread through the same route push notifications use. It refreshes as notifications arrive: push while backgrounded, streaming while foregrounded, plus in-app mutations, the refresh button, and a staleness-gated fetch on the platform's periodic update. See the "Home-screen widget" section in `CLAUDE.md` for the design constraints (Binder payload budget, Glance's single `goAsync` PendingResult).
 - **Material You**: Optional "Match wallpaper colors" toggle in Settings (Android 12+, off by default) re-derives the gradient, avatars, glow and accent ink from the device's wallpaper colors while keeping the glass surfaces and typography untouched; falls back to the static neon palette below API 31 or when off. Paired with a themed (monochrome) launcher icon. See the "Theming & Material You" section in `CLAUDE.md` for the implementation.
-
-Architecture mirrors the Flutter app: singleton repositories hold
-`StateFlow<AsyncState<…>>` per list; after every mutation `StatusRepository`
-directly calls the timeline/notification repositories and notifies registered
-listener ViewModels (thread, profile), each patching its copies — interactions
-stay in sync across timelines, thread, notifications and profiles.
 
 Navigation is a plain singleton: `Navigator` in `core/ui` holds the Nav3 back
 stack (bound by `NeonApp` while the shell is on screen) and screens call it
@@ -142,8 +163,6 @@ Phone layouts remain untouched below the threshold.
   to clear the ~1MB Binder transaction limit, and `SizeMode.Exact`/`Responsive`
   compose one `RemoteViews` tree (and one copy of every avatar bitmap) *per host
   size*. Keep that in mind before adding rows or raising the avatar size.
-- Both streaming (live `user` WebSocket while foregrounded) and push notifications
-  **are** implemented, ahead of the Flutter sibling.
 
 ## Contributing
 

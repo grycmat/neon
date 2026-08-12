@@ -4,10 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Neon is a native Android Mastodon client — a Kotlin + Jetpack Compose port of a
-Flutter app (`../flutter`), matching the "glassy pink→purple→cyan" design in
-`Neon Mastodon Client.html`. When behavior is ambiguous, the Flutter sibling
-project is the reference implementation to check against.
+Neon is a native Android Mastodon client — a Kotlin + Jetpack Compose app with "glassy pink→purple→cyan" design.
 
 Stack: Kotlin 2.2, JVM 17, AGP 8.11, compileSdk 36 / minSdk 26, Jetpack Compose
 (Material 3), Navigation 3 (pre-1.0, see caveats below), Hilt for DI, Room for
@@ -111,8 +108,7 @@ it into this direct-call/listener pattern.
 `CacheStore` (`core/data/CacheStore.kt`) is a typed facade over `core/database`'s
 Room DAO. Lists are cached as `list_cache` rows keyed by `(listKey, position)`
 storing raw entity JSON; single entities go in `entity_cache` keyed by an
-entity key. This mirrors the Flutter app's sqflite cache design intentionally,
-for cache-first rendering. Decode failures are swallowed (`runCatching { ... }.getOrNull()`)
+entity key. Decode failures are swallowed (`runCatching { ... }.getOrNull()`)
 so a schema/model change never bricks startup — never make cache reads throw.
 
 ### Networking
@@ -442,8 +438,7 @@ reworking a screen so it stays previewable without Hilt/ViewModels.
 - **Downloadable fonts** (Space Grotesk + Manrope): if they silently fall back
   to the system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
   from the AndroidX downloadable-fonts docs — the base64 certs must match exactly.
-- Both streaming (see Streaming above) and push notifications are implemented, ahead of the
-  Flutter sibling — don't treat either as missing. (The media viewer is also implemented:
+- Both streaming (see Streaming above) and push notifications are implemented (The media viewer is also implemented:
   `core/ui/.../media/MediaPreviewScreen.kt`, opened via
   `Navigator.openMediaPreview`; `MediaGrid` falls back to it when no
   custom click handler is given.)
