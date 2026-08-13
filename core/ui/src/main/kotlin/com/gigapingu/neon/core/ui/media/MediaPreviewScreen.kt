@@ -71,6 +71,9 @@ fun MediaPreviewScreen(
     // screen's background; idle pages never touch this (see MediaPreviewPage).
     var backgroundAlpha by remember { mutableFloatStateOf(1f) }
 
+    var showAltText by remember { mutableStateOf(false) }
+    val currentAttachment = attachments.getOrNull(pagerState.currentPage)
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -104,6 +107,19 @@ fun MediaPreviewScreen(
                 modifier = Modifier.size(24.dp)
             )
         }
+
+        if (currentAttachment?.altText?.isNotBlank() == true) {
+            AltTextBadge(
+                onClick = { showAltText = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = 16.dp, top = 48.dp),
+            )
+        }
+    }
+
+    if (showAltText && currentAttachment != null) {
+        AltTextSheet(currentAttachment.altText) { showAltText = false }
     }
 }
 

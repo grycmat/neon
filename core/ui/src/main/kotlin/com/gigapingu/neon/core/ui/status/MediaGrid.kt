@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,6 +40,8 @@ import coil3.compose.AsyncImage
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.model.MediaAttachment
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.media.AltTextBadge
+import com.gigapingu.neon.core.ui.media.AltTextSheet
 import androidx.compose.ui.unit.sp
 
 /** 1–4 media attachments in a rounded grid. Videos/gifs get a play badge. */
@@ -131,6 +134,7 @@ fun MediaGrid(
 private fun Tile(attachments: List<MediaAttachment>, index: Int, onClick: ((MediaAttachment) -> Unit)?) {
     val palette = NeonTheme.palette
     val attachment = attachments[index]
+    var showAltText by remember(attachment.id) { mutableStateOf(false) }
 
     // Video/gifv attachments are never played inline in the feed — a live
     // ExoPlayer per visible tile (AndroidView-hosted SurfaceView) is a severe
@@ -178,5 +182,16 @@ private fun Tile(attachments: List<MediaAttachment>, index: Int, onClick: ((Medi
                 )
             }
         }
+
+        if (attachment.altText.isNotBlank()) {
+            AltTextBadge(
+                onClick = { showAltText = true },
+                modifier = Modifier.align(Alignment.BottomStart).padding(6.dp),
+            )
+        }
+    }
+
+    if (showAltText) {
+        AltTextSheet(attachment.altText) { showAltText = false }
     }
 }
