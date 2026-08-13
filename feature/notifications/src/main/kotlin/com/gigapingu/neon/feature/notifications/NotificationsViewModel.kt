@@ -4,13 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AsyncState
+import com.gigapingu.neon.core.data.NotificationKind
 import com.gigapingu.neon.core.data.NotificationRepository
 import com.gigapingu.neon.core.model.MastoNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -19,7 +23,18 @@ class NotificationsViewModel @Inject constructor(
     private val accounts: AccountRepository,
 ) : ViewModel() {
 
-    val state: StateFlow<AsyncState<List<MastoNotification>>> = notifications.state
+    private val _kind = MutableStateFlow(NotificationKind.All)
+    val kind: StateFlow<NotificationKind> = _kind.asStateFlow()
+
+    val state: StateFlow<AsyncState<List<MastoNotification>>> =
+        combine(notifications.state, _kind) { state, kind ->
+            if (kind == NotificationKind.All) state
+            else state.copy(data = state.data?.filter { kind.matches(it.type) })
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AsyncState.idle())
+
+    fun switchTo(kind: NotificationKind) {
+        _kind.value = kind
+    }
 
     private val _requestsCount = MutableStateFlow(0)
     val requestsCount: StateFlow<Int> = _requestsCount.asStateFlow()

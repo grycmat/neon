@@ -1,18 +1,26 @@
 package com.gigapingu.neon.feature.notifications
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bolt
@@ -28,11 +36,18 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,8 +56,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gigapingu.neon.core.data.NotificationKind
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.NeonAvatar
+import com.gigapingu.neon.core.designsystem.component.SegmentPill
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.designsystem.util.htmlToPlainText
 import com.gigapingu.neon.core.designsystem.util.relativeTime
@@ -54,6 +71,7 @@ import com.gigapingu.neon.core.ui.LocalShellPadding
 import com.gigapingu.neon.core.ui.PaneSelection
 import com.gigapingu.neon.core.ui.PreviewFixtures
 import com.gigapingu.neon.core.ui.PreviewHarness
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.Instant
 
 /**
@@ -67,20 +85,51 @@ fun NotificationsScreen(
 ) {
     val palette = NeonTheme.palette
     val type = NeonTheme.type
+    val kind by viewModel.kind.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val requestsCount by viewModel.requestsCount.collectAsStateWithLifecycle()
     val followRequestsCount by viewModel.followRequestsCount.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
+    val listState = rememberLazyListState()
 
-    Column(Modifier.fillMaxSize()) {
+    // Pills float over the list, same as TimelineScreen's Home/Local/Federated row.
+    var pillsHeightPx by remember { mutableIntStateOf(0) }
+    val pillsHeight = with(LocalDensity.current) { pillsHeightPx.toDp() }
+
+    // Hidden while scrolling down through the list, shown again on scroll-up
+    // or once back at the top. Reset per-kind so switching pills always shows it.
+    var pillsVisible by remember(kind) { mutableStateOf(true) }
+    var lastScrollPosition by remember(kind) { mutableStateOf(0 to 0) }
+
+    LaunchedEffect(listState, kind) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .distinctUntilChanged()
+            .collect { (index, offset) ->
+                val isAtTop = index == 0 && offset == 0
+                if (isAtTop) {
+                    pillsVisible = true
+                } else {
+                    val (lastIndex, lastOffset) = lastScrollPosition
+                    val scrolledDown = index > lastIndex || (index == lastIndex && offset > lastOffset)
+                    val scrolledUp = index < lastIndex || (index == lastIndex && offset < lastOffset)
+                    if (scrolledDown) pillsVisible = false
+                    if (scrolledUp) pillsVisible = true
+                }
+                lastScrollPosition = index to offset
+            }
+    }
+
+    Box(Modifier.fillMaxSize()) {
         AsyncList(
             state = state,
             onRefresh = viewModel::refresh,
             onLoadMore = viewModel::loadMore,
             emptyLabel = "All quiet — for now.",
+            modifier = Modifier.fillMaxSize(),
+            listState = listState,
             contentPadding = PaddingValues(
                 start = 16.dp,
-                top = 8.dp + shellPadding.calculateTopPadding(),
+                top = pillsHeight,
                 end = 16.dp,
                 bottom = 90.dp + shellPadding.calculateBottomPadding(),
             ),
@@ -111,6 +160,32 @@ fun NotificationsScreen(
                     onAuthorizeFollow = { viewModel.authorizeFollow(notification) },
                     onRejectFollow = { viewModel.rejectFollow(notification) },
                 )
+            }
+        }
+        AnimatedVisibility(
+            visible = pillsVisible,
+            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(palette.surfaceSolid.copy(alpha = .80f))
+                    .onSizeChanged { pillsHeightPx = it.height }
+                    .padding(top = shellPadding.calculateTopPadding())
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                NotificationKind.entries.forEach { entry ->
+                    SegmentPill(
+                        label = entry.label,
+                        active = entry == kind,
+                        onClick = { viewModel.switchTo(entry) },
+                    )
+                }
             }
         }
     }
@@ -312,6 +387,21 @@ private fun NotificationRowPreview() {
             NotificationRow(item = previewNotification("4", "follow", withStatus = false), onDismiss = {})
             NotificationRow(item = previewNotification("5", "poll"), onDismiss = {})
             NotificationRow(item = previewNotification("6", "follow_request", withStatus = false), onDismiss = {})
+        }
+    }
+}
+
+@Preview(name = "Notification filter pills", showBackground = true, heightDp = 100)
+@Composable
+private fun NotificationPillsPreview() {
+    PreviewHarness {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            NotificationKind.entries.forEachIndexed { index, entry ->
+                SegmentPill(label = entry.label, active = index == 0) {}
+            }
         }
     }
 }

@@ -55,7 +55,8 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCar
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills, plus hashtag and list timelines
 feature/explore       Trends (with TrendSpark sparklines) + search (also pushed for hashtag taps)
-feature/notifications Notifications feed + filtered-notification requests queue + follow-request review;
+feature/notifications Notifications feed (type-filter pills: All/Mentions/Favourites/Boosts/Follows/Polls)
+                      + filtered-notification requests queue + follow-request review;
                       NeonFirebaseMessagingService + NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (push)
 feature/messages      Direct messages: Conversation list + new-message composer (Mastodon has no
                       separate DM system — a Conversation just groups visibility="direct" statuses)

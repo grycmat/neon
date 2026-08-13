@@ -3,6 +3,7 @@ package com.gigapingu.neon.core.data
 import com.gigapingu.neon.core.data.di.ApplicationScope
 import com.gigapingu.neon.core.model.MastoNotification
 import com.gigapingu.neon.core.model.NotificationRequest
+import com.gigapingu.neon.core.model.NotificationType
 import com.gigapingu.neon.core.model.Status
 import com.gigapingu.neon.core.network.ApiClient
 import javax.inject.Inject
@@ -16,7 +17,24 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+/** Client-side notification type filter, mirroring [TimelineKind]'s pill-switcher shape. */
+enum class NotificationKind(val label: String) {
+    All("All"),
+    Mentions("Mentions"),
+    Favourites("Favourites"),
+    Boosts("Boosts"),
+    Follows("Follows"),
+    Polls("Polls");
 
+    fun matches(type: NotificationType): Boolean = when (this) {
+        All -> true
+        Mentions -> type == NotificationType.Mention || type == NotificationType.Quote
+        Favourites -> type == NotificationType.Favourite
+        Boosts -> type == NotificationType.Reblog
+        Follows -> type == NotificationType.Follow || type == NotificationType.FollowRequest
+        Polls -> type == NotificationType.Poll || type == NotificationType.Update
+    }
+}
 
 /** Notifications list with Room cache + status sync. */
 @Singleton

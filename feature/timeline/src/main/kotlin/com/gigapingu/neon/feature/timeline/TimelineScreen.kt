@@ -1,18 +1,13 @@
 package com.gigapingu.neon.feature.timeline
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -21,16 +16,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.TimelineKind
+import com.gigapingu.neon.core.designsystem.component.SegmentPill
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.AsyncGrid
 import com.gigapingu.neon.core.ui.AsyncList
@@ -196,28 +189,6 @@ fun TimelineScreen(
         }
 
         // "N new toots" pill temporarily removed — see git history to restore.
-    }
-}
-
-@Composable
-private fun SegmentPill(label: String, active: Boolean, onClick: () -> Unit) {
-    val palette = NeonTheme.palette
-    val shape = RoundedCornerShape(14.dp)
-    Box(
-        modifier = Modifier
-            .height(38.dp)
-            .clip(shape)
-            .background(if (active) palette.surfaceHi else Color.Transparent)
-            .border(1.dp, if (active) palette.borderStrong else Color.Transparent, shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            style = NeonTheme.type.labelLarge.copy(fontSize = 14.sp),
-            color = if (active) palette.text else palette.textDim,
-        )
     }
 }
 
