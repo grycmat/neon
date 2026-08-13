@@ -140,7 +140,6 @@ fun StatusCard(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(
@@ -148,40 +147,41 @@ fun StatusCard(
                                 indication = null,
                             ) { Navigator.openProfile(display.account.id) },
                     ) {
-                        EmojiText(
-                            display.account.displayNameOrUsername,
-                            emojis = display.account.emojis,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = type.titleSmall,
-                            color = palette.text,
-                            modifier = Modifier.weight(1f, fill = false),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            display.account.fullHandle,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = type.bodySmall,
-                            color = palette.textDim,
-                            modifier = Modifier.weight(1f, fill = false),
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            relativeTime(display.createdAt),
-                            style = type.bodySmall,
-                            color = palette.textMute,
-                        )
-                        if (display.editedAt != null) {
+                        Column(Modifier.weight(1f)) {
+                            EmojiText(
+                                display.account.displayNameOrUsername,
+                                emojis = display.account.emojis,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = type.titleSmall,
+                                color = palette.text,
+                            )
                             Text(
-                                " · edited",
+                                display.account.fullHandle,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = type.bodySmall,
+                                color = palette.textDim,
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Row {
+                            Text(
+                                relativeTime(display.createdAt),
                                 style = type.bodySmall,
                                 color = palette.textMute,
-                                modifier = Modifier.clickable(
-                                    interactionSource = null,
-                                    indication = null,
-                                ) { showEditHistory = true },
                             )
+                            if (display.editedAt != null) {
+                                Text(
+                                    " · edited",
+                                    style = type.bodySmall,
+                                    color = palette.textMute,
+                                    modifier = Modifier.clickable(
+                                        interactionSource = null,
+                                        indication = null,
+                                    ) { showEditHistory = true },
+                                )
+                            }
                         }
                     }
                     val hasWarning = display.spoilerText.isNotEmpty() || display.filtered.isNotEmpty()

@@ -228,6 +228,8 @@ private fun NotificationRow(
                         }
                     },
                     style = type.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (preview.isNotEmpty()) {
                     Spacer(Modifier.height(4.dp))

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -49,28 +48,27 @@ fun QuoteCard(
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(start = 13.dp, top = 12.dp, end = 13.dp, bottom = 12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row {
             NeonAvatar(account = status.account, size = 22.dp)
             Spacer(Modifier.width(8.dp))
-            EmojiText(
-                status.account.displayNameOrUsername,
-                emojis = status.account.emojis,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = type.bodySmall.copy(fontWeight = FontWeight.ExtraBold),
-                color = palette.text,
-                modifier = Modifier.weight(1f, fill = false),
-            )
+            Column(Modifier.weight(1f)) {
+                EmojiText(
+                    status.account.displayNameOrUsername,
+                    emojis = status.account.emojis,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = type.bodySmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = palette.text,
+                )
+                Text(
+                    status.account.fullHandle,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = type.bodySmall,
+                    color = palette.textDim,
+                )
+            }
             Spacer(Modifier.width(6.dp))
-            Text(
-                status.account.fullHandle,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = type.bodySmall,
-                color = palette.textDim,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            Spacer(Modifier.weight(1f))
             Text(
                 relativeTime(status.createdAt),
                 style = type.bodySmall,
