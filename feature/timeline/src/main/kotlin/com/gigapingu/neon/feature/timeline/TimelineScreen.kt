@@ -10,12 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +52,8 @@ import com.gigapingu.neon.core.ui.Navigator
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
+private val PillsHideShowThreshold = 64.dp
+
 /**
  * Home / Local / Federated timelines behind a segmented pill switcher.
  * [selectedStatusId] marks the toot open in the big-screen detail pane.
@@ -72,33 +79,54 @@ fun TimelineScreen(
     var pillsHeightPx by remember { mutableIntStateOf(0) }
     val pillsHeight = with(LocalDensity.current) { pillsHeightPx.toDp() }
 
-    // Hidden while scrolling down through the list, shown again on scroll-up
-    // or once back at the top. Reset per-kind so switching tabs always shows it.
+    // Hidden after scrolling down past a threshold, shown again after scrolling
+    // up past it (or once back at the top). Reset per-kind so switching tabs
+    // always shows it.
     var pillsVisible by remember(kind) { mutableStateOf(true) }
-    var lastScrollPosition by remember(kind) { mutableStateOf(0 to 0) }
+    var scrollAccumulator by remember(kind) { mutableFloatStateOf(0f) }
+    val pillsThresholdPx = with(LocalDensity.current) { PillsHideShowThreshold.toPx() }
+
+    // Pixel-accurate scroll deltas (unlike diffing firstVisibleItemIndex, which is
+    // imprecise across items of different heights). Never consumes, so it doesn't
+    // interfere with AsyncList/AsyncGrid's own PullToRefreshBox nested scrolling.
+    val pillsScrollConnection = remember(kind, pillsThresholdPx) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                if ((delta < 0f && scrollAccumulator > 0f) || (delta > 0f && scrollAccumulator < 0f)) {
+                    scrollAccumulator = 0f
+                }
+                scrollAccumulator += delta
+                when {
+                    scrollAccumulator <= -pillsThresholdPx -> {
+                        pillsVisible = false
+                        scrollAccumulator = 0f
+                    }
+                    scrollAccumulator >= pillsThresholdPx -> {
+                        pillsVisible = true
+                        scrollAccumulator = 0f
+                    }
+                }
+                return Offset.Zero
+            }
+        }
+    }
 
     LaunchedEffect(listState, gridState, kind, gridLayout) {
         snapshotFlow {
             if (gridLayout) {
-                gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
+                gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
             } else {
-                listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
+                listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
             }
         }
             .distinctUntilChanged()
-            .collect { (index, offset) ->
-                val isAtTop = index == 0 && offset == 0
+            .collect { isAtTop ->
                 if (isAtTop) {
                     viewModel.clearNewToots(kind)
                     pillsVisible = true
-                } else {
-                    val (lastIndex, lastOffset) = lastScrollPosition
-                    val scrolledDown = index > lastIndex || (index == lastIndex && offset > lastOffset)
-                    val scrolledUp = index < lastIndex || (index == lastIndex && offset < lastOffset)
-                    if (scrolledDown) pillsVisible = false
-                    if (scrolledUp) pillsVisible = true
+                    scrollAccumulator = 0f
                 }
-                lastScrollPosition = index to offset
             }
     }
 
@@ -117,7 +145,7 @@ fun TimelineScreen(
         onDispose { if (isActiveTab) Navigator.scrollToTopHandler = null }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().nestedScroll(pillsScrollConnection)) {
         if (gridLayout) {
             AsyncGrid(
                 state = state,
