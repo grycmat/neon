@@ -232,17 +232,16 @@ class ComposeViewModel @Inject constructor(
         if (uris.isEmpty() || state.poll != null || state.media.size >= MAX_MEDIA) return
         _uiState.update { it.copy(uploading = true) }
         viewModelScope.launch {
-            try {
-                uris.take(MAX_MEDIA - state.media.size).forEach { uri ->
+            uris.take(MAX_MEDIA - state.media.size).forEach { uri ->
+                try {
                     val file = withContext(Dispatchers.IO) { readUri(uri) }
                     val uploaded = media.upload(file.bytes, filename = file.name, mimeType = file.mimeType)
                     _uiState.update { it.copy(media = it.media + uploaded) }
+                } catch (e: Exception) {
+                    _errors.tryEmit("Upload failed: ${e.message}")
                 }
-            } catch (e: Exception) {
-                _errors.tryEmit("Upload failed: ${e.message}")
-            } finally {
-                _uiState.update { it.copy(uploading = false) }
             }
+            _uiState.update { it.copy(uploading = false) }
         }
     }
 
