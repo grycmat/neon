@@ -16,8 +16,8 @@ android {
         applicationId = "com.gigapingu.neon"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.3.5"
+        versionCode = 9
+        versionName = "1.4.0"
     }
 
     buildTypes {
