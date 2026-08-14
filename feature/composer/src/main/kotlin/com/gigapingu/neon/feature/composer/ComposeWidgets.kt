@@ -218,10 +218,11 @@ private fun AltTextSheet(
     }
 }
 
-/** Inline poll editor: 2–4 options, duration, single/multiple choice. */
+/** Inline poll editor: 2–[maxOptions] options, duration, single/multiple choice. */
 @Composable
 fun PollEditor(
     poll: PollDraftState,
+    maxOptions: Int,
     onUpdate: ((PollDraftState) -> PollDraftState) -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -308,7 +309,7 @@ fun PollEditor(
                 }
             }
         }
-        if (poll.options.size < 4) {
+        if (poll.options.size < maxOptions) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable {
@@ -481,6 +482,7 @@ private fun PollEditorPreview() {
         Column(Modifier.padding(16.dp)) {
             PollEditor(
                 poll = PollDraftState(options = listOf("Pink", "Cyan", "")),
+                maxOptions = 4,
                 onUpdate = {},
                 onRemove = {},
             )

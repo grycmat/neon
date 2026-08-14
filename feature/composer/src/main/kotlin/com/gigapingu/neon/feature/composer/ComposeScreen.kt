@@ -254,6 +254,7 @@ fun ComposeScreen(
                     Spacer(Modifier.height(8.dp))
                     PollEditor(
                         poll = poll,
+                        maxOptions = uiState.maxPollOptions,
                         onUpdate = viewModel::updatePoll,
                         onRemove = viewModel::togglePoll,
                     )

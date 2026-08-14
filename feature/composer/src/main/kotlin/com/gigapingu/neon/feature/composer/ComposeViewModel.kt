@@ -56,6 +56,7 @@ data class ComposeUiState(
     val editingStatusId: String? = null,
     val lockedVisibility: Boolean = false,
     val maxChars: Int = Instance.DEFAULT_MAX_CHARACTERS,
+    val maxPollOptions: Int = Instance.DEFAULT_MAX_POLL_OPTIONS,
 ) {
     val canPost: Boolean
         get() = !posting && !uploading && text.isNotBlank() && text.length <= maxChars
@@ -83,8 +84,10 @@ class ComposeViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val maxChars = instances.getInstance().maxStatusCharacters
-            _uiState.update { it.copy(maxChars = maxChars) }
+            val instance = instances.getInstance()
+            _uiState.update {
+                it.copy(maxChars = instance.maxStatusCharacters, maxPollOptions = instance.maxPollOptions)
+            }
         }
         viewModelScope.launch {
             mentionToken.debounce(300).collectLatest { token ->
