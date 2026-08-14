@@ -34,6 +34,8 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -91,6 +93,9 @@ fun NotificationsScreen(
     val followRequestsCount by viewModel.followRequestsCount.collectAsStateWithLifecycle()
     val shellPadding = LocalShellPadding.current
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) { viewModel.errors.collect { snackbarHostState.showSnackbar(it) } }
 
     // Pills float over the list, same as TimelineScreen's Home/Local/Federated row.
     var pillsHeightPx by remember { mutableIntStateOf(0) }
@@ -188,6 +193,10 @@ fun NotificationsScreen(
                 }
             }
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 

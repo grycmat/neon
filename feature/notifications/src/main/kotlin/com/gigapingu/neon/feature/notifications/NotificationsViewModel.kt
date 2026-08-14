@@ -9,9 +9,12 @@ import com.gigapingu.neon.core.data.NotificationRepository
 import com.gigapingu.neon.core.model.MastoNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -25,6 +28,9 @@ class NotificationsViewModel @Inject constructor(
 
     private val _kind = MutableStateFlow(NotificationKind.All)
     val kind: StateFlow<NotificationKind> = _kind.asStateFlow()
+
+    private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val errors: SharedFlow<String> = _errors.asSharedFlow()
 
     val state: StateFlow<AsyncState<List<MastoNotification>>> =
         combine(notifications.state, _kind) { state, kind ->
@@ -93,6 +99,7 @@ class NotificationsViewModel @Inject constructor(
     fun dismiss(id: String) {
         viewModelScope.launch {
             runCatching { notifications.dismiss(id) }
+                .onFailure { _errors.tryEmit("Couldn't dismiss notification: ${it.message}") }
         }
     }
 
