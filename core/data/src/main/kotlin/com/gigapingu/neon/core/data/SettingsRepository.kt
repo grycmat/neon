@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
+import com.gigapingu.neon.core.data.push.PushDistributorStatus
+import com.gigapingu.neon.core.data.push.PushEndpointProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +26,7 @@ private val Context.settingsStore by preferencesDataStore(name = "neon_settings"
 @Singleton
 class SettingsRepository @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val pushEndpointProvider: PushEndpointProvider,
 ) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
@@ -53,7 +56,7 @@ class SettingsRepository @Inject constructor(
     }
 
     val notificationsEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
-        prefs[notificationsEnabledKey] ?: true
+        prefs[notificationsEnabledKey] ?: (pushEndpointProvider.getDistributorStatus() !is PushDistributorStatus.NotInstalled)
     }
 
     /** Whether the POST_NOTIFICATIONS OS permission dialog has ever been shown to completion. */

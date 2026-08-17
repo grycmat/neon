@@ -1,5 +1,6 @@
 package com.gigapingu.neon.feature.notifications
 
+import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.data.push.PushEndpointProvider
 import com.google.firebase.messaging.FirebaseMessaging
 import java.net.URLEncoder
@@ -15,6 +16,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @Singleton
 class GmsPushEndpointProvider @Inject constructor() : PushEndpointProvider {
     override suspend fun getEndpoint(): String? = getToken()?.let { buildEndpoint(it) }
+
+    override fun getDistributorStatus(): PushDistributorStatus =
+        PushDistributorStatus.Available("Google Play Services")
 
     /** Also used by NeonFirebaseMessagingService.onNewToken to re-register on token rotation. */
     fun buildEndpoint(token: String): String =

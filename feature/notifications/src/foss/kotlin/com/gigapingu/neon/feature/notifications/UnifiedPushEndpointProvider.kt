@@ -2,6 +2,7 @@ package com.gigapingu.neon.feature.notifications
 
 import android.content.Context
 import android.util.Log
+import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.data.push.PushEndpointProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.atomic.AtomicBoolean
@@ -50,6 +51,26 @@ class UnifiedPushEndpointProvider @Inject constructor(
         cachedEndpointIfLive()?.let { return@withContext it }
         requestRegistrationIfIdle()
         null
+    }
+
+    override fun getDistributorStatus(): PushDistributorStatus {
+        val distributors = UnifiedPush.getDistributors(context)
+        if (distributors.isEmpty()) {
+            return PushDistributorStatus.NotInstalled
+        }
+        val saved = UnifiedPush.getSavedDistributor(context)
+        if (saved != null && saved in distributors) {
+            return PushDistributorStatus.Available(saved)
+        }
+        if (distributors.size == 1) {
+            return PushDistributorStatus.Available(distributors.first())
+        }
+        return PushDistributorStatus.Undecided(distributors)
+    }
+
+    override fun selectDistributor(packageName: String) {
+        UnifiedPush.saveDistributor(context, packageName)
+        UnifiedPush.register(context)
     }
 
     /** Called by [NeonUnifiedPushReceiver] once a registration attempt reaches a terminal state. */

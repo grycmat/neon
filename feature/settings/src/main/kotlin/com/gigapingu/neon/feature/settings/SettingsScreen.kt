@@ -59,9 +59,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import com.gigapingu.neon.core.data.ThemeMode
+import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.designsystem.component.GlassButton
 import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
@@ -89,6 +94,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val me by viewModel.me.collectAsStateWithLifecycle()
     val prefNotificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
     val alertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
+    val pushDistributorStatus by viewModel.pushDistributorStatus.collectAsStateWithLifecycle()
+    val isPushSupported = pushDistributorStatus !is PushDistributorStatus.NotInstalled
+
+    var showInstallDistributorDialog by remember { mutableStateOf(false) }
+    var showSelectDistributorDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     var hasPermission by remember {
@@ -108,6 +118,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshPushDistributorStatus()
                 hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     ContextCompat.checkSelfPermission(
                         context,
@@ -138,7 +149,45 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val notificationsDisallowed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
         !hasPermission && permissionRequested
 
-    val isToggled = prefNotificationsEnabled && hasPermission
+    val isToggled = prefNotificationsEnabled && hasPermission && isPushSupported
+
+    if (showInstallDistributorDialog) {
+        InstallDistributorDialog(onDismiss = { showInstallDistributorDialog = false })
+    }
+
+    if (showSelectDistributorDialog) {
+        val undecided = pushDistributorStatus as? PushDistributorStatus.Undecided
+        if (undecided != null) {
+            SelectDistributorDialog(
+                distributors = undecided.distributors,
+                onSelect = { pkg ->
+                    viewModel.selectPushDistributor(pkg)
+                    showSelectDistributorDialog = false
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        viewModel.setNotificationsEnabled(true)
+                    }
+                },
+                onDismiss = { showSelectDistributorDialog = false },
+            )
+        }
+    }
+
+    val notificationSubtitle = when {
+        pushDistributorStatus is PushDistributorStatus.NotInstalled ->
+            "Push provider not installed (e.g. ntfy) — tap to set up"
+        pushDistributorStatus is PushDistributorStatus.Undecided ->
+            "Multiple push providers found — tap to choose"
+        notificationsDisallowed ->
+            "Notification permission is off for Neon — tap to enable"
+        pushDistributorStatus is PushDistributorStatus.Available &&
+            (pushDistributorStatus as PushDistributorStatus.Available).distributorName != null &&
+            (pushDistributorStatus as PushDistributorStatus.Available).distributorName != "Google Play Services" ->
+            "Using ${(pushDistributorStatus as PushDistributorStatus.Available).distributorName} · Receive notifications on your device"
+        else ->
+            "Receive notifications on your device"
+    }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Row(
@@ -216,7 +265,22 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
             Spacer(Modifier.height(28.dp))
             NeonLabel("Notifications", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+            GlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (!isPushSupported || pushDistributorStatus is PushDistributorStatus.Undecided) {
+                            Modifier.clickable {
+                                if (pushDistributorStatus is PushDistributorStatus.NotInstalled) {
+                                    showInstallDistributorDialog = true
+                                } else if (pushDistributorStatus is PushDistributorStatus.Undecided) {
+                                    showSelectDistributorDialog = true
+                                }
+                            }
+                        } else Modifier
+                    ),
+                contentPadding = PaddingValues(16.dp),
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -224,20 +288,20 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     Column(Modifier.weight(1f)) {
                         Text("Push notifications", style = type.titleSmall, color = palette.text)
                         Text(
-                            if (notificationsDisallowed) {
-                                "Notification permission is off for Neon — tap to enable"
-                            } else {
-                                "Receive notifications on your device"
-                            },
+                            notificationSubtitle,
                             style = type.bodySmall,
-                            color = palette.textDim,
+                            color = if (pushDistributorStatus is PushDistributorStatus.NotInstalled) palette.cyan else palette.textDim,
                         )
                     }
                     Switch(
                         checked = isToggled,
                         onCheckedChange = { checked ->
                             if (checked) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
+                                if (pushDistributorStatus is PushDistributorStatus.NotInstalled) {
+                                    showInstallDistributorDialog = true
+                                } else if (pushDistributorStatus is PushDistributorStatus.Undecided) {
+                                    showSelectDistributorDialog = true
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
                                     val activity = context.findActivity()
                                     val canShowDialog = activity == null || !permissionRequested ||
                                         ActivityCompat.shouldShowRequestPermissionRationale(
@@ -561,3 +625,98 @@ private fun ThemeOptionPreview() {
         }
     }
 }
+
+@Composable
+private fun InstallDistributorDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Push Provider Required", color = palette.text, style = type.titleMedium) },
+        text = {
+            Text(
+                "Push notifications on de-googled devices require an open-source UnifiedPush distributor such as ntfy.\n\nInstall ntfy and open it once to enable push notifications in Neon.",
+                color = palette.textDim,
+                style = type.bodyMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                    try {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=io.heckel.ntfy"))
+                        )
+                    } catch (e: Exception) {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://ntfy.sh"))
+                        )
+                    }
+                }
+            ) {
+                Text("Get ntfy", color = palette.cyan, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://unifiedpush.org"))
+                        )
+                    }
+                ) {
+                    Text("Learn more", color = palette.textDim)
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel", color = palette.textMute)
+                }
+            }
+        },
+        containerColor = palette.surfaceSolid,
+        shape = RoundedCornerShape(20.dp),
+    )
+}
+
+@Composable
+private fun SelectDistributorDialog(
+    distributors: List<String>,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Push Provider", color = palette.text, style = type.titleMedium) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Choose which UnifiedPush provider to use:",
+                    color = palette.textDim,
+                    style = type.bodyMedium,
+                )
+                Spacer(Modifier.height(4.dp))
+                distributors.forEach { pkg ->
+                    GlassButton(
+                        label = pkg,
+                        onClick = { onSelect(pkg) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = palette.textMute)
+            }
+        },
+        containerColor = palette.surfaceSolid,
+        shape = RoundedCornerShape(20.dp),
+    )
+}
+
