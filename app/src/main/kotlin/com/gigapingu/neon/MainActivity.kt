@@ -18,7 +18,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.data.ThemeMode
+import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
+import com.gigapingu.neon.core.ui.InstallDistributorDialog
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.update.AppUpdateUiState
 import com.gigapingu.neon.update.UpdateReadyDialog
@@ -63,6 +65,8 @@ class MainActivity : ComponentActivity() {
             val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
             val notificationAlertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
             val updateState by viewModel.updateState.collectAsStateWithLifecycle()
+            val pushDistributorStatus by viewModel.pushDistributorStatus.collectAsStateWithLifecycle()
+            val pushProviderPromptShown by viewModel.pushProviderPromptShown.collectAsStateWithLifecycle()
 
             var hasNotificationPermission by remember {
                 mutableStateOf(
@@ -85,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     when (event) {
                         Event.ON_RESUME -> {
                             isAppForeground = true
+                            viewModel.refreshPushDistributorStatus()
                             hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 ContextCompat.checkSelfPermission(
                                     this@MainActivity,
@@ -150,6 +155,17 @@ class MainActivity : ComponentActivity() {
                     UpdateReadyDialog(
                         onRestart = viewModel::completeUpdate,
                         onLater = viewModel::dismissUpdatePrompt,
+                    )
+                }
+
+                // First run after login: prompt once if no UnifiedPush distributor is installed
+                if (authStatus == AuthStatus.Authenticated &&
+                    pushDistributorStatus is PushDistributorStatus.NotInstalled &&
+                    !pushProviderPromptShown
+                ) {
+                    InstallDistributorDialog(
+                        isFirstRunPrompt = true,
+                        onDismiss = viewModel::dismissPushProviderPrompt,
                     )
                 }
             }

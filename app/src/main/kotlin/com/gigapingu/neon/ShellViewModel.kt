@@ -14,6 +14,7 @@ import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.data.TimelineRepository
 import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
+import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.data.push.PushEndpointProvider
 import com.gigapingu.neon.core.data.push.PushRepository
 import com.gigapingu.neon.core.model.Account
@@ -73,6 +74,20 @@ class ShellViewModel @Inject constructor(
 
     val dynamicColorEnabled: StateFlow<Boolean> = settings.dynamicColorEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val pushProviderPromptShown: StateFlow<Boolean> = settings.pushProviderPromptShown
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    private val _pushDistributorStatus = MutableStateFlow(pushEndpointProvider.getDistributorStatus())
+    val pushDistributorStatus: StateFlow<PushDistributorStatus> = _pushDistributorStatus.asStateFlow()
+
+    fun refreshPushDistributorStatus() {
+        _pushDistributorStatus.value = pushEndpointProvider.getDistributorStatus()
+    }
+
+    fun dismissPushProviderPrompt() {
+        viewModelScope.launch { settings.setPushProviderPromptShown(true) }
+    }
 
     private val _selectedTab = MutableStateFlow<Int?>(null)
     val selectedTab: StateFlow<Int?> = _selectedTab.asStateFlow()

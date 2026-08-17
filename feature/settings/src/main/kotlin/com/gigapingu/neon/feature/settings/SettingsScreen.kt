@@ -72,6 +72,7 @@ import com.gigapingu.neon.core.designsystem.component.GlassCard
 import com.gigapingu.neon.core.designsystem.component.GlassIconButton
 import com.gigapingu.neon.core.designsystem.component.NeonLabel
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
+import com.gigapingu.neon.core.ui.InstallDistributorDialog
 import com.gigapingu.neon.core.ui.Navigator
 import com.gigapingu.neon.core.ui.PreviewHarness
 
@@ -624,61 +625,6 @@ private fun ThemeOptionPreview() {
             )
         }
     }
-}
-
-@Composable
-private fun InstallDistributorDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val palette = NeonTheme.palette
-    val type = NeonTheme.type
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Push Provider Required", color = palette.text, style = type.titleMedium) },
-        text = {
-            Text(
-                "Push notifications on de-googled devices require an open-source UnifiedPush distributor such as ntfy.\n\nInstall ntfy and open it once to enable push notifications in Neon.",
-                color = palette.textDim,
-                style = type.bodyMedium,
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onDismiss()
-                    try {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=io.heckel.ntfy"))
-                        )
-                    } catch (e: Exception) {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://ntfy.sh"))
-                        )
-                    }
-                }
-            ) {
-                Text("Get ntfy", color = palette.cyan, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(
-                    onClick = {
-                        onDismiss()
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://unifiedpush.org"))
-                        )
-                    }
-                ) {
-                    Text("Learn more", color = palette.textDim)
-                }
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel", color = palette.textMute)
-                }
-            }
-        },
-        containerColor = palette.surfaceSolid,
-        shape = RoundedCornerShape(20.dp),
-    )
 }
 
 @Composable

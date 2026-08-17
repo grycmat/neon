@@ -31,6 +31,7 @@ class SettingsRepository @Inject constructor(
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationsEnabledKey = booleanPreferencesKey("notifications_enabled")
     private val notificationPermissionRequestedKey = booleanPreferencesKey("notification_permission_requested")
+    private val pushProviderPromptShownKey = booleanPreferencesKey("push_provider_prompt_shown")
     // Legacy on/off key, read as a fallback when bigScreenLayoutKey hasn't been written yet.
     private val twoPaneEnabledKey = booleanPreferencesKey("two_pane_enabled")
     private val bigScreenLayoutKey = stringPreferencesKey("big_screen_layout")
@@ -62,6 +63,11 @@ class SettingsRepository @Inject constructor(
     /** Whether the POST_NOTIFICATIONS OS permission dialog has ever been shown to completion. */
     val notificationPermissionRequested: Flow<Boolean> = context.settingsStore.data.map { prefs ->
         prefs[notificationPermissionRequestedKey] ?: false
+    }
+
+    /** Whether the UnifiedPush missing distributor modal has been shown on first run after login. */
+    val pushProviderPromptShown: Flow<Boolean> = context.settingsStore.data.map { prefs ->
+        prefs[pushProviderPromptShownKey] ?: false
     }
 
     /** Big-screen tab body layout, list-detail by default; falls back to the legacy on/off key pre-migration. */
@@ -106,6 +112,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setNotificationPermissionRequested(requested: Boolean) {
         context.settingsStore.edit { prefs ->
             prefs[notificationPermissionRequestedKey] = requested
+        }
+    }
+
+    suspend fun setPushProviderPromptShown(shown: Boolean) {
+        context.settingsStore.edit { prefs ->
+            prefs[pushProviderPromptShownKey] = shown
         }
     }
 
