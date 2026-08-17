@@ -1,0 +1,4 @@
+• Added FOSS flavor with open-source UnifiedPush support (ntfy)
+• Bundled static fonts (Space Grotesk & Manrope) directly in the app
+• Improved push notification settings and first-run provider setup
+• Bug fixes and performance enhancements
