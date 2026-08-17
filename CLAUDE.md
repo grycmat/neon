@@ -436,9 +436,9 @@ reworking a screen so it stays previewable without Hilt/ViewModels.
   versions in `gradle/libs.versions.toml` are alphas and may need bumping; the
   `NavDisplay` / `entryProvider` / decorator API has shifted between alphas
   (notably the `onBack(count)` signature used in `NeonApp.kt`).
-- **Downloadable fonts** (Space Grotesk + Manrope): if they silently fall back
-  to the system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
-  from the AndroidX downloadable-fonts docs — the base64 certs must match exactly.
+- **Bundled fonts**: Space Grotesk/Manrope ship as static `.ttf` files in
+  `core/designsystem/src/main/res/font/` (no downloadable-fonts provider) under
+  the SIL Open Font License — see `THIRD_PARTY_LICENSES/`.
 - Both streaming (see Streaming above) and push notifications are implemented (The media viewer is also implemented:
   `core/ui/.../media/MediaPreviewScreen.kt`, opened via
   `Navigator.openMediaPreview`; `MediaGrid` falls back to it when no

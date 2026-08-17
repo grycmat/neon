@@ -39,7 +39,7 @@ with Mastodon gGmbH.
 ## Stack
 
 - **Kotlin 2.2**, JVM 17, AGP 8.11, compileSdk 36 / minSdk 26
-- **Jetpack Compose** (Material 3, BOM), downloadable Google Fonts (Space Grotesk + Manrope)
+- **Jetpack Compose** (Material 3, BOM), bundled static fonts (Space Grotesk + Manrope, SIL OFL 1.1)
 - **Navigation 3** (`androidx.navigation3`) — serializable `NavKey`s, `NavDisplay`, ViewModel-scoped entries
 - **Hilt** for DI (`@HiltViewModel` per screen, `@Singleton` repositories)
 - **OkHttp + kotlinx.serialization** for the Mastodon REST API (dynamic instance host, so no Retrofit)
@@ -156,10 +156,6 @@ Phone layouts remain untouched below the threshold.
   `gradle/libs.versions.toml` may need bumping to the current release; the
   `NavDisplay`/`entryProvider`/decorator API has shifted slightly between
   alphas (notably the `onBack(count)` signature in `NeonApp.kt`).
-- **Downloadable fonts**: if Space Grotesk/Manrope silently fall back to the
-  system font, re-copy `core/designsystem/src/main/res/values/font_certs.xml`
-  from the AndroidX downloadable-fonts docs — the base64 certs must match
-  exactly.
 - **Glance is pinned at `1.1.1`** in `gradle/libs.versions.toml`. The widget uses
   `SizeMode.Single` and caps rows/avatar pixels deliberately — a widget update has
   to clear the ~1MB Binder transaction limit, and `SizeMode.Exact`/`Responsive`
@@ -175,4 +171,7 @@ before opening a PR.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Bundled fonts (Space Grotesk, Manrope) are licensed separately under the
+SIL Open Font License 1.1 — see [`THIRD_PARTY_LICENSES/`](THIRD_PARTY_LICENSES).
 

@@ -1,38 +1,27 @@
 package com.gigapingu.neon.core.designsystem.theme
 
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.gigapingu.neon.core.designsystem.R
 
 /**
- * Space Grotesk (display) + Manrope (body) via downloadable Google Fonts,
- * matching the Flutter google_fonts pairing. Falls back to the system
- * sans-serif while fonts load (or if the fonts provider is unavailable).
+ * Space Grotesk (display) + Manrope (body), bundled as static font files,
+ * matching the Flutter google_fonts pairing.
  */
-private val fontProvider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs,
-)
-
-private val spaceGrotesk = GoogleFont("Space Grotesk")
-private val manrope = GoogleFont("Manrope")
-
 val DisplayFontFamily = FontFamily(
-    Font(googleFont = spaceGrotesk, fontProvider = fontProvider, weight = FontWeight.Bold),
-    Font(googleFont = spaceGrotesk, fontProvider = fontProvider, weight = FontWeight.Medium),
+    Font(R.font.space_grotesk_bold, FontWeight.Bold),
+    Font(R.font.space_grotesk_medium, FontWeight.Medium),
 )
 
 val BodyFontFamily = FontFamily(
-    Font(googleFont = manrope, fontProvider = fontProvider, weight = FontWeight.Normal),
-    Font(googleFont = manrope, fontProvider = fontProvider, weight = FontWeight.SemiBold),
-    Font(googleFont = manrope, fontProvider = fontProvider, weight = FontWeight.Bold),
-    Font(googleFont = manrope, fontProvider = fontProvider, weight = FontWeight.ExtraBold),
+    Font(R.font.manrope_regular, FontWeight.Normal),
+    Font(R.font.manrope_semibold, FontWeight.SemiBold),
+    Font(R.font.manrope_bold, FontWeight.Bold),
+    Font(R.font.manrope_extrabold, FontWeight.ExtraBold),
 )
 
 /**

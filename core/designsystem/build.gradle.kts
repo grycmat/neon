@@ -32,7 +32,6 @@ dependencies {
     api(libs.compose.material3)
     api(libs.compose.material.icons.extended)
     api(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.ui.text.google.fonts)
     api(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     debugImplementation(libs.compose.ui.tooling)
