@@ -1,0 +1,10 @@
+Neon is a fast, modern, and beautiful Mastodon client built natively for Android with Jetpack Compose.
+
+Features:
+• Clean and fluid UI with dark, light, and wallpaper-based dynamic theming
+• Adaptive multi-pane layouts for foldables, tablets, and large screens
+• Fast timeline navigation with home, local, federated, explore, and direct message feeds
+• Push notifications with on-device RFC 8291 end-to-end payload decryption
+• Full de-googled / FOSS support with open UnifiedPush push providers (e.g. ntfy)
+• Rich media viewer, polls, bookmarks, and account management
+• Zero third-party trackers or telemetry

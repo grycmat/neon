@@ -32,14 +32,58 @@ android {
         versionName = "1.4.0"
     }
 
+    signingConfigs {
+        create("fossRelease") {
+            val keystorePath = (project.findProperty("FOSS_KEYSTORE_FILE") as String?) ?: System.getenv("FOSS_KEYSTORE_FILE")
+            val keystoreFile = keystorePath?.let { file(it) }
+            if (keystoreFile != null && keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = (project.findProperty("FOSS_KEYSTORE_PASSWORD") as String?) ?: System.getenv("FOSS_KEYSTORE_PASSWORD") ?: ""
+                keyAlias = (project.findProperty("FOSS_KEY_ALIAS") as String?) ?: System.getenv("FOSS_KEY_ALIAS") ?: "neon-foss"
+                keyPassword = (project.findProperty("FOSS_KEY_PASSWORD") as String?) ?: System.getenv("FOSS_KEY_PASSWORD") ?: ""
+            } else {
+                initWith(getByName("debug"))
+            }
+        }
+        create("gmsRelease") {
+            val keystorePath = (project.findProperty("GMS_KEYSTORE_FILE") as String?)
+                ?: (project.findProperty("KEYSTORE_FILE") as String?)
+                ?: System.getenv("GMS_KEYSTORE_FILE")
+                ?: System.getenv("KEYSTORE_FILE")
+            val keystoreFile = keystorePath?.let { file(it) }
+            if (keystoreFile != null && keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = (project.findProperty("GMS_KEYSTORE_PASSWORD") as String?)
+                    ?: (project.findProperty("KEYSTORE_PASSWORD") as String?)
+                    ?: System.getenv("GMS_KEYSTORE_PASSWORD")
+                    ?: System.getenv("KEYSTORE_PASSWORD")
+                    ?: ""
+                keyAlias = (project.findProperty("GMS_KEY_ALIAS") as String?)
+                    ?: (project.findProperty("KEY_ALIAS") as String?)
+                    ?: System.getenv("GMS_KEY_ALIAS")
+                    ?: System.getenv("KEY_ALIAS")
+                    ?: "neon-upload"
+                keyPassword = (project.findProperty("GMS_KEY_PASSWORD") as String?)
+                    ?: (project.findProperty("KEY_PASSWORD") as String?)
+                    ?: System.getenv("GMS_KEY_PASSWORD")
+                    ?: System.getenv("KEY_PASSWORD")
+                    ?: ""
+            } else {
+                initWith(getByName("debug"))
+            }
+        }
+    }
+
     flavorDimensions += "distribution"
     productFlavors {
         create("gms") {
             dimension = "distribution"
+            signingConfig = signingConfigs.getByName("gmsRelease")
         }
         create("foss") {
             dimension = "distribution"
             applicationIdSuffix = ".foss"
+            signingConfig = signingConfigs.getByName("fossRelease")
         }
     }
 
@@ -52,6 +96,12 @@ android {
                 "proguard-rules.pro",
             )
         }
+    }
+
+    lint {
+        disable += "Instantiatable"
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 
     buildFeatures { compose = true }

@@ -10,7 +10,10 @@ with Mastodon gGmbH.
 </p>
 
 <p align="center">
-  <a href="https://play.google.com/store/apps/details?id=com.gigapingu.neon">Get it on Google Play</a>
+  <a href="https://play.google.com/store/apps/details?id=com.gigapingu.neon"><img src="https://img.shields.io/badge/Google_Play-Neon-34A853?logo=google-play&logoColor=white" alt="Google Play" /></a>
+  <a href="https://github.com/grycmat/neon/releases"><img src="https://img.shields.io/badge/GitHub-Releases-181717?logo=github&logoColor=white" alt="GitHub Releases" /></a>
+  <a href="https://github.com/grycmat/neon/releases"><img src="https://img.shields.io/badge/Obtainium-Direct_Install-3F51B5?logo=android&logoColor=white" alt="Obtainium" /></a>
+  <a href="deployment.md"><img src="https://img.shields.io/badge/F--Droid_/_IzzyOnDroid-FOSS-1976D2?logo=f-droid&logoColor=white" alt="F-Droid / IzzyOnDroid" /></a>
 </p>
 
 ## Screenshots

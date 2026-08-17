@@ -1,0 +1,1 @@
+Sleek, modern Mastodon client with customizable themes and push notifications.
