@@ -39,10 +39,13 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: ShellViewModel by viewModels()
 
+    private var onPermissionResult: ((Boolean) -> Unit)? = null
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) {
+    ) { isGranted ->
         viewModel.markNotificationPermissionRequested()
+        onPermissionResult?.invoke(isGranted)
     }
 
     private val appUpdateLauncher = registerForActivityResult(
@@ -79,6 +82,15 @@ class MainActivity : ComponentActivity() {
                         true
                     }
                 )
+            }
+
+            DisposableEffect(Unit) {
+                onPermissionResult = { isGranted ->
+                    hasNotificationPermission = isGranted
+                }
+                onDispose {
+                    onPermissionResult = null
+                }
             }
 
             var isAppForeground by remember { mutableStateOf(true) }
@@ -121,7 +133,21 @@ class MainActivity : ComponentActivity() {
                         this@MainActivity,
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED
-                    if (!granted && !viewModel.hasRequestedNotificationPermission()) {
+                    hasNotificationPermission = granted
+                    if (!granted) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            }
+
+            LaunchedEffect(authStatus) {
+                if (authStatus == AuthStatus.Authenticated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val granted = ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                    hasNotificationPermission = granted
+                    if (!granted) {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }

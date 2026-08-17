@@ -2,6 +2,8 @@ package com.gigapingu.neon.core.ui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -12,6 +14,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
+
+private const val NTFY_FDROID_URL = "https://f-droid.org/en/packages/io.heckel.ntfy/"
+private const val NTFY_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=io.heckel.ntfy"
+private const val UNIFIED_PUSH_URL = "https://unifiedpush.org"
 
 @Composable
 fun InstallDistributorDialog(
@@ -31,37 +37,51 @@ fun InstallDistributorDialog(
         onDismissRequest = onDismiss,
         title = { Text("Push Provider Required", color = palette.text, style = type.titleMedium) },
         text = {
-            Text(
-                message,
-                color = palette.textDim,
-                style = type.bodyMedium,
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onDismiss()
-                    try {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=io.heckel.ntfy"))
-                        )
-                    } catch (e: Exception) {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://ntfy.sh"))
-                        )
-                    }
-                }
-            ) {
-                Text("Get ntfy", color = palette.cyan, fontWeight = FontWeight.Bold)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    message,
+                    color = palette.textDim,
+                    style = type.bodyMedium,
+                )
             }
         },
-        dismissButton = {
-            Row {
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(
                     onClick = {
                         onDismiss()
                         context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://unifiedpush.org"))
+                            Intent(Intent.ACTION_VIEW, Uri.parse(NTFY_FDROID_URL))
+                        )
+                    }
+                ) {
+                    Text("Get on F-Droid", color = palette.cyan, fontWeight = FontWeight.Bold)
+                }
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                        try {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=io.heckel.ntfy"))
+                            )
+                        } catch (e: Exception) {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(NTFY_PLAY_STORE_URL))
+                            )
+                        }
+                    }
+                ) {
+                    Text("Get on Play Store", color = palette.cyan, fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(UNIFIED_PUSH_URL))
                         )
                     }
                 ) {
@@ -76,3 +96,4 @@ fun InstallDistributorDialog(
         shape = RoundedCornerShape(20.dp),
     )
 }
+

@@ -3,17 +3,13 @@
 
     <application>
 
-        <receiver
-            android:name="com.gigapingu.neon.feature.notifications.NeonUnifiedPushReceiver"
-            android:exported="true">
+        <service
+            android:name="com.gigapingu.neon.feature.notifications.NeonPushService"
+            android:exported="false">
             <intent-filter>
-                <action android:name="org.unifiedpush.android.connector.MESSAGE" />
-                <action android:name="org.unifiedpush.android.connector.UNREGISTERED" />
-                <action android:name="org.unifiedpush.android.connector.NEW_ENDPOINT" />
-                <action android:name="org.unifiedpush.android.connector.REGISTRATION_FAILED" />
-                <action android:name="org.unifiedpush.android.connector.TEMP_UNAVAILABLE" />
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
             </intent-filter>
-        </receiver>
+        </service>
 
     </application>
 

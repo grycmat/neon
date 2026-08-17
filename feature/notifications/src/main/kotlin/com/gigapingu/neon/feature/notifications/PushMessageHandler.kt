@@ -31,7 +31,7 @@ const val NEON_NOTIFICATION_CHANNEL_ID = "neon_notifications"
 /**
  * Shared decrypt-and-display logic for an incoming Web Push payload, regardless of which
  * Android entry point delivered it — FCM/C2DM ([NeonFirebaseMessagingService]/[NeonC2dmReceiver],
- * gms flavor) or UnifiedPush (NeonUnifiedPushReceiver, foss flavor). Lives in the flavor-agnostic
+ * gms flavor) or UnifiedPush (NeonPushService, foss flavor). Lives in the flavor-agnostic
  * source set since every delivery entry point across both flavors depends on it.
  */
 class PushMessageHandler @Inject constructor(

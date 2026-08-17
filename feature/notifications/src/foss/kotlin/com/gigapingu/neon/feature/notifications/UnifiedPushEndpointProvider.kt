@@ -18,12 +18,12 @@ import org.unifiedpush.android.connector.data.ResolvedDistributor
  * RFC 8291-compliant Web Push endpoint, so Mastodon posts encrypted payloads straight to it —
  * no relay involved.
  *
- * Returns the last endpoint [NeonUnifiedPushReceiver] was handed, after confirming the saved
+ * Returns the last endpoint [NeonPushService] was handed, after confirming the saved
  * distributor is still installed (a distributor uninstalled outside the app never gets a chance
  * to send `onUnregistered`, so a stale cached endpoint would otherwise persist forever). If no
  * live endpoint exists, resolves the distributor via [UnifiedPush.resolveDefaultDistributor]
  * (Context-only, no Activity/OS picker needed when there's an unambiguous single distributor)
- * and requests registration, returning null — [NeonUnifiedPushReceiver.onNewEndpoint] completes
+ * and requests registration, returning null — [NeonPushService.onNewEndpoint] completes
  * the actual `PushRepository.register` call once the distributor responds, mirroring how the gms
  * flavor's `onNewToken` re-registers on FCM rotation. When multiple distributors are installed
  * with none chosen yet ([ResolvedDistributor.ToSelect]), or none are installed at all
@@ -38,7 +38,7 @@ class UnifiedPushEndpointProvider @Inject constructor(
     /**
      * Guards against re-sending a registration request on every call while one is already
      * pending (e.g. repeated ON_RESUME before the distributor has responded). Reset by
-     * [markRegistrationSettled] once [NeonUnifiedPushReceiver] observes a terminal outcome
+     * [markRegistrationSettled] once [NeonPushService] observes a terminal outcome
      * (new endpoint, registration failure, or unregistration) for the attempt this started.
      */
     private val registrationInFlight = AtomicBoolean(false)
@@ -73,7 +73,7 @@ class UnifiedPushEndpointProvider @Inject constructor(
         UnifiedPush.register(context)
     }
 
-    /** Called by [NeonUnifiedPushReceiver] once a registration attempt reaches a terminal state. */
+    /** Called by [NeonPushService] once a registration attempt reaches a terminal state. */
     fun markRegistrationSettled() {
         registrationInFlight.set(false)
     }
@@ -97,7 +97,7 @@ class UnifiedPushEndpointProvider @Inject constructor(
     /**
      * Resolves a distributor and asks it to register, unless a request from an earlier call is
      * still pending. Only the [ResolvedDistributor.Found] path leaves [registrationInFlight] set
-     * — it's cleared by [markRegistrationSettled] once [NeonUnifiedPushReceiver] observes a
+     * — it's cleared by [markRegistrationSettled] once [NeonPushService] observes a
      * terminal outcome for the request this starts. Every other path, including a thrown
      * exception (e.g. a malfunctioning distributor), must clear it itself here, or no callback
      * will ever arrive to do so and every future call would short-circuit to null forever.
