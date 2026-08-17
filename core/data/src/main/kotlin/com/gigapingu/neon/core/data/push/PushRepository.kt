@@ -1,18 +1,20 @@
 package com.gigapingu.neon.core.data.push
 
-import com.gigapingu.neon.core.data.NeonConfig
+import com.gigapingu.neon.core.data.AuthRepository
+import com.gigapingu.neon.core.data.AuthStatus
+import com.gigapingu.neon.core.data.SettingsRepository
 import com.gigapingu.neon.core.network.ApiClient
-import java.net.URLEncoder
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * Registers / removes the Mastodon Web Push subscription that points at the
- * mastodon-fcm-relay. The device's FCM token is embedded in the endpoint path so
- * the relay knows which device to forward each push to. The public key + auth
- * secret come from [PushKeyManager]; the matching private key stays on-device for
+ * Registers / removes the Mastodon Web Push subscription at a given transport
+ * endpoint (relay-backed for the gms flavor, a UnifiedPush distributor's own
+ * endpoint for foss — see [PushEndpointProvider]). The public key + auth secret
+ * come from [PushKeyManager]; the matching private key stays on-device for
  * [WebPushDecryptor].
  */
 @Singleton
@@ -25,14 +27,12 @@ class PushRepository @Inject constructor(
     private var lastRegistrationKey: String? = null
 
     /** POST /api/v1/push/subscription. No-op if not authenticated or unchanged since the last call. */
-    suspend fun register(fcmToken: String, alerts: NotificationAlertPrefs = NotificationAlertPrefs()) {
+    suspend fun register(endpoint: String, alerts: NotificationAlertPrefs = NotificationAlertPrefs()) {
         if (!api.isConfigured) return
-        val registrationKey = "$fcmToken:$alerts"
+        val registrationKey = "$endpoint:$alerts"
         if (registrationKey == lastRegistrationKey) return
 
         val keys = keyManager.getOrCreateKeys()
-        val endpoint = NeonConfig.RELAY_BASE_URL.trimEnd('/') +
-            "/push/" + URLEncoder.encode(fcmToken, "UTF-8")
         val request = RegisterPushRequest(
             subscription = PushSubscriptionBody(
                 endpoint = endpoint,
@@ -49,6 +49,24 @@ class PushRepository @Inject constructor(
         lastRegistrationKey = null
         if (!api.isConfigured) return
         runCatching { api.delete("/api/v1/push/subscription") }
+    }
+
+    /**
+     * [register], gated on auth status and the notifications setting — the eligibility check
+     * every push-transport rotation entry point (FCM token refresh, UnifiedPush endpoint change)
+     * needs identically, previously duplicated verbatim in both flavors' receivers. Returns
+     * whether registration actually happened, so callers can log accordingly.
+     */
+    suspend fun registerIfEligible(
+        endpoint: String,
+        alerts: NotificationAlertPrefs,
+        authRepository: AuthRepository,
+        settingsRepository: SettingsRepository,
+    ): Boolean {
+        if (authRepository.status.value != AuthStatus.Authenticated) return false
+        if (!settingsRepository.notificationsEnabled.first()) return false
+        register(endpoint, alerts)
+        return true
     }
 }
 

@@ -14,9 +14,9 @@ import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.data.TimelineRepository
 import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
+import com.gigapingu.neon.core.data.push.PushEndpointProvider
 import com.gigapingu.neon.core.data.push.PushRepository
 import com.gigapingu.neon.core.model.Account
-import com.gigapingu.neon.feature.notifications.FcmTokenProvider
 import com.gigapingu.neon.feature.notifications.NEON_PUSH_TAG
 import com.gigapingu.neon.update.AppUpdateController
 import com.gigapingu.neon.update.AppUpdateUiState
@@ -37,7 +37,7 @@ class ShellViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val timelines: TimelineRepository,
     private val pushRepository: PushRepository,
-    private val fcmTokenProvider: FcmTokenProvider,
+    private val pushEndpointProvider: PushEndpointProvider,
     private val streamingRepository: StreamingRepository,
     private val appUpdate: AppUpdateController,
 ) : ViewModel() {
@@ -111,21 +111,22 @@ class ShellViewModel @Inject constructor(
     }
 
     /**
-     * Registers (or removes) the FCM/relay push subscription based on current auth,
-     * the notifications setting, and OS notification permission. Safe to call on every
-     * relevant state change — [PushRepository] skips redundant re-registration.
+     * Registers (or removes) the push subscription based on current auth, the notifications
+     * setting, and OS notification permission. Transport is flavor-dependent — see
+     * [PushEndpointProvider]. Safe to call on every relevant state change — [PushRepository]
+     * skips redundant re-registration.
      */
     fun syncPushRegistration(hasNotificationPermission: Boolean) {
         viewModelScope.launch {
             if (authStatus.value != AuthStatus.Authenticated) return@launch
             try {
                 if (notificationsEnabled.value && hasNotificationPermission) {
-                    val token = fcmTokenProvider.getToken()
-                    if (token != null) {
-                        pushRepository.register(token, notificationAlertPrefs.value)
+                    val endpoint = pushEndpointProvider.getEndpoint()
+                    if (endpoint != null) {
+                        pushRepository.register(endpoint, notificationAlertPrefs.value)
                         Log.i(NEON_PUSH_TAG, "Registered push subscription with instance")
                     } else {
-                        Log.w(NEON_PUSH_TAG, "No FCM token available — skipping push registration")
+                        Log.w(NEON_PUSH_TAG, "No push endpoint available yet — skipping registration")
                     }
                 } else {
                     pushRepository.unregister()

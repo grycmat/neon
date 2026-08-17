@@ -16,24 +16,33 @@ DataStore for credentials/settings.
 
 - Open the repo root in Android Studio (Narwhal or newer) and let it sync — this is the normal workflow.
 - From the CLI (the Gradle wrapper is committed):
-  - `./gradlew :app:assembleDebug` — build the debug APK
-  - `./gradlew :app:installDebug` — build and install on a connected device/emulator
-  - `./gradlew build` — full build of all modules
+  - `./gradlew :app:assembleGmsDebug` — build the debug APK for Play (FCM push, Play in-app updates)
+  - `./gradlew :app:assembleFossDebug` — build the debug APK for F-Droid/IzzyOnDroid/Obtainium
+    (UnifiedPush, no Google dependencies at all — see Product flavors below)
+  - `./gradlew :app:installGmsDebug` / `:app:installFossDebug` — build and install on a connected device/emulator
+  - `./gradlew build` — full build of all modules (both flavors)
   - `./gradlew :core:data:build` (etc.) — build a single module
 - A clean checkout builds and runs with **no secrets**: OAuth app registration
   happens dynamically against whatever instance the user enters at login; the
   redirect `neon://oauth` is intercepted inside an in-app WebView, so no manifest
   intent-filter/scheme is needed. Defaults (redirect URI, scopes, default
   instance) live in `core/data/.../NeonConfig.kt`.
-- **Push notifications** (see Architecture below) need real config, gitignored:
-  - `google-services.json` at the app module root for Firebase/FCM. Without it
-    the `com.google.gms.google-services` Gradle plugin fails, so a build that
-    doesn't touch Firebase is unaffected but installing/running with push is.
-  - `secrets.properties` at the repo root with `RELAY_BASE_URL` (the deployed
-    `mastodon-fcm-relay` host). Copy `secrets.properties.example`. It is read in
-    `core/data/build.gradle.kts` into `BuildConfig.RELAY_BASE_URL`; absent, it
-    falls back to `RELAY_BASE_URL` env var, then `https://relay.example.com`
-    (builds fine, push just won't deliver).
+- **Push notifications** (see Architecture below) differ by flavor:
+  - `gms` needs real config, gitignored, or it silently degrades (push won't deliver, everything
+    else still builds/runs):
+    - `google-services.json` in `app/src/gms/` (not the module root — a `gms`-flavor-scoped source
+      set, so its single client entry for the unsuffixed `com.gigapingu.neon` applicationId is
+      never even looked at while building `foss`). Its absence is handled — `app/build.gradle.kts`
+      sets `googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }`,
+      so any variant that finds no matching config (every `foss` variant, or a `gms` variant built
+      without the file) configures and builds cleanly instead of hard-failing.
+    - `secrets.properties` at the repo root with `RELAY_BASE_URL` (the deployed
+      `mastodon-fcm-relay` host). Copy `secrets.properties.example`. It is read in
+      `feature/notifications/build.gradle.kts` into the `gms`-flavor-scoped
+      `BuildConfig.RELAY_BASE_URL`; absent, it falls back to the `RELAY_BASE_URL` env var, then
+      `https://relay.example.com`.
+  - `foss` needs neither file — UnifiedPush posts straight to a distributor's own endpoint, no
+    relay involved.
 - There is currently no automated test suite in this repo.
 
 ## Architecture
@@ -57,7 +66,9 @@ feature/timeline      Home / Local / Federated with segmented pills, plus hashta
 feature/explore       Trends (with TrendSpark sparklines) + search (also pushed for hashtag taps)
 feature/notifications Notifications feed (type-filter pills: All/Mentions/Favourites/Boosts/Follows/Polls)
                       + filtered-notification requests queue + follow-request review;
-                      NeonFirebaseMessagingService + NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (push)
+                      PushMessageHandler is shared; NeonFirebaseMessagingService + NeonC2dmReceiver +
+                      GmsPushEndpointProvider live in src/gms, NeonUnifiedPushReceiver +
+                      UnifiedPushEndpointProvider in src/foss (see Product flavors, Push notifications)
 feature/messages      Direct messages: Conversation list + new-message composer (Mastodon has no
                       separate DM system — a Conversation just groups visibility="direct" statuses)
 feature/thread        Thread view (ancestors → focused → replies)
@@ -129,27 +140,46 @@ that `withContext`.
 
 ### Push notifications
 
-Delivered over **FCM data messages** relayed through a self-hosted
-`mastodon-fcm-relay`, with **all decryption on-device** — the relay never sees
-plaintext. The device subscribes to Mastodon Web Push (RFC 8030/8188/8291)
-pointing the endpoint at the relay, which forwards each still-encrypted payload
-via FCM. Pieces:
-- `core/data/push/PushKeyManager` — generates + persists the P-256 ECDH keypair
-  and 16-byte auth secret in `EncryptedSharedPreferences`. Only the public key +
-  auth secret ever leave the device.
-- `core/data/push/PushRepository` — `POST/DELETE /api/v1/push/subscription`. The
-  FCM token is URL-encoded into the endpoint path (`RELAY_BASE_URL/push/<token>`)
-  so the relay knows which device to forward to. Registers with `standard=true`
-  (aes128gcm; Mastodon ≥ 4.4).
-- `core/data/push/WebPushDecryptor` — pure crypto, no Firebase/network; decrypts
+Transport is **flavor-swapped** (see Product flavors below): `gms` delivers over
+FCM data messages relayed through a self-hosted `mastodon-fcm-relay`; `foss`
+delivers over **UnifiedPush**, posting straight to a distributor's own endpoint
+with no relay involved. Either way, **all decryption is on-device** — neither the
+relay nor a UnifiedPush distributor ever sees plaintext — and the device
+subscribes to Mastodon Web Push (RFC 8030/8188/8291) the same way regardless of
+transport. Shared pieces (`core/data/push`, flavor-agnostic):
+- `PushKeyManager` — generates + persists the P-256 ECDH keypair and 16-byte
+  auth secret in `EncryptedSharedPreferences`. Only the public key + auth secret
+  ever leave the device.
+- `PushRepository` — `POST/DELETE /api/v1/push/subscription`, given a pre-built
+  `endpoint: String` (the caller — a flavor's `PushEndpointProvider` — decides
+  what that endpoint is). Registers with `standard=true` (aes128gcm; Mastodon
+  ≥ 4.4).
+- `WebPushDecryptor` — pure crypto, no Firebase/UnifiedPush/network; decrypts
   both modern `aes128gcm` and legacy `aesgcm` payloads.
-- `feature/notifications/FcmTokenProvider` — suspending wrapper over the FCM token
-  Task. `PushMessageHandler` holds the shared decrypt-and-post logic (decrypts,
-  resolves the status best-effort to deep-link, posts to the `neon_notifications`
-  channel created in `NeonApplication.onCreate`) and is called from **two**
-  entry points, both registered in `app/AndroidManifest.xml`:
+- `PushEndpointProvider` (`core/data/push`) — `suspend fun getEndpoint(): String?`,
+  one implementation per flavor, bound via a flavor-scoped Hilt `@Provides`
+  module in `feature/notifications/src/{gms,foss}/.../di/PushModule.kt`.
+- `PushRepository.registerIfEligible(endpoint, alerts, authRepository,
+  settingsRepository)` — `register`, gated on auth status and the
+  notifications setting; the token/endpoint-rotation eligibility check both
+  `NeonFirebaseMessagingService.onNewToken` and `NeonUnifiedPushReceiver
+  .onNewEndpoint` need identically, so it lives once in `core/data` instead of
+  duplicated per flavor.
+
+`feature/notifications/PushMessageHandler` (flavor-agnostic, `src/main`) holds
+the shared decrypt-and-post logic (decrypts, resolves the status best-effort to
+deep-link, posts to the `neon_notifications` channel created in
+`NeonApplication.onCreate`) and owns the shared `NEON_PUSH_TAG`/
+`NEON_NOTIFICATION_CHANNEL_ID` constants. Delivery entry points differ by flavor:
+
+- **`gms`** (`feature/notifications/src/gms`, `app/src/gms/AndroidManifest.xml`):
+  `GmsPushEndpointProvider` wraps the FCM registration token and builds
+  `RELAY_BASE_URL/push/<token>` (URL-encoded) so the relay knows which device to
+  forward to. `PushMessageHandler` is called from **two** entry points, both
+  registered in the gms manifest:
   - `NeonFirebaseMessagingService` (`FirebaseMessagingService.onMessageReceived`) — the
-    modern path.
+    modern path; `onNewToken` re-registers via `GmsPushEndpointProvider.buildEndpoint`
+    + `PushRepository.registerIfEligible`.
   - `NeonC2dmReceiver` — a manifest `BroadcastReceiver` for the legacy
     `com.google.android.c2dm.intent.RECEIVE` system broadcast, deliberately mirroring
     how the official `org.joinmastodon.android` app receives push. This exists because
@@ -162,11 +192,40 @@ via FCM. Pieces:
     entry points can fire for the same message; that's harmless since
     `PushMessageHandler` always resolves the same `notification_id` and
     `NotificationManagerCompat.notify()` on a duplicate id just overwrites in place.
+- **`foss`** (`feature/notifications/src/foss`, `app/src/foss/AndroidManifest.xml`):
+  `NeonUnifiedPushReceiver` extends the `org.unifiedpush.android:connector`
+  library's `MessagingReceiver` (a `BroadcastReceiver`, for the same OEM
+  background-restriction reasons `NeonC2dmReceiver` is one, not a `Service`).
+  `UnifiedPushEndpointProvider` resolves a distributor via
+  `UnifiedPush.resolveDefaultDistributor` (Context-only — no Activity/OS picker
+  needed when there's one unambiguous distributor; multiple-distributor and
+  no-distributor cases are logged, not surfaced in UI, deliberately out of scope
+  for now) and requests registration; `onNewEndpoint` completes it via
+  `PushRepository.registerIfEligible(endpoint.url, ...)` — the distributor's
+  endpoint *is* the RFC 8291 Web Push endpoint, so no relay is involved. The connector's
+  own decryption is unused (Mastodon encrypts to `PushKeyManager`'s keypair, not
+  any key the connector manages) — `onMessage` hands the raw ciphertext to
+  `PushMessageHandler` exactly like the gms entry points do, always labeled
+  `aes128gcm`: the connector's `PushMessage` exposes only the raw body, never
+  the separate `Encryption`/`Crypto-Key` headers legacy `aesgcm` needs, so a
+  Mastodon instance older than 4.4 (which ignores `standard=true` and always
+  sends `aesgcm`) can't be supported over UnifiedPush — those pushes
+  consistently fail to decrypt and fall back to a generic notification. The
+  gms flavor doesn't have this limitation, since the relay forwards whatever
+  `contentEncoding` the instance actually used. `MessagingReceiver.onReceive`
+  doesn't call `goAsync()` itself (and releases the connector's own wake lock
+  the moment it returns), so every callback that launches async work
+  (`onMessage`, `onNewEndpoint`, `onUnregistered`) calls `goAsync()` directly,
+  same as `NeonC2dmReceiver`. `UnifiedPushEndpointProvider` also re-validates
+  a cached endpoint's distributor is still installed before trusting it (a
+  distributor removed outside the app never gets to send `onUnregistered`),
+  and guards `getEndpoint()` against re-sending a registration request while
+  one from an earlier call is still pending.
 - **Sync loop**: `ShellViewModel.syncPushRegistration(hasPermission)` is the single
   entry point, called from a `MainActivity` `LaunchedEffect` keyed on auth status,
   the `notificationsEnabled` setting, and `POST_NOTIFICATIONS` permission (re-checked
   on `ON_RESUME`). It registers when all three hold, else unregisters;
-  `PushRepository` de-dupes redundant re-registration by last token. `AuthRepository`
+  `PushRepository` de-dupes redundant re-registration by last endpoint. `AuthRepository`
   logout unregisters (while the token is still valid) then wipes the keypair.
 - Notification taps route through `Navigator.handleNotificationClick` (via
   `MainActivity.handleNotificationIntent` on `status_id` / `open_notifications`
@@ -227,13 +286,20 @@ re-states the layout in Glance primitives.
 ### In-app updates
 
 Google Play in-app updates (`com.google.android.play:app-update-ktx`), all in `app/.../update/`
-— no `core/*` or `feature/*` module needs them, so the Play dependency stays in `:app`.
+— no `core/*` or `feature/*` module needs them, so the Play dependency stays in `:app`, and is
+now **gms-only** (see Product flavors below): `foss` has zero Play Core dependency, per F-Droid's
+inclusion policy.
 
-- `AppUpdateController` is the whole implementation: a Hilt `@Singleton` wrapping
-  `AppUpdateManager`, same shape as `FcmTokenProvider` (thin coroutine wrapper over a
-  Play-services Task API). It exposes `StateFlow<AppUpdateUiState>` — `Idle` / `Downloading` /
-  `ReadyToInstall`, deliberately **free of Play types** so the Compose layer never observes an
-  unstable `AppUpdateInfo`.
+- `AppUpdateController` (`app/src/main/.../update/AppUpdateController.kt`) is now just the shared
+  interface plus `AppUpdateUiState` — `Idle` / `Downloading` / `ReadyToInstall`, deliberately
+  **free of Play types** so the Compose layer never observes an unstable `AppUpdateInfo`.
+  `PlayAppUpdateController` (`app/src/gms`) is the real implementation: a Hilt `@Singleton`
+  wrapping `AppUpdateManager`, same shape as `GmsPushEndpointProvider` (thin coroutine wrapper
+  over a Play-services Task API). `NoOpAppUpdateController` (`app/src/foss`) stays `Idle` and
+  no-ops every method. One flavor-scoped `@Provides` module each
+  (`app/src/{gms,foss}/.../update/di/UpdateModule.kt`) binds the interface — `ShellViewModel`/
+  `MainActivity` reference `AppUpdateController`/`AppUpdateUiState` by name only and need no
+  flavor-specific code.
 - **Strategy is priority-driven**: `FLEXIBLE` (background download, app stays usable) for routine
   releases, escalating to Play's blocking `IMMEDIATE` flow only when `updatePriority() >= 4` or
   `clientVersionStalenessDays() >= 14`. Note `updatePriority` is **not** settable in the Play
@@ -258,6 +324,41 @@ Google Play in-app updates (`com.google.android.play:app-update-ktx`), all in `a
   `onActivityResult` override anywhere — keep it that way) and renders `UpdateReadyDialog`
   inside `NeonTheme` next to `NeonApp`, so its own window floats above the shell and any pushed
   Nav3 screen.
+
+### Product flavors (gms / foss)
+
+A single `distribution` flavor dimension (`app/build.gradle.kts`,
+`feature/notifications/build.gradle.kts`) produces two always-buildable outputs from the same
+source tree — not a fork, not a separate branch — so a change to shared code (nearly everything;
+`core/*` has no flavor dimension at all) automatically applies to both:
+- **`gms`** — ships to Play. `applicationId` unchanged (`com.gigapingu.neon`). FCM/C2DM push
+  through the self-hosted relay, Google Play in-app updates. Needs `google-services.json` +
+  `secrets.properties` (see Build & run above) to actually deliver push; builds without them
+  regardless.
+- **`foss`** — for F-Droid, IzzyOnDroid, or a direct APK via Obtainium.
+  `applicationIdSuffix = ".foss"` (→ `com.gigapingu.neon.foss`) so it can be installed alongside
+  the Play build without a signature-mismatch collision, and so Play's listing (which owns the
+  bare id) is never contested. Zero Google dependencies *declared* — no Firebase, no Play Core —
+  push is UnifiedPush instead, and in-app updates are a silent no-op (`NoOpAppUpdateController`).
+  The `google-services` plugin itself is still applied module-wide (AGP plugins can't be
+  per-flavor), but it finds no matching config for any `foss` variant — `google-services.json`
+  lives only under `app/src/gms/`, scoped to a single client entry for the unsuffixed
+  applicationId — and `missingGoogleServicesStrategy = WARN` (see Build & run above) turns that
+  into a no-op instead of a build failure. `versionCode`/`versionName` stay shared in
+  `defaultConfig` so both flavors always report the same app version.
+
+Every flavor-swapped concern (`PushEndpointProvider`, `AppUpdateController`) follows one pattern:
+a small interface in the flavor-agnostic source set, one concrete implementation per flavor in
+`src/gms`/`src/foss`, bound by an identically-named-and-packaged `@Provides` Hilt module per
+flavor (this repo has no `@Binds` usage anywhere — matching that existing convention rather than
+introducing a second DI idiom). See Push notifications and In-app updates above for the concrete
+implementations.
+
+To cut a release: `./gradlew :app:bundleGmsRelease` (the AAB uploaded to Play) and
+`./gradlew :app:assembleFossRelease` (the APK for F-Droid/IzzyOnDroid/a GitHub Release Obtainium
+tracks) against the same tag. There's no CI in this repo, so make a habit of running
+`:app:assembleFossRelease` once before each release with `google-services.json`/
+`secrets.properties` removed, to catch a Google import that leaked into shared code.
 
 ### Navigation
 

@@ -22,12 +22,17 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+/** Log tag for push registration/delivery diagnostics. */
+const val NEON_PUSH_TAG = "NeonPush"
+
+/** Notification channel id shared between channel creation (NeonApplication) and posting. */
+const val NEON_NOTIFICATION_CHANNEL_ID = "neon_notifications"
+
 /**
  * Shared decrypt-and-display logic for an incoming Web Push payload, regardless of which
- * Android entry point delivered it — the modern [NeonFirebaseMessagingService] or the legacy
- * C2DM [NeonC2dmReceiver] (mirroring how the official Mastodon app receives pushes; some OEMs
- * treat a manifest-registered broadcast receiver far more leniently than a Service wake-up for
- * a backgrounded app, see CLAUDE.md Push notifications section).
+ * Android entry point delivered it — FCM/C2DM ([NeonFirebaseMessagingService]/[NeonC2dmReceiver],
+ * gms flavor) or UnifiedPush (NeonUnifiedPushReceiver, foss flavor). Lives in the flavor-agnostic
+ * source set since every delivery entry point across both flavors depends on it.
  */
 class PushMessageHandler @Inject constructor(
     @ApplicationContext private val context: Context,

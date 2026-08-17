@@ -24,6 +24,7 @@ firebaseBom = "33.7.0"
 securityCrypto = "1.1.0-alpha06"
 glance = "1.1.1"
 playAppUpdate = "2.1.0"
+unifiedpushConnector = "3.3.3"
 
 
 
@@ -79,9 +80,12 @@ glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", versi
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
-# Play In-App Updates (see app/.../update/AppUpdateController.kt)
+# Play In-App Updates (see app/.../update/AppUpdateController.kt) — gms flavor only
 play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "playAppUpdate" }
 play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "playAppUpdate" }
+
+# UnifiedPush — the foss flavor's push transport (see feature/notifications/src/foss)
+unifiedpush-connector = { group = "org.unifiedpush.android", name = "connector", version.ref = "unifiedpushConnector" }
 
 
 

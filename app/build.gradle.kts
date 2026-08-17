@@ -1,3 +1,5 @@
+import com.google.gms.googleservices.GoogleServicesPlugin
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,16 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.services)
+}
+
+// google-services.json only lives under src/gms (see below) — it has one client entry for the
+// unsuffixed gms applicationId, which would never match the foss flavor's applicationIdSuffix
+// even if the file were visible to it. WARN (not the default ERROR) lets every foss variant, and
+// a from-source (F-Droid/IzzyOnDroid) or gms-without-secrets checkout, configure and build
+// cleanly with nothing found for that variant, instead of failing with "No matching client" /
+// "File google-services.json is missing".
+googleServices {
+    missingGoogleServicesStrategy = GoogleServicesPlugin.MissingGoogleServicesStrategy.WARN
 }
 
 android {
@@ -18,6 +30,17 @@ android {
         targetSdk = 36
         versionCode = 9
         versionName = "1.4.0"
+    }
+
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("gms") {
+            dimension = "distribution"
+        }
+        create("foss") {
+            dimension = "distribution"
+            applicationIdSuffix = ".foss"
+        }
     }
 
     buildTypes {
@@ -91,13 +114,9 @@ dependencies {
     // For the app-wide ImageLoader (crossfade) built in NeonApplication.
     implementation(libs.coil.compose)
 
-    // FCM token retrieval for push registration (see ShellViewModel / feature:notifications).
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging)
-
-    // In-app updates via Play (see update/AppUpdateController.kt).
-    implementation(libs.play.app.update)
-    implementation(libs.play.app.update.ktx)
+    // In-app updates via Play (see update/PlayAppUpdateController.kt) — gms only.
+    "gmsImplementation"(libs.play.app.update)
+    "gmsImplementation"(libs.play.app.update.ktx)
 
     debugImplementation(libs.compose.ui.tooling)
 

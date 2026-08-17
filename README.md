@@ -65,8 +65,9 @@ core/ui               StatusCard, MediaGrid, PollView, QuoteCard, LinkPreviewCar
 feature/auth          Login + in-app OAuth WebView
 feature/timeline      Home / Local / Federated with segmented pills, plus hashtag and list timelines
 feature/explore       Trends + search (also pushed for hashtag taps)
-feature/notifications Notifications feed + filtered-notification requests queue + follow-request review,
-                      NeonFirebaseMessagingService + NeonC2dmReceiver + PushMessageHandler + FcmTokenProvider (FCM push)
+feature/notifications Notifications feed + filtered-notification requests queue + follow-request review;
+                      PushMessageHandler is shared, push transport is flavor-swapped — FCM/C2DM in
+                      src/gms, UnifiedPush in src/foss (see "Product flavors" below)
 feature/messages      Direct messages: Conversation list + new-message composer (a Conversation just groups
                       visibility="direct" statuses — Mastodon has no separate DM system)
 feature/thread        Thread view (ancestors → focused → replies)
@@ -92,7 +93,7 @@ feature/widget        Home-screen notifications widget (Glance): NotificationWid
 - **Dynamic Shell & Navigation**: Translucent bottom tab bar (Home, Explore, Notifications, Profile), shared glassy TopAppBar with feedback and settings actions, custom slide transitions, and predictive back support.
 - **Feedback**: Bug-report icon in the TopAppBar (and a "Send feedback" entry in Settings) opens the composer pre-addressed as a locked direct message to the developer's account.
 - **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).
-- **Push Notifications**: FCM-delivered Mastodon Web Push, decrypted on-device (RFC 8291), relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext. Delivered via two manifest entry points — the modern `FirebaseMessagingService` and a legacy C2DM `BroadcastReceiver` mirroring the official Mastodon app — since some OEMs silently drop background `Service` wake-ups well before Doze/App-Standby checks apply (see the "Push notifications" section in `CLAUDE.md`). Taps deep-link to the relevant thread.
+- **Push Notifications**: Mastodon Web Push, decrypted on-device (RFC 8291) either way. The `gms` build (Play) delivers over FCM, relayed through a self-hosted `mastodon-fcm-relay` so the relay never sees plaintext, via two manifest entry points — the modern `FirebaseMessagingService` and a legacy C2DM `BroadcastReceiver` mirroring the official Mastodon app, since some OEMs silently drop background `Service` wake-ups well before Doze/App-Standby checks apply. The `foss` build (F-Droid/IzzyOnDroid/Obtainium) delivers over UnifiedPush instead, posting straight to a distributor's own endpoint with no relay at all (see the "Push notifications" and "Product flavors" sections in `CLAUDE.md`). Taps deep-link to the relevant thread either way.
 - **Home-screen Widget**: Resizable Glance widget listing the newest notifications in the app's own glass styling — avatar with the notification-type badge composited in, name/verb/toot preview/time, an "Updated Xm ago" line and a refresh button. It follows the app's Theme mode setting (falling back to the system's night mode for `System`), renders from the Room cache so it works before the app has ever been opened in that process, and taps deep-link to the thread through the same route push notifications use. It refreshes as notifications arrive: push while backgrounded, streaming while foregrounded, plus in-app mutations, the refresh button, and a staleness-gated fetch on the platform's periodic update. See the "Home-screen widget" section in `CLAUDE.md` for the design constraints (Binder payload budget, Glance's single `goAsync` PendingResult).
 - **Material You**: Optional "Match wallpaper colors" toggle in Settings (Android 12+, off by default) re-derives the gradient, avatars, glow and accent ink from the device's wallpaper colors while keeping the glass surfaces and typography untouched; falls back to the static neon palette below API 31 or when off. Paired with a themed (monochrome) launcher icon. See the "Theming & Material You" section in `CLAUDE.md` for the implementation.
 
@@ -136,18 +137,33 @@ Phone layouts remain untouched below the threshold.
 
 1. Open the repository root folder in Android Studio (Narwhal or newer) and let it
    sync. If you build from the CLI, run `gradle wrapper` once (the wrapper
-   `.jar` is not committed) and then `./gradlew :app:assembleDebug`.
+   `.jar` is not committed) and then `./gradlew :app:assembleGmsDebug` (Play
+   flavor) or `./gradlew :app:assembleFossDebug` (F-Droid/IzzyOnDroid/Obtainium
+   flavor — no Google dependencies at all, see "Product flavors" in `CLAUDE.md`).
 2. No secrets needed to build or run the core app — OAuth app registration
    happens dynamically against the instance you enter at login (redirect
    `neon://oauth` is intercepted inside the WebView, so no manifest scheme is
    required). Defaults live in `core/data/.../NeonConfig.kt`.
-3. **Push notifications** need two gitignored files (a clean checkout builds
-   without them, push just won't deliver):
-   - `google-services.json` at the app module root for Firebase/FCM.
+3. **Push notifications on the `gms` flavor** need two gitignored files (the
+   `gms` flavor builds without them, push just won't deliver; the `foss` flavor
+   needs neither — UnifiedPush has no relay to configure):
+   - `google-services.json` in `app/src/gms/` (`gms`-flavor-scoped) for Firebase/FCM.
    - `secrets.properties` at the repo root with `RELAY_BASE_URL` (your deployed
      `mastodon-fcm-relay` host) — copy `secrets.properties.example`. It's read
-     into `BuildConfig.RELAY_BASE_URL`, falling back to the `RELAY_BASE_URL` env
-     var, then `https://relay.example.com`.
+     into `feature/notifications`'s `BuildConfig.RELAY_BASE_URL`, falling back
+     to the `RELAY_BASE_URL` env var, then `https://relay.example.com`.
+
+## Product flavors
+
+Two Gradle product flavors (`distribution` dimension) build from the same source tree:
+
+- **`gms`** — the Play Store build (`com.gigapingu.neon`). FCM/C2DM push through the self-hosted
+  relay, Google Play in-app updates.
+- **`foss`** — for F-Droid, IzzyOnDroid, or a direct APK via Obtainium
+  (`com.gigapingu.neon.foss`, installable alongside the Play build). Zero Google dependencies
+  declared — push is UnifiedPush instead, in-app updates are a no-op.
+
+See the "Product flavors" section in `CLAUDE.md` for the implementation.
 
 ## Known caveats
 
