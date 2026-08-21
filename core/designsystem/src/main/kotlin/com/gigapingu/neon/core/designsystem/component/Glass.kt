@@ -49,6 +49,7 @@ fun GlassCard(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     highlighted: Boolean = false,
+    borderColor: Color? = null,
     content: @Composable () -> Unit,
 ) {
     val palette = NeonTheme.palette
@@ -58,7 +59,7 @@ fun GlassCard(
             .shadow(elevation = 14.dp, shape = shape, ambientColor = palette.shadow, spotColor = palette.shadow)
             .clip(shape)
             .background(if (highlighted) palette.surfaceHi else palette.surface)
-            .border(1.dp, if (highlighted) palette.borderStrong else palette.border, shape)
+            .border(1.dp, borderColor ?: if (highlighted) palette.borderStrong else palette.border, shape)
             .then(
                 if (onClick != null || onLongClick != null) {
                     Modifier.combinedClickable(

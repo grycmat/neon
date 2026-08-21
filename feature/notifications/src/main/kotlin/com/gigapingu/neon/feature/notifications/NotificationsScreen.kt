@@ -275,6 +275,7 @@ private fun NotificationRow(
     GlassCard(
         modifier = Modifier.padding(vertical = 5.dp),
         contentPadding = PaddingValues(14.dp),
+        borderColor = color.copy(alpha = .45f),
         onClick = {
             val status = item.status
             if (status != null) {
