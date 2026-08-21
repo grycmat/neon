@@ -481,9 +481,9 @@ on `NavDisplay` (see Navigation above), not part of `NeonMotion`.
 
 `NeonPalette` (`core/designsystem/.../theme/NeonPalette.kt`) is the single source of every color
 in the app: two static instances, `Dark`/`Light`, hand-tuned around the pink→purple→cyan brand
-trio (`NeonAccents`). `NeonTheme(darkTheme, dynamicColor, content)` provides the active instance
-via `LocalNeonPalette`; `neonColorScheme()` derives the M3 `ColorScheme` fed to `MaterialTheme`
-from whichever palette is active, so it never needs separate wiring.
+trio (`NeonAccents`). `NeonTheme(darkTheme, dynamicColor, textScale, iconScale, content)` provides
+the active instance via `LocalNeonPalette`; `neonColorScheme()` derives the M3 `ColorScheme` fed to
+`MaterialTheme` from whichever palette is active, so it never needs separate wiring.
 
 Material You (dynamic color, Android 12+) is opt-in and off by default:
 - `SettingsRepository.dynamicColorEnabled` → `ShellViewModel` (read, for `MainActivity`) and
@@ -504,6 +504,46 @@ Material You (dynamic color, Android 12+) is opt-in and off by default:
   dynamic color too. `NeonAccents` itself is referenced only from `NeonPalette.kt` now.
 - Themed launcher icon (monochrome adaptive-icon layer, `app/src/main/res/mipmap-anydpi-v26/`) is
   the other half of Material You and needs no Compose wiring — it's handled entirely by the OS.
+
+Text size is a separate, app-internal setting — independent of Material You and of the OS
+font-scale accessibility setting (this app doesn't read or override `fontScale`):
+- `SettingsRepository.TextScale` (`Small`/`Default`/`Large`/`ExtraLarge`) has a `multiplier: Float`
+  extension (0.9/1/1.15/1.3) consumed only outside `core/designsystem`, so the design system itself
+  stays enum-agnostic and only ever receives a resolved `Float` — the same split `ThemeMode` has
+  with the `darkTheme: Boolean` `NeonTheme` actually takes.
+- Same wiring shape as dynamic color: `SettingsRepository.textScale` → `ShellViewModel` (read, for
+  `MainActivity`) and `SettingsViewModel` (read/write, for the Settings screen) → `MainActivity`
+  resolves the enum to its `multiplier` and passes it into `NeonTheme(textScale = ...)`.
+- `neonTypography(scale: Float = 1f)` (`core/designsystem/.../theme/NeonType.kt`) multiplies every
+  role's `fontSize` literal by `scale` before building each `TextStyle`; `letterSpacing` is left
+  unscaled (scaling small tracking values too looks off at the extremes) and `lineHeight` is
+  already `.em`, so it follows `fontSize` automatically. The Settings screen exposes it as a
+  4-option row under "Appearance" (`TextScaleOption`, styled like the theme-mode picker but with a
+  live-sized "Aa" preview instead of an icon).
+
+Icon size is a second, independent app-internal setting, scoped specifically to the post-card
+action row (reply/boost/favourite/bookmark/share, plus overflow on your own posts) — the icons
+users complained were too small — not a general UI/icon scale:
+- `SettingsRepository.IconScale` (`Small`/`Default`/`Large`/`ExtraLarge`) has its own
+  `multiplier: Float` extension (0.85/1/1.2/1.4), independent of `TextScale`'s multiplier values.
+  Same wiring shape: `SettingsRepository.iconScale` → `ShellViewModel`/`SettingsViewModel` →
+  `MainActivity` resolves the enum to its `multiplier` and passes it into
+  `NeonTheme(iconScale = ...)`.
+- Unlike `textScale`, `NeonTheme` doesn't fold `iconScale` into a value object it already threads
+  everywhere (there's no per-component "icon size" param anywhere) — it's provided as its own
+  `LocalIconScale` composition local (`core/designsystem/.../theme/NeonTheme.kt`), read via
+  `NeonTheme.iconScale` next to the existing `NeonTheme.palette`/`.type` accessors.
+- `core/ui/.../status/StatusActions.kt`'s private `ActionItem` (the single composable every action
+  icon in the row is built from) is the only consumer: its icon `Modifier.size(17.dp)` becomes
+  `Modifier.size(17.dp * NeonTheme.iconScale)`. Deliberately just the glyph — the row's 26dp
+  inter-item spacing and 10dp touch-target padding stay fixed, since the row has no horizontal
+  scroll and, unlike vertical growth (nothing constrains the card's height), scaling spacing too
+  risks it overflowing/wrapping on narrow phones once combined with a large `textScale` (the
+  counter next to each icon already scales independently via `NeonTheme.type.bodySmall`). The
+  Boost/Quote sheet and post overflow-menu icon chips (`SheetOption`, same file) are a separate,
+  fixed-size 40dp/20dp scheme and intentionally out of scope. Settings exposes it as a second
+  4-option row under "Appearance", right below "Text size" (`IconScaleOption`, same visual
+  treatment, previewing with a scaled star icon instead of "Aa").
 
 ### Profile header photo & full-screen preview
 

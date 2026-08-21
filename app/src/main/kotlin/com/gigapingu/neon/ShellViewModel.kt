@@ -8,8 +8,10 @@ import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AuthRepository
 import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.data.BigScreenLayout
+import com.gigapingu.neon.core.data.IconScale
 import com.gigapingu.neon.core.data.SettingsRepository
 import com.gigapingu.neon.core.data.StreamingRepository
+import com.gigapingu.neon.core.data.TextScale
 import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.TimelineKind
 import com.gigapingu.neon.core.data.TimelineRepository
@@ -74,6 +76,12 @@ class ShellViewModel @Inject constructor(
 
     val dynamicColorEnabled: StateFlow<Boolean> = settings.dynamicColorEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val textScale: StateFlow<TextScale> = settings.textScale
+        .stateIn(viewModelScope, SharingStarted.Eagerly, TextScale.Default)
+
+    val iconScale: StateFlow<IconScale> = settings.iconScale
+        .stateIn(viewModelScope, SharingStarted.Eagerly, IconScale.Default)
 
     val pushProviderPromptShown: StateFlow<Boolean> = settings.pushProviderPromptShown
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)

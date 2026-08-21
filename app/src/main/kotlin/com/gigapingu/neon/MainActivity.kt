@@ -18,6 +18,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.AuthStatus
 import com.gigapingu.neon.core.data.ThemeMode
+import com.gigapingu.neon.core.data.multiplier
 import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.designsystem.theme.NeonTheme
 import com.gigapingu.neon.core.ui.InstallDistributorDialog
@@ -65,6 +66,8 @@ class MainActivity : ComponentActivity() {
             val authStatus by viewModel.authStatus.collectAsStateWithLifecycle()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
+            val textScale by viewModel.textScale.collectAsStateWithLifecycle()
+            val iconScale by viewModel.iconScale.collectAsStateWithLifecycle()
             val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
             val notificationAlertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
             val updateState by viewModel.updateState.collectAsStateWithLifecycle()
@@ -173,7 +176,12 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.Light -> false
                 ThemeMode.System -> isSystemInDarkTheme()
             }
-            NeonTheme(darkTheme = darkTheme, dynamicColor = dynamicColorEnabled) {
+            NeonTheme(
+                darkTheme = darkTheme,
+                dynamicColor = dynamicColorEnabled,
+                textScale = textScale.multiplier,
+                iconScale = iconScale.multiplier,
+            ) {
                 NeonApp(viewModel = viewModel, modifier = Modifier)
 
                 // Its own window, so it floats above the shell and any pushed Nav3 screen.

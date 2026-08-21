@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Smartphone
+import androidx.compose.material.icons.rounded.Star
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Icon
@@ -52,6 +55,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,7 +69,10 @@ import android.net.Uri
 import android.os.Build
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import com.gigapingu.neon.core.data.IconScale
+import com.gigapingu.neon.core.data.TextScale
 import com.gigapingu.neon.core.data.ThemeMode
+import com.gigapingu.neon.core.data.multiplier
 import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.designsystem.component.GlassButton
 import com.gigapingu.neon.core.designsystem.component.GlassCard
@@ -92,6 +99,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val type = NeonTheme.type
     val mode by viewModel.themeMode.collectAsStateWithLifecycle()
     val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
+    val textScale by viewModel.textScale.collectAsStateWithLifecycle()
+    val iconScale by viewModel.iconScale.collectAsStateWithLifecycle()
     val me by viewModel.me.collectAsStateWithLifecycle()
     val prefNotificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
     val alertPrefs by viewModel.notificationAlertPrefs.collectAsStateWithLifecycle()
@@ -237,6 +246,90 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     onSelect = viewModel::setThemeMode,
                     modifier = Modifier.weight(1f),
                 )
+            }
+            Spacer(Modifier.height(10.dp))
+            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                Column {
+                    Text("Text size", style = type.bodySmall, color = palette.textDim)
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        TextScaleOption(
+                            scale = TextScale.Small,
+                            label = "Small",
+                            current = textScale,
+                            onSelect = viewModel::setTextScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextScaleOption(
+                            scale = TextScale.Default,
+                            label = "Default",
+                            current = textScale,
+                            onSelect = viewModel::setTextScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextScaleOption(
+                            scale = TextScale.Large,
+                            label = "Large",
+                            current = textScale,
+                            onSelect = viewModel::setTextScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextScaleOption(
+                            scale = TextScale.ExtraLarge,
+                            label = "XL",
+                            current = textScale,
+                            onSelect = viewModel::setTextScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                Column {
+                    Text("Icon size", style = type.bodySmall, color = palette.textDim)
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Max),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        IconScaleOption(
+                            scale = IconScale.Small,
+                            label = "Small",
+                            current = iconScale,
+                            onSelect = viewModel::setIconScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconScaleOption(
+                            scale = IconScale.Default,
+                            label = "Default",
+                            current = iconScale,
+                            onSelect = viewModel::setIconScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconScaleOption(
+                            scale = IconScale.Large,
+                            label = "Large",
+                            current = iconScale,
+                            onSelect = viewModel::setIconScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconScaleOption(
+                            scale = IconScale.ExtraLarge,
+                            label = "XL",
+                            current = iconScale,
+                            onSelect = viewModel::setIconScale,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 Spacer(Modifier.height(10.dp))
@@ -588,6 +681,118 @@ private fun ThemeOption(
             style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
             color = if (selected) palette.text else palette.textDim,
         )
+    }
+}
+
+@Composable
+private fun TextScaleOption(
+    scale: TextScale,
+    label: String,
+    current: TextScale,
+    onSelect: (TextScale) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    val selected = scale == current
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(shape)
+            .background(if (selected) palette.cyan.copy(alpha = .08f) else palette.surface)
+            .border(1.dp, if (selected) palette.cyan.copy(alpha = .4f) else palette.border, shape)
+            .clickable { onSelect(scale) }
+            .padding(vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            "Aa",
+            fontSize = (16f * scale.multiplier).sp,
+            fontWeight = FontWeight.Bold,
+            color = if (selected) palette.cyan else palette.textDim,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
+            color = if (selected) palette.text else palette.textDim,
+        )
+    }
+}
+
+@Preview(name = "Text size options", showBackground = true, heightDp = 140)
+@Composable
+private fun TextScaleOptionPreview() {
+    PreviewHarness {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TextScaleOption(TextScale.Small, "Small", TextScale.Default, {}, Modifier.weight(1f))
+            TextScaleOption(TextScale.Default, "Default", TextScale.Default, {}, Modifier.weight(1f))
+            TextScaleOption(TextScale.Large, "Large", TextScale.Default, {}, Modifier.weight(1f))
+            TextScaleOption(TextScale.ExtraLarge, "XL", TextScale.Default, {}, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun IconScaleOption(
+    scale: IconScale,
+    label: String,
+    current: IconScale,
+    onSelect: (IconScale) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = NeonTheme.palette
+    val type = NeonTheme.type
+    val selected = scale == current
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(shape)
+            .background(if (selected) palette.cyan.copy(alpha = .08f) else palette.surface)
+            .border(1.dp, if (selected) palette.cyan.copy(alpha = .4f) else palette.border, shape)
+            .clickable { onSelect(scale) }
+            .padding(vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            Icons.Rounded.Star,
+            contentDescription = null,
+            tint = if (selected) palette.cyan else palette.textDim,
+            modifier = Modifier.size(17.dp * scale.multiplier),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            style = type.bodySmall.copy(fontWeight = FontWeight.Bold),
+            color = if (selected) palette.text else palette.textDim,
+        )
+    }
+}
+
+@Preview(name = "Icon size options", showBackground = true, heightDp = 140)
+@Composable
+private fun IconScaleOptionPreview() {
+    PreviewHarness {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            IconScaleOption(IconScale.Small, "Small", IconScale.Default, {}, Modifier.weight(1f))
+            IconScaleOption(IconScale.Default, "Default", IconScale.Default, {}, Modifier.weight(1f))
+            IconScaleOption(IconScale.Large, "Large", IconScale.Default, {}, Modifier.weight(1f))
+            IconScaleOption(IconScale.ExtraLarge, "XL", IconScale.Default, {}, Modifier.weight(1f))
+        }
     }
 }
 

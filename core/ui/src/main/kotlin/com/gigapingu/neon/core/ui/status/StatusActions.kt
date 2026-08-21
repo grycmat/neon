@@ -246,7 +246,7 @@ private fun ActionItem(
             contentDescription = null,
             tint = color,
             modifier = Modifier
-                .size(17.dp)
+                .size(17.dp * NeonTheme.iconScale)
                 .graphicsLayer {
                     scaleX = scale.value
                     scaleY = scale.value

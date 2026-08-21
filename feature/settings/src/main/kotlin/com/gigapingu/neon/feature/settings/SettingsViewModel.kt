@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gigapingu.neon.core.data.AccountRepository
 import com.gigapingu.neon.core.data.AuthRepository
+import com.gigapingu.neon.core.data.IconScale
 import com.gigapingu.neon.core.data.SettingsRepository
+import com.gigapingu.neon.core.data.TextScale
 import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
 import com.gigapingu.neon.core.data.push.PushDistributorStatus
@@ -48,6 +50,12 @@ class SettingsViewModel @Inject constructor(
     val dynamicColorEnabled: StateFlow<Boolean> = settings.dynamicColorEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    val textScale: StateFlow<TextScale> = settings.textScale
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TextScale.Default)
+
+    val iconScale: StateFlow<IconScale> = settings.iconScale
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IconScale.Default)
+
     private val _pushDistributorStatus = MutableStateFlow(pushEndpointProvider.getDistributorStatus())
     val pushDistributorStatus: StateFlow<PushDistributorStatus> = _pushDistributorStatus.asStateFlow()
 
@@ -84,6 +92,14 @@ class SettingsViewModel @Inject constructor(
 
     fun setDynamicColorEnabled(enabled: Boolean) {
         viewModelScope.launch { settings.setDynamicColorEnabled(enabled) }
+    }
+
+    fun setTextScale(scale: TextScale) {
+        viewModelScope.launch { settings.setTextScale(scale) }
+    }
+
+    fun setIconScale(scale: IconScale) {
+        viewModelScope.launch { settings.setIconScale(scale) }
     }
 
     fun setDefaultPrivacy(visibility: String) {

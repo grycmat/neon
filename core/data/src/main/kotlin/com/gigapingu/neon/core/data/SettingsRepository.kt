@@ -21,6 +21,30 @@ enum class ThemeMode { Dark, Light, System }
 /** Big-screen tab body layout: phone-style single pane, hinge-aligned list-detail, or a list-detail grid. */
 enum class BigScreenLayout { List, TwoPane, Grid }
 
+/** App-wide text size, independent of the OS font-scale accessibility setting. */
+enum class TextScale { Small, Default, Large, ExtraLarge }
+
+/** Multiplier applied to every typography role's font size. */
+val TextScale.multiplier: Float
+    get() = when (this) {
+        TextScale.Small -> 0.9f
+        TextScale.Default -> 1f
+        TextScale.Large -> 1.15f
+        TextScale.ExtraLarge -> 1.3f
+    }
+
+/** Post-card action-row icon size (reply/boost/favourite/bookmark/share/more), independent of [TextScale]. */
+enum class IconScale { Small, Default, Large, ExtraLarge }
+
+/** Multiplier applied to the action-row icon glyph size. */
+val IconScale.multiplier: Float
+    get() = when (this) {
+        IconScale.Small -> 0.85f
+        IconScale.Default -> 1f
+        IconScale.Large -> 1.2f
+        IconScale.ExtraLarge -> 1.4f
+    }
+
 private val Context.settingsStore by preferencesDataStore(name = "neon_settings")
 
 @Singleton
@@ -36,6 +60,8 @@ class SettingsRepository @Inject constructor(
     private val twoPaneEnabledKey = booleanPreferencesKey("two_pane_enabled")
     private val bigScreenLayoutKey = stringPreferencesKey("big_screen_layout")
     private val dynamicColorEnabledKey = booleanPreferencesKey("dynamic_color_enabled")
+    private val textScaleKey = stringPreferencesKey("text_scale")
+    private val iconScaleKey = stringPreferencesKey("icon_scale")
     private val dismissedUpdateVersionKey = intPreferencesKey("dismissed_update_version")
     private object AlertKeys {
         val mention = booleanPreferencesKey("alert_mention")
@@ -83,6 +109,26 @@ class SettingsRepository @Inject constructor(
     /** Material You: derive the neon gradient/avatar/accent colors from the wallpaper (Android 12+). Off by default — the brand palette is the default identity. */
     val dynamicColorEnabled: Flow<Boolean> = context.settingsStore.data.map { prefs ->
         prefs[dynamicColorEnabledKey] ?: false
+    }
+
+    /** App-wide text size (independent of the OS font-scale setting). Default-sized by default. */
+    val textScale: Flow<TextScale> = context.settingsStore.data.map { prefs ->
+        when (prefs[textScaleKey]) {
+            "small" -> TextScale.Small
+            "large" -> TextScale.Large
+            "extra_large" -> TextScale.ExtraLarge
+            else -> TextScale.Default
+        }
+    }
+
+    /** Post-card action-row icon size, independent of [textScale]. Default-sized by default. */
+    val iconScale: Flow<IconScale> = context.settingsStore.data.map { prefs ->
+        when (prefs[iconScaleKey]) {
+            "small" -> IconScale.Small
+            "large" -> IconScale.Large
+            "extra_large" -> IconScale.ExtraLarge
+            else -> IconScale.Default
+        }
     }
 
     /**
@@ -134,6 +180,28 @@ class SettingsRepository @Inject constructor(
     suspend fun setDynamicColorEnabled(enabled: Boolean) {
         context.settingsStore.edit { prefs ->
             prefs[dynamicColorEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setTextScale(scale: TextScale) {
+        context.settingsStore.edit { prefs ->
+            prefs[textScaleKey] = when (scale) {
+                TextScale.Small -> "small"
+                TextScale.Default -> "default"
+                TextScale.Large -> "large"
+                TextScale.ExtraLarge -> "extra_large"
+            }
+        }
+    }
+
+    suspend fun setIconScale(scale: IconScale) {
+        context.settingsStore.edit { prefs ->
+            prefs[iconScaleKey] = when (scale) {
+                IconScale.Small -> "small"
+                IconScale.Default -> "default"
+                IconScale.Large -> "large"
+                IconScale.ExtraLarge -> "extra_large"
+            }
         }
     }
 

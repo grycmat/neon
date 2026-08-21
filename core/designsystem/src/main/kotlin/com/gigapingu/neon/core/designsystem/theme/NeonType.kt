@@ -44,7 +44,8 @@ data class NeonTypography(
     val labelSmall: TextStyle,
 )
 
-fun neonTypography(): NeonTypography {
+/** @param scale multiplier applied to every role's font size, driven by the user's text-size setting. */
+fun neonTypography(scale: Float = 1f): NeonTypography {
     val display = TextStyle(
         fontFamily = DisplayFontFamily,
         fontWeight = FontWeight.Bold,
@@ -52,18 +53,20 @@ fun neonTypography(): NeonTypography {
     )
     val body = TextStyle(fontFamily = BodyFontFamily)
     return NeonTypography(
-        displayLarge = display.copy(fontSize = 46.sp, lineHeight = 1.02.em),
-        displayMedium = display.copy(fontSize = 30.sp, lineHeight = 1.05.em),
-        displaySmall = display.copy(fontSize = 24.sp),
-        headlineMedium = display.copy(fontSize = 19.sp, letterSpacing = (-0.2).sp),
-        titleMedium = body.copy(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold),
-        titleSmall = body.copy(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold),
-        bodyLarge = body.copy(fontSize = 15.sp, lineHeight = 1.55.em),
-        bodyMedium = body.copy(fontSize = 14.sp, lineHeight = 1.5.em),
-        bodySmall = body.copy(fontSize = 12.sp, lineHeight = 1.45.em),
-        labelLarge = body.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
-        labelMedium = body.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.8.sp),
-        labelSmall = body.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp),
+        displayLarge = display.copy(fontSize = 46f.scaled(scale), lineHeight = 1.02.em),
+        displayMedium = display.copy(fontSize = 30f.scaled(scale), lineHeight = 1.05.em),
+        displaySmall = display.copy(fontSize = 24f.scaled(scale)),
+        headlineMedium = display.copy(fontSize = 19f.scaled(scale), letterSpacing = (-0.2).sp),
+        titleMedium = body.copy(fontSize = 15f.scaled(scale), fontWeight = FontWeight.ExtraBold),
+        titleSmall = body.copy(fontSize = 14f.scaled(scale), fontWeight = FontWeight.ExtraBold),
+        bodyLarge = body.copy(fontSize = 15f.scaled(scale), lineHeight = 1.55.em),
+        bodyMedium = body.copy(fontSize = 14f.scaled(scale), lineHeight = 1.5.em),
+        bodySmall = body.copy(fontSize = 12f.scaled(scale), lineHeight = 1.45.em),
+        labelLarge = body.copy(fontSize = 15f.scaled(scale), fontWeight = FontWeight.Bold),
+        labelMedium = body.copy(fontSize = 11f.scaled(scale), fontWeight = FontWeight.Bold, letterSpacing = 1.8.sp),
+        labelSmall = body.copy(fontSize = 10f.scaled(scale), fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp),
     )
 }
+
+private fun Float.scaled(scale: Float) = (this * scale).sp
 

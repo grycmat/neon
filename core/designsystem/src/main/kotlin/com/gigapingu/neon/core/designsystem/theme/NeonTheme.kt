@@ -15,8 +15,9 @@ import androidx.compose.ui.platform.LocalContext
 
 val LocalNeonPalette = staticCompositionLocalOf { NeonPalette.Dark }
 val LocalNeonTypography = staticCompositionLocalOf { neonTypography() }
+val LocalIconScale = staticCompositionLocalOf { 1f }
 
-/** Access with `NeonTheme.palette` / `NeonTheme.type` inside a [NeonTheme] scope. */
+/** Access with `NeonTheme.palette` / `NeonTheme.type` / `NeonTheme.iconScale` inside a [NeonTheme] scope. */
 object NeonTheme {
     val palette: NeonPalette
         @Composable get() = LocalNeonPalette.current
@@ -24,12 +25,18 @@ object NeonTheme {
         @Composable get() = LocalNeonTypography.current
     val isLight: Boolean
         @Composable get() = LocalNeonPalette.current.isLight
+
+    /** Multiplier for the post-card action-row icon glyph size — see [com.gigapingu.neon.core.data.IconScale]. */
+    val iconScale: Float
+        @Composable get() = LocalIconScale.current
 }
 
 @Composable
 fun NeonTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
+    textScale: Float = 1f,
+    iconScale: Float = 1f,
     content: @Composable () -> Unit,
 ) {
     val useDynamicColor = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -43,10 +50,11 @@ fun NeonTheme(
             NeonPalette.Light
         }
     }
-    val typography = neonTypography()
+    val typography = neonTypography(scale = textScale)
     CompositionLocalProvider(
         LocalNeonPalette provides palette,
         LocalNeonTypography provides typography,
+        LocalIconScale provides iconScale,
     ) {
         MaterialTheme(
             colorScheme = neonColorScheme(palette, darkTheme),
