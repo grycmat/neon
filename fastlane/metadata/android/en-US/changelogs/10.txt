@@ -1,4 +1,7 @@
-• Added FOSS flavor with open-source UnifiedPush support (ntfy)
+• Added FOSS flavor with open-source UnifiedPush support (ntfy), no Google dependencies
 • Bundled static fonts (Space Grotesk & Manrope) directly in the app
 • Improved push notification settings and first-run provider setup
+• New Settings > Appearance controls for adjustable text size and post-action icon size
+• Notification cards are now tinted by notification type for easier scanning
+• Save photos and videos to your device from the media viewer
 • Bug fixes and performance enhancements
