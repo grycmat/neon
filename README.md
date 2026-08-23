@@ -93,6 +93,7 @@ feature/widget        Home-screen notifications widget (Glance): NotificationWid
 - **Composer**: Text composer with media attachments, alt text, polls, CW toggle, and visibility settings.
 - **Filters, Lists & Followed Hashtags**: Manage keyword filters, custom lists (with per-account membership from a profile), and followed hashtags from Settings; filtered-out notifications land in a review queue.
 - **Profile**: Edit profile, including a custom-fields editor, with an accessibility pass over profile screens. The account's Mastodon header/cover photo renders behind the avatar (falling back to the brand gradient when unset); tapping either the header photo or the avatar opens the same full-screen media viewer used for toot media.
+- **Media Viewer**: Full-screen pinch-zoom/pan viewer for photos and video, with a swipe-down-to-dismiss gesture, an alt-text badge/sheet, and a download button to save the attachment to the device's Pictures/Movies via `DownloadManager`.
 - **Dynamic Shell & Navigation**: Translucent bottom tab bar (Home, Explore, Notifications, Profile), shared glassy TopAppBar with feedback and settings actions, custom slide transitions, and predictive back support.
 - **Feedback**: Bug-report icon in the TopAppBar (and a "Send feedback" entry in Settings) opens the composer pre-addressed as a locked direct message to the developer's account.
 - **Adaptive Layouts**: List-detail dual panes for foldables and tablets (>640dp).

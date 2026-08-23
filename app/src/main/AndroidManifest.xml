@@ -3,6 +3,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Only needed to let DownloadManager write into the public Pictures/Movies dirs pre-scoped
+         storage; Q+ downloads through DownloadManager's own process without it (see
+         StatusActionService.saveMedia). -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:name=".NeonApplication"

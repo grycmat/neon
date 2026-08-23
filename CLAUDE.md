@@ -583,4 +583,14 @@ reworking a screen so it stays previewable without Hilt/ViewModels.
 - Both streaming (see Streaming above) and push notifications are implemented (The media viewer is also implemented:
   `core/ui/.../media/MediaPreviewScreen.kt`, opened via
   `Navigator.openMediaPreview`; `MediaGrid` falls back to it when no
-  custom click handler is given.)
+  custom click handler is given.) The viewer's top-right download button calls
+  `StatusActionService.saveMedia(attachment)`, which just hands the attachment URL to
+  `DownloadManager` (destination `DIRECTORY_PICTURES`/`DIRECTORY_MOVIES` by
+  `attachment.isPlayable`) rather than fetching bytes with OkHttp — no network dependency needed
+  in `core/ui`, and no permission required from API 29 on since `DownloadManager` writes through
+  its own process, not this app's sandbox. Pre-29 still needs `WRITE_EXTERNAL_STORAGE` (declared
+  `maxSdkVersion="28"` in the manifest, since scoped storage removes the need above that); a
+  missing grant there just routes the user to the app's settings page to flip it on and retry,
+  rather than adding a second Activity-scoped runtime-permission launcher (see Navigation's
+  `notificationPermissionLauncher` pattern in `MainActivity`) solely for that now-vanishingly rare
+  OS range.

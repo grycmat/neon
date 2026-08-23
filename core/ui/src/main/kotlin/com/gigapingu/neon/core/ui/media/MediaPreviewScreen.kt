@@ -12,8 +12,10 @@ import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateCentroidSize
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -23,6 +25,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -52,6 +55,7 @@ import coil3.request.ImageRequest
 import com.gigapingu.neon.core.model.MediaAttachment
 import com.gigapingu.neon.core.model.MediaType
 import com.gigapingu.neon.core.ui.Navigator
+import com.gigapingu.neon.core.ui.StatusActionService
 import com.gigapingu.neon.core.ui.media.VideoPlayer
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -108,13 +112,31 @@ fun MediaPreviewScreen(
             )
         }
 
-        if (currentAttachment?.altText?.isNotBlank() == true) {
-            AltTextBadge(
-                onClick = { showAltText = true },
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 16.dp, top = 48.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (currentAttachment?.altText?.isNotBlank() == true) {
+                AltTextBadge(onClick = { showAltText = true })
+            }
+
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = 16.dp, top = 48.dp),
-            )
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable { currentAttachment?.let { StatusActionService.saveMedia(it) } },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Download,
+                    contentDescription = "Save to device",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 
