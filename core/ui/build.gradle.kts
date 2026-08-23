@@ -31,6 +31,7 @@ dependencies {
     api(projects.core.data)
     api(libs.navigation3.runtime)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
