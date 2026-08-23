@@ -1,5 +1,6 @@
 package com.gigapingu.neon.core.ui.media
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
@@ -154,6 +155,7 @@ fun MediaPreviewScreen(
  * (scale > 1f) every drag is consumed here to pan the image, which naturally
  * blocks the pager from swiping.
  */
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 private fun MediaPreviewPage(
     attachment: MediaAttachment,
