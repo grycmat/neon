@@ -221,12 +221,21 @@ deep-link, posts to the `neon_notifications` channel created in
   distributor removed outside the app never gets to send `onUnregistered`),
   and guards `getEndpoint()` against re-sending a registration request while
   one from an earlier call is still pending.
-- **Sync loop**: `ShellViewModel.syncPushRegistration(hasPermission)` is the single
+- **Sync loop**: `ShellViewModel.syncPushRegistration(hasPermission)` is the reactive
   entry point, called from a `MainActivity` `LaunchedEffect` keyed on auth status,
   the `notificationsEnabled` setting, and `POST_NOTIFICATIONS` permission (re-checked
   on `ON_RESUME`). It registers when all three hold, else unregisters;
   `PushRepository` de-dupes redundant re-registration by last endpoint. `AuthRepository`
   logout unregisters (while the token is still valid) then wipes the keypair.
+  `SettingsScreen`'s push toggle and per-type alert switches additionally call
+  `PushRepository.register`/`unregister` directly from `SettingsViewModel` (same
+  singleton, so it shares the de-dupe key) so the screen can await the response and
+  show a snackbar; on failure it reverts the just-written `SettingsRepository` value,
+  which snaps the switch back since it's DataStore-backed. `ShellViewModel`'s pass
+  over the same state change afterward is then a de-duped no-op. `unregister()` is
+  deliberately best-effort (never throws — see its kdoc), so turning the push switch
+  *off* always reports success; only enabling it, and editing alert prefs, can surface
+  a real failure and revert.
 - Notification taps route through `Navigator.handleNotificationClick` (via
   `MainActivity.handleNotificationIntent` on `status_id` / `open_notifications`
   extras).

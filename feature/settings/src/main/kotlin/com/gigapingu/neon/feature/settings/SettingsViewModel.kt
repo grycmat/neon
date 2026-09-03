@@ -11,6 +11,7 @@ import com.gigapingu.neon.core.data.ThemeMode
 import com.gigapingu.neon.core.data.push.NotificationAlertPrefs
 import com.gigapingu.neon.core.data.push.PushDistributorStatus
 import com.gigapingu.neon.core.data.push.PushEndpointProvider
+import com.gigapingu.neon.core.data.push.PushRepository
 import com.gigapingu.neon.core.model.Account
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -33,6 +34,7 @@ class SettingsViewModel @Inject constructor(
     private val auth: AuthRepository,
     private val accounts: AccountRepository,
     private val pushEndpointProvider: PushEndpointProvider,
+    private val pushRepository: PushRepository,
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
@@ -62,19 +64,47 @@ class SettingsViewModel @Inject constructor(
     val me: StateFlow<Account?> = auth.me
     val instance: String? get() = auth.instance
 
-    private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 4)
-    val errors: SharedFlow<String> = _errors.asSharedFlow()
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val messages: SharedFlow<String> = _messages.asSharedFlow()
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settings.setThemeMode(mode) }
     }
 
     fun setNotificationsEnabled(enabled: Boolean) {
-        viewModelScope.launch { settings.setNotificationsEnabled(enabled) }
+        viewModelScope.launch {
+            val previous = notificationsEnabled.value
+            settings.setNotificationsEnabled(enabled)
+            try {
+                if (enabled) {
+                    val endpoint = pushEndpointProvider.getEndpoint()
+                        ?: error("No push endpoint available yet")
+                    pushRepository.register(endpoint, notificationAlertPrefs.value)
+                } else {
+                    pushRepository.unregister()
+                }
+                _messages.tryEmit(if (enabled) "Push notifications enabled" else "Push notifications disabled")
+            } catch (e: Exception) {
+                settings.setNotificationsEnabled(previous)
+                _messages.tryEmit(e.message ?: "Could not update push notifications")
+            }
+        }
     }
 
     fun setNotificationAlertPrefs(prefs: NotificationAlertPrefs) {
-        viewModelScope.launch { settings.setNotificationAlertPrefs(prefs) }
+        viewModelScope.launch {
+            val previous = notificationAlertPrefs.value
+            settings.setNotificationAlertPrefs(prefs)
+            try {
+                val endpoint = pushEndpointProvider.getEndpoint()
+                    ?: error("No push endpoint available yet")
+                pushRepository.register(endpoint, prefs)
+                _messages.tryEmit("Notification preferences updated")
+            } catch (e: Exception) {
+                settings.setNotificationAlertPrefs(previous)
+                _messages.tryEmit(e.message ?: "Could not update notification preferences")
+            }
+        }
     }
 
     fun markNotificationPermissionRequested() {
@@ -108,7 +138,7 @@ class SettingsViewModel @Inject constructor(
                 val updated = accounts.updateCredentials(defaultPrivacy = visibility)
                 auth.updateMe(updated)
             } catch (e: Exception) {
-                _errors.tryEmit(e.message ?: "Could not update default visibility")
+                _messages.tryEmit(e.message ?: "Could not update default visibility")
             }
         }
     }
@@ -119,7 +149,7 @@ class SettingsViewModel @Inject constructor(
                 val updated = accounts.updateCredentials(defaultLanguage = languageCode)
                 auth.updateMe(updated)
             } catch (e: Exception) {
-                _errors.tryEmit(e.message ?: "Could not update default language")
+                _messages.tryEmit(e.message ?: "Could not update default language")
             }
         }
     }

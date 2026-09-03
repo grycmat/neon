@@ -1,4 +1,4 @@
-package com.gigapingu.neon.feature.settings
+﻿package com.gigapingu.neon.feature.settings
 
 import android.app.Activity
 import android.content.Context
@@ -36,11 +36,14 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -109,6 +112,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 
     var showInstallDistributorDialog by remember { mutableStateOf(false) }
     var showSelectDistributorDialog by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) { viewModel.messages.collect { snackbarHostState.showSnackbar(it) } }
 
     val context = LocalContext.current
     var hasPermission by remember {
@@ -199,156 +205,226 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             "Receive notifications on your device"
     }
 
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Row(
-            modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GlassIconButton(
-                icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                onClick = Navigator::back,
-                contentDescription = "Back",
-            )
-            Spacer(Modifier.width(10.dp))
-            Text("Settings", style = type.headlineMedium, color = palette.text)
-        }
-        Column(
-            Modifier
-                // Cap + centre on big screens; no-op at phone widths.
-                .align(Alignment.CenterHorizontally)
-                .widthIn(max = 560.dp)
-                .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 30.dp),
-        ) {
-            NeonLabel("Appearance", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ThemeOption(
-                    mode = ThemeMode.Dark,
-                    label = "Neon dark",
-                    icon = Icons.Rounded.DarkMode,
-                    current = mode,
-                    onSelect = viewModel::setThemeMode,
-                    modifier = Modifier.weight(1f),
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+            Row(
+                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlassIconButton(
+                    icon = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                    onClick = Navigator::back,
+                    contentDescription = "Back",
                 )
-                ThemeOption(
-                    mode = ThemeMode.Light,
-                    label = "Light",
-                    icon = Icons.Rounded.LightMode,
-                    current = mode,
-                    onSelect = viewModel::setThemeMode,
-                    modifier = Modifier.weight(1f),
-                )
-                ThemeOption(
-                    mode = ThemeMode.System,
-                    label = "System",
-                    icon = Icons.Rounded.Smartphone,
-                    current = mode,
-                    onSelect = viewModel::setThemeMode,
-                    modifier = Modifier.weight(1f),
-                )
+                Spacer(Modifier.width(10.dp))
+                Text("Settings", style = type.headlineMedium, color = palette.text)
             }
-            Spacer(Modifier.height(10.dp))
-            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                Column {
-                    Text("Text size", style = type.bodySmall, color = palette.textDim)
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Max),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        TextScaleOption(
-                            scale = TextScale.Small,
-                            label = "Small",
-                            current = textScale,
-                            onSelect = viewModel::setTextScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextScaleOption(
-                            scale = TextScale.Default,
-                            label = "Default",
-                            current = textScale,
-                            onSelect = viewModel::setTextScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextScaleOption(
-                            scale = TextScale.Large,
-                            label = "Large",
-                            current = textScale,
-                            onSelect = viewModel::setTextScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextScaleOption(
-                            scale = TextScale.ExtraLarge,
-                            label = "XL",
-                            current = textScale,
-                            onSelect = viewModel::setTextScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+            Column(
+                Modifier
+                    // Cap + centre on big screens; no-op at phone widths.
+                    .align(Alignment.CenterHorizontally)
+                    .widthIn(max = 560.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 30.dp),
+            ) {
+                NeonLabel("Appearance", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ThemeOption(
+                        mode = ThemeMode.Dark,
+                        label = "Neon dark",
+                        icon = Icons.Rounded.DarkMode,
+                        current = mode,
+                        onSelect = viewModel::setThemeMode,
+                        modifier = Modifier.weight(1f),
+                    )
+                    ThemeOption(
+                        mode = ThemeMode.Light,
+                        label = "Light",
+                        icon = Icons.Rounded.LightMode,
+                        current = mode,
+                        onSelect = viewModel::setThemeMode,
+                        modifier = Modifier.weight(1f),
+                    )
+                    ThemeOption(
+                        mode = ThemeMode.System,
+                        label = "System",
+                        icon = Icons.Rounded.Smartphone,
+                        current = mode,
+                        onSelect = viewModel::setThemeMode,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
-            }
-            Spacer(Modifier.height(10.dp))
-            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                Column {
-                    Text("Icon size", style = type.bodySmall, color = palette.textDim)
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Max),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        IconScaleOption(
-                            scale = IconScale.Small,
-                            label = "Small",
-                            current = iconScale,
-                            onSelect = viewModel::setIconScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconScaleOption(
-                            scale = IconScale.Default,
-                            label = "Default",
-                            current = iconScale,
-                            onSelect = viewModel::setIconScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconScaleOption(
-                            scale = IconScale.Large,
-                            label = "Large",
-                            current = iconScale,
-                            onSelect = viewModel::setIconScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconScaleOption(
-                            scale = IconScale.ExtraLarge,
-                            label = "XL",
-                            current = iconScale,
-                            onSelect = viewModel::setIconScale,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 Spacer(Modifier.height(10.dp))
                 GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                    Column {
+                        Text("Text size", style = type.bodySmall, color = palette.textDim)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Max),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            TextScaleOption(
+                                scale = TextScale.Small,
+                                label = "Small",
+                                current = textScale,
+                                onSelect = viewModel::setTextScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextScaleOption(
+                                scale = TextScale.Default,
+                                label = "Default",
+                                current = textScale,
+                                onSelect = viewModel::setTextScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextScaleOption(
+                                scale = TextScale.Large,
+                                label = "Large",
+                                current = textScale,
+                                onSelect = viewModel::setTextScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextScaleOption(
+                                scale = TextScale.ExtraLarge,
+                                label = "XL",
+                                current = textScale,
+                                onSelect = viewModel::setTextScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                    Column {
+                        Text("Icon size", style = type.bodySmall, color = palette.textDim)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Max),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            IconScaleOption(
+                                scale = IconScale.Small,
+                                label = "Small",
+                                current = iconScale,
+                                onSelect = viewModel::setIconScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconScaleOption(
+                                scale = IconScale.Default,
+                                label = "Default",
+                                current = iconScale,
+                                onSelect = viewModel::setIconScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconScaleOption(
+                                scale = IconScale.Large,
+                                label = "Large",
+                                current = iconScale,
+                                onSelect = viewModel::setIconScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconScaleOption(
+                                scale = IconScale.ExtraLarge,
+                                label = "XL",
+                                current = iconScale,
+                                onSelect = viewModel::setIconScale,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Spacer(Modifier.height(10.dp))
+                    GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Match wallpaper colors", style = type.titleSmall, color = palette.text)
+                                Text(
+                                    "Derive the gradient, avatars and accents from your wallpaper instead of Neon's brand colors",
+                                    style = type.bodySmall,
+                                    color = palette.textDim,
+                                )
+                            }
+                            Switch(
+                                checked = dynamicColorEnabled,
+                                onCheckedChange = viewModel::setDynamicColorEnabled,
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = palette.cyan.copy(alpha = .35f),
+                                    checkedThumbColor = palette.cyan,
+                                ),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(28.dp))
+                NeonLabel("Notifications", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+                GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (!isPushSupported || pushDistributorStatus is PushDistributorStatus.Undecided) {
+                                Modifier.clickable {
+                                    if (pushDistributorStatus is PushDistributorStatus.NotInstalled) {
+                                        showInstallDistributorDialog = true
+                                    } else if (pushDistributorStatus is PushDistributorStatus.Undecided) {
+                                        showSelectDistributorDialog = true
+                                    }
+                                }
+                            } else Modifier
+                        ),
+                    contentPadding = PaddingValues(16.dp),
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("Match wallpaper colors", style = type.titleSmall, color = palette.text)
+                            Text("Push notifications", style = type.titleSmall, color = palette.text)
                             Text(
-                                "Derive the gradient, avatars and accents from your wallpaper instead of Neon's brand colors",
+                                notificationSubtitle,
                                 style = type.bodySmall,
-                                color = palette.textDim,
+                                color = if (pushDistributorStatus is PushDistributorStatus.NotInstalled) palette.cyan else palette.textDim,
                             )
                         }
                         Switch(
-                            checked = dynamicColorEnabled,
-                            onCheckedChange = viewModel::setDynamicColorEnabled,
+                            checked = isToggled,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    if (pushDistributorStatus is PushDistributorStatus.NotInstalled) {
+                                        showInstallDistributorDialog = true
+                                    } else if (pushDistributorStatus is PushDistributorStatus.Undecided) {
+                                        showSelectDistributorDialog = true
+                                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
+                                        val activity = context.findActivity()
+                                        val canShowDialog = activity == null || !permissionRequested ||
+                                            ActivityCompat.shouldShowRequestPermissionRationale(
+                                                activity,
+                                                Manifest.permission.POST_NOTIFICATIONS,
+                                            )
+                                        if (canShowDialog) {
+                                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        } else {
+                                            context.startActivity(
+                                                android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                    putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                }
+                                            )
+                                        }
+                                    } else {
+                                        viewModel.setNotificationsEnabled(true)
+                                    }
+                                } else {
+                                    viewModel.setNotificationsEnabled(false)
+                                }
+                            },
                             colors = SwitchDefaults.colors(
                                 checkedTrackColor = palette.cyan.copy(alpha = .35f),
                                 checkedThumbColor = palette.cyan,
@@ -356,233 +432,166 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                         )
                     }
                 }
-            }
-            Spacer(Modifier.height(28.dp))
-            NeonLabel("Notifications", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-            GlassCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(
-                        if (!isPushSupported || pushDistributorStatus is PushDistributorStatus.Undecided) {
-                            Modifier.clickable {
-                                if (pushDistributorStatus is PushDistributorStatus.NotInstalled) {
-                                    showInstallDistributorDialog = true
-                                } else if (pushDistributorStatus is PushDistributorStatus.Undecided) {
-                                    showSelectDistributorDialog = true
-                                }
-                            }
-                        } else Modifier
-                    ),
-                contentPadding = PaddingValues(16.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Push notifications", style = type.titleSmall, color = palette.text)
-                        Text(
-                            notificationSubtitle,
-                            style = type.bodySmall,
-                            color = if (pushDistributorStatus is PushDistributorStatus.NotInstalled) palette.cyan else palette.textDim,
-                        )
-                    }
-                    Switch(
-                        checked = isToggled,
-                        onCheckedChange = { checked ->
-                            if (checked) {
-                                if (pushDistributorStatus is PushDistributorStatus.NotInstalled) {
-                                    showInstallDistributorDialog = true
-                                } else if (pushDistributorStatus is PushDistributorStatus.Undecided) {
-                                    showSelectDistributorDialog = true
-                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
-                                    val activity = context.findActivity()
-                                    val canShowDialog = activity == null || !permissionRequested ||
-                                        ActivityCompat.shouldShowRequestPermissionRationale(
-                                            activity,
-                                            Manifest.permission.POST_NOTIFICATIONS,
-                                        )
-                                    if (canShowDialog) {
-                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        context.startActivity(
-                                            android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                                putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                            }
-                                        )
-                                    }
-                                } else {
-                                    viewModel.setNotificationsEnabled(true)
-                                }
-                            } else {
-                                viewModel.setNotificationsEnabled(false)
-                            }
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedTrackColor = palette.cyan.copy(alpha = .35f),
-                            checkedThumbColor = palette.cyan,
-                        ),
-                    )
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                Column {
-                    NotificationAlertToggle("Mentions", alertPrefs.mention, enabled = isToggled) {
-                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(mention = it))
-                    }
-                    NotificationAlertToggle("Favourites", alertPrefs.favourite, enabled = isToggled) {
-                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(favourite = it))
-                    }
-                    NotificationAlertToggle("Boosts", alertPrefs.reblog, enabled = isToggled) {
-                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(reblog = it))
-                    }
-                    NotificationAlertToggle("New followers", alertPrefs.follow, enabled = isToggled) {
-                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(follow = it))
-                    }
-                    NotificationAlertToggle("Follow requests", alertPrefs.followRequest, enabled = isToggled) {
-                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(followRequest = it))
-                    }
-                    NotificationAlertToggle("Polls", alertPrefs.poll, enabled = isToggled) {
-                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(poll = it))
-                    }
-                    NotificationAlertToggle("New posts", alertPrefs.status, isLast = true, enabled = isToggled) {
-                        viewModel.setNotificationAlertPrefs(alertPrefs.copy(status = it))
-                    }
-                }
-            }
-            Spacer(Modifier.height(28.dp))
-            NeonLabel("Composing", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                Column {
-                    Text("Default visibility", style = type.bodySmall, color = palette.textDim)
-                    Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PostVisibilityOptions.forEach { visibility ->
-                            VisibilityChip(
-                                visibility = visibility,
-                                selected = (me?.source?.privacy ?: "public") == visibility,
-                                onSelect = { viewModel.setDefaultPrivacy(visibility) },
-                                modifier = Modifier.weight(1f),
-                            )
+                Spacer(Modifier.height(10.dp))
+                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                    Column {
+                        NotificationAlertToggle("Mentions", alertPrefs.mention, enabled = isToggled) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(mention = it))
+                        }
+                        NotificationAlertToggle("Favourites", alertPrefs.favourite, enabled = isToggled) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(favourite = it))
+                        }
+                        NotificationAlertToggle("Boosts", alertPrefs.reblog, enabled = isToggled) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(reblog = it))
+                        }
+                        NotificationAlertToggle("New followers", alertPrefs.follow, enabled = isToggled) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(follow = it))
+                        }
+                        NotificationAlertToggle("Follow requests", alertPrefs.followRequest, enabled = isToggled) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(followRequest = it))
+                        }
+                        NotificationAlertToggle("Polls", alertPrefs.poll, enabled = isToggled) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(poll = it))
+                        }
+                        NotificationAlertToggle("New posts", alertPrefs.status, isLast = true, enabled = isToggled) {
+                            viewModel.setNotificationAlertPrefs(alertPrefs.copy(status = it))
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
-                    Text("Default language (ISO code)", style = type.bodySmall, color = palette.textDim)
-                    Spacer(Modifier.height(8.dp))
-                    var language by remember(me?.source?.language) {
-                        mutableStateOf(me?.source?.language.orEmpty())
-                    }
-                    BasicTextField(
-                        value = language,
-                        onValueChange = { language = it },
-                        textStyle = type.bodyMedium.copy(color = palette.text),
-                        cursorBrush = SolidColor(palette.cyan),
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(palette.surface, RoundedCornerShape(8.dp))
-                            .border(1.dp, palette.border, RoundedCornerShape(8.dp))
-                            .padding(10.dp),
-                        decorationBox = { inner ->
-                            if (language.isEmpty()) {
-                                Text("e.g. en", style = type.bodyMedium, color = palette.textMute)
+                }
+                Spacer(Modifier.height(28.dp))
+                NeonLabel("Composing", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                    Column {
+                        Text("Default visibility", style = type.bodySmall, color = palette.textDim)
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PostVisibilityOptions.forEach { visibility ->
+                                VisibilityChip(
+                                    visibility = visibility,
+                                    selected = (me?.source?.privacy ?: "public") == visibility,
+                                    onSelect = { viewModel.setDefaultPrivacy(visibility) },
+                                    modifier = Modifier.weight(1f),
+                                )
                             }
-                            inner()
-                        },
-                        keyboardActions = KeyboardActions(
-                            onDone = { viewModel.setDefaultLanguage(language) },
-                        ),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    GlassButton(
-                        label = "Save language",
-                        onClick = { viewModel.setDefaultLanguage(language) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Text("Default language (ISO code)", style = type.bodySmall, color = palette.textDim)
+                        Spacer(Modifier.height(8.dp))
+                        var language by remember(me?.source?.language) {
+                            mutableStateOf(me?.source?.language.orEmpty())
+                        }
+                        BasicTextField(
+                            value = language,
+                            onValueChange = { language = it },
+                            textStyle = type.bodyMedium.copy(color = palette.text),
+                            cursorBrush = SolidColor(palette.cyan),
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(palette.surface, RoundedCornerShape(8.dp))
+                                .border(1.dp, palette.border, RoundedCornerShape(8.dp))
+                                .padding(10.dp),
+                            decorationBox = { inner ->
+                                if (language.isEmpty()) {
+                                    Text("e.g. en", style = type.bodyMedium, color = palette.textMute)
+                                }
+                                inner()
+                            },
+                            keyboardActions = KeyboardActions(
+                                onDone = { viewModel.setDefaultLanguage(language) },
+                            ),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        GlassButton(
+                            label = "Save language",
+                            onClick = { viewModel.setDefaultLanguage(language) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
-            }
-            Spacer(Modifier.height(28.dp))
-            NeonLabel("Account", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-            GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                Column {
-                    Text(me?.fullHandle.orEmpty(), style = type.titleSmall, color = palette.text)
-                    Text(viewModel.instance.orEmpty(), style = type.bodySmall, color = palette.textDim)
+                Spacer(Modifier.height(28.dp))
+                NeonLabel("Account", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+                GlassCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
+                    Column {
+                        Text(me?.fullHandle.orEmpty(), style = type.titleSmall, color = palette.text)
+                        Text(viewModel.instance.orEmpty(), style = type.bodySmall, color = palette.textDim)
+                    }
                 }
-            }
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Server info",
-                onClick = {
-                    val instance = viewModel.instance
-                    if (instance != null) {
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Server info",
+                    onClick = {
+                        val instance = viewModel.instance
+                        if (instance != null) {
+                            context.startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://$instance/about"),
+                                )
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(28.dp))
+                NeonLabel("Safety & Privacy", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
+                GlassButton(
+                    label = "Blocked & muted accounts",
+                    onClick = Navigator::openBlockedAccounts,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Privacy policy & community standards",
+                    onClick = {
                         context.startActivity(
                             android.content.Intent(
                                 android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse("https://$instance/about"),
+                                android.net.Uri.parse(PRIVACY_POLICY_URL),
                             )
                         )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(28.dp))
-            NeonLabel("Safety & Privacy", modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 10.dp))
-            GlassButton(
-                label = "Blocked & muted accounts",
-                onClick = Navigator::openBlockedAccounts,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Privacy policy & community standards",
-                onClick = {
-                    context.startActivity(
-                        android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse(PRIVACY_POLICY_URL),
-                        )
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Bookmarks",
-                onClick = Navigator::openBookmarks,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Lists",
-                onClick = Navigator::openManageLists,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Followed hashtags",
-                onClick = Navigator::openManageFollowedHashtags,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Filters",
-                onClick = Navigator::openFilters,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Send feedback",
-                onClick = { Navigator.openCompose(directToHandle = FEEDBACK_HANDLE) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(14.dp))
-            GlassButton(
-                label = "Log out",
-                onClick = viewModel::logout,
-                modifier = Modifier.fillMaxWidth(),
-            )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Bookmarks",
+                    onClick = Navigator::openBookmarks,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Lists",
+                    onClick = Navigator::openManageLists,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Followed hashtags",
+                    onClick = Navigator::openManageFollowedHashtags,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Filters",
+                    onClick = Navigator::openFilters,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Send feedback",
+                    onClick = { Navigator.openCompose(directToHandle = FEEDBACK_HANDLE) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(14.dp))
+                GlassButton(
+                    label = "Log out",
+                    onClick = viewModel::logout,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
