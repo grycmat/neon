@@ -13,7 +13,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import android.net.Uri
 import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gigapingu.neon.core.data.AuthStatus
@@ -61,6 +63,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         handleNotificationIntent(intent)
+        handleShareIntent(intent)
 
         setContent {
             val authStatus by viewModel.authStatus.collectAsStateWithLifecycle()
@@ -210,6 +213,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleNotificationIntent(intent)
+        handleShareIntent(intent)
     }
 
     private fun handleNotificationIntent(intent: Intent?) {
@@ -218,6 +222,28 @@ class MainActivity : ComponentActivity() {
         val openNotifications = intent.getBooleanExtra("open_notifications", false)
         if (statusId != null || openNotifications) {
             Navigator.handleNotificationClick(statusId = statusId, openNotificationsTab = openNotifications)
+        }
+    }
+
+    private fun handleShareIntent(intent: Intent?) {
+        if (intent == null) return
+        val text = if (intent.action == Intent.ACTION_SEND) {
+            intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+        } else {
+            null
+        }
+        val uris: List<Uri> = when (intent.action) {
+            Intent.ACTION_SEND ->
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                    ?.let { listOf(it) }.orEmpty()
+
+            Intent.ACTION_SEND_MULTIPLE ->
+                IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
+
+            else -> emptyList()
+        }
+        if (text != null || uris.isNotEmpty()) {
+            Navigator.handleShare(text = text, mediaUris = uris.map { it.toString() })
         }
     }
 }

@@ -414,6 +414,31 @@ wired in `app/src/main/kotlin/com/gigapingu/neon/NeonApp.kt`:
   silently no-ops there — same null-is-a-no-op convention as
   `threadPaneHandler` below.
 
+### Receiving shared content
+
+`MainActivity` is registered as an Android share target (`app/src/main/AndroidManifest.xml`:
+`ACTION_SEND`/`ACTION_SEND_MULTIPLE` intent-filters for `text/plain`, `image/*`, `video/*`, plus
+`android:launchMode="singleTask"` so repeat shares while Neon is already running route through
+`onNewIntent` instead of stacking a second activity instance — the sending app builds the
+Sharesheet `Intent`, so Neon can't inject `FLAG_ACTIVITY_SINGLE_TOP`/`CLEAR_TOP` itself the way
+`PushMessageHandler` does for its own `PendingIntent`s). No `audio/*` filter: the composer has no
+audio-attach path today (`MediaType.Audio` in `core/model/.../Media.kt` only renders existing
+attachments), so registering for it would offer Neon as a target for content it can't attach.
+
+`MainActivity.handleShareIntent` (called from both `onCreate` and `onNewIntent`, mirroring
+`handleNotificationIntent`) parses `EXTRA_TEXT`/`EXTRA_STREAM` and forwards to
+`Navigator.handleShare(text, mediaUris)`, which follows the exact same buffered-handoff pattern as
+`handleNotificationClick`/`bindNotificationHandler`: if the authenticated shell's `DisposableEffect`
+hasn't bound a handler yet (cold start, auth still resolving), the share is held in
+`pendingSharedText`/`pendingSharedMediaUris` and replayed once `bindShareHandler` runs. The bound
+handler just calls `Navigator.openCompose(sharedText = ..., sharedMediaUris = ...)`, pushing a
+`ComposeKey` with those two extra fields (`Uri`s stored as `String`, since `NavKey` must stay
+`kotlinx.serialization.Serializable`). `ComposeViewModel.start(...)` seeds `uiState.text` from
+`sharedText` and, for `sharedMediaUris`, calls the existing `pickMedia(uris: List<Uri>)` unchanged
+— it was already `Uri`-source-agnostic (the Photo Picker and a shared-in `content://` `Uri` look
+identical to it), so shared media reuses the same `readUri`/`MediaRepository.upload` path a normal
+attachment pick does, with no new upload code.
+
 ### Clickable status/bio content
 
 `HtmlText` (`core/designsystem/.../component/HtmlText.kt`) parses Mastodon HTML

@@ -161,10 +161,14 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                 viewModel.selectTab(1)
             }
         }
+        Navigator.bindShareHandler { text, mediaUris ->
+            Navigator.openCompose(sharedText = text, sharedMediaUris = mediaUris.ifEmpty { null })
+        }
         onDispose {
             if (Navigator.backStack === backStack) {
                 Navigator.backStack = null
                 Navigator.unbindNotificationHandler()
+                Navigator.unbindShareHandler()
             }
         }
     }
@@ -200,6 +204,8 @@ private fun AuthenticatedApp(viewModel: ShellViewModel) {
                         redraftSpoilerText = key.redraftSpoilerText,
                         redraftVisibility = key.redraftVisibility,
                         directToHandle = key.directToHandle,
+                        sharedText = key.sharedText,
+                        sharedMediaUris = key.sharedMediaUris,
                     )
                 }
                 entry<FollowListKey> { key ->

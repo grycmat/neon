@@ -92,6 +92,8 @@ fun ComposeScreen(
     redraftSpoilerText: String? = null,
     redraftVisibility: String? = null,
     directToHandle: String? = null,
+    sharedText: String? = null,
+    sharedMediaUris: List<String>? = null,
     viewModel: ComposeViewModel = hiltViewModel(),
 ) {
     val palette = NeonTheme.palette
@@ -117,6 +119,8 @@ fun ComposeScreen(
             redraftSpoilerText = redraftSpoilerText,
             redraftVisibility = redraftVisibility,
             directToHandle = directToHandle,
+            sharedText = sharedText,
+            sharedMediaUris = sharedMediaUris,
         )
     }
     LaunchedEffect(Unit) { viewModel.errors.collect { snackbarHostState.showSnackbar(it) } }

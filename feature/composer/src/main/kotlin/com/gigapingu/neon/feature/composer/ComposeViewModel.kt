@@ -110,9 +110,19 @@ class ComposeViewModel @Inject constructor(
         redraftSpoilerText: String? = null,
         redraftVisibility: String? = null,
         directToHandle: String? = null,
+        sharedText: String? = null,
+        sharedMediaUris: List<String>? = null,
     ) {
         if (initialized) return
         initialized = true
+
+        if (sharedText != null || !sharedMediaUris.isNullOrEmpty()) {
+            _uiState.update { it.copy(text = sharedText.orEmpty()) }
+            if (!sharedMediaUris.isNullOrEmpty()) {
+                pickMedia(sharedMediaUris.map(Uri::parse))
+            }
+            return
+        }
 
         if (directToHandle != null) {
             _uiState.update {

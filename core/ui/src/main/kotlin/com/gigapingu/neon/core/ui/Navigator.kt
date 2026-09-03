@@ -31,6 +31,8 @@ data class ComposeKey(
     val redraftSpoilerText: String? = null,
     val redraftVisibility: String? = null,
     val directToHandle: String? = null,
+    val sharedText: String? = null,
+    val sharedMediaUris: List<String>? = null,
 ) : NavKey
 
 @Serializable
@@ -109,6 +111,34 @@ object Navigator {
         onPendingNotification = null
     }
 
+    private var onPendingShare: ((String?, List<String>) -> Unit)? = null
+    private var pendingSharedText: String? = null
+    private var pendingSharedMediaUris: List<String> = emptyList()
+
+    /** Called from MainActivity when an ACTION_SEND/ACTION_SEND_MULTIPLE Intent arrives. */
+    fun handleShare(text: String?, mediaUris: List<String>) {
+        val handler = onPendingShare
+        if (handler != null) {
+            handler(text, mediaUris)
+        } else {
+            pendingSharedText = text
+            pendingSharedMediaUris = mediaUris
+        }
+    }
+
+    fun bindShareHandler(handler: (String?, List<String>) -> Unit) {
+        onPendingShare = handler
+        if (pendingSharedText != null || pendingSharedMediaUris.isNotEmpty()) {
+            handler(pendingSharedText, pendingSharedMediaUris)
+            pendingSharedText = null
+            pendingSharedMediaUris = emptyList()
+        }
+    }
+
+    fun unbindShareHandler() {
+        onPendingShare = null
+    }
+
     /**
      * Big-screen HomeShell binds this while it is on screen: when it returns
      * true the thread was shown in the shell's detail pane and nothing is
@@ -146,6 +176,8 @@ object Navigator {
         redraftSpoilerText: String? = null,
         redraftVisibility: String? = null,
         directToHandle: String? = null,
+        sharedText: String? = null,
+        sharedMediaUris: List<String>? = null,
     ) {
         backStack?.add(
             ComposeKey(
@@ -156,6 +188,8 @@ object Navigator {
                 redraftSpoilerText = redraftSpoilerText,
                 redraftVisibility = redraftVisibility,
                 directToHandle = directToHandle,
+                sharedText = sharedText,
+                sharedMediaUris = sharedMediaUris,
             )
         )
     }
